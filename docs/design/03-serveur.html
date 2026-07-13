@@ -1,0 +1,384 @@
+<title>QuickTable — Écrans : Interface Serveur</title>
+<style>
+  /* ====== TOKENS (identiques au Design System v1) ====== */
+  :root {
+    --ink-900:#1c1712; --ink-800:#241f1a; --ink-700:#362f27; --ink-600:#4f463a; --ink-500:#6e6252;
+    --ink-400:#948572; --ink-300:#b9ac98; --ink-200:#d6ccbe; --ink-100:#e8e1d7; --ink-50:#f3eee7; --ink-0:#fbf8f3;
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16);
+    --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-full:999px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px; --space-9:48px;
+    --dur-fast:120ms; --dur-base:180ms; --ease:cubic-bezier(.2,.8,.2,1);
+    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+      --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+      --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+      --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+      --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+      --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+      --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+      --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+      --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+      --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  }
+  :root[data-theme="dark"] { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+    --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+    --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+    --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+    --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+    --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+    --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+    --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+    --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  :root[data-theme="light"] { --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16); color-scheme:light; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--surface-2); color:var(--text-1); font-family:var(--font-ui); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4,p { margin:0; } h1,h2,h3,h4 { text-wrap:balance; font-weight:700; letter-spacing:-.01em; }
+  :focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; border-radius:var(--radius-xs); }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+  .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .icon { stroke:currentColor; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+
+  .topbar { position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--border); padding: var(--space-4) var(--space-7); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-3); }
+  .crumbs { font-size:13px; color:var(--text-3); display:flex; align-items:center; gap:6px; }
+  .crumbs b { color:var(--text-1); font-weight:600; }
+  .topbar-tabs { display:flex; gap: var(--space-6); }
+  .topbar-tabs a { font-size:13px; font-weight:600; color:var(--text-3); text-decoration:none; padding: 4px 0; border-bottom:2px solid transparent; }
+  .topbar-tabs a.active, .topbar-tabs a:hover { color:var(--text-1); border-color:var(--accent); }
+
+  main.page { max-width: 1280px; margin:0 auto; padding: var(--space-8) var(--space-7) var(--space-9); }
+  .eyebrow { display:inline-flex; align-items:center; gap:var(--space-2); font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:var(--space-3); }
+  .eyebrow::before { content:""; width:14px; height:1.5px; background:var(--accent); display:block; }
+  h2.title { font-size:1.6rem; margin-bottom: var(--space-2); }
+  .lede { max-width: 68ch; color: var(--text-2); font-size:14.5px; margin-bottom: var(--space-7); }
+  h3.sub { font-size:1rem; font-weight:600; margin: var(--space-8) 0 var(--space-4); }
+
+  .gallery { display:flex; gap: var(--space-6); overflow-x:auto; padding: var(--space-2) var(--space-1) var(--space-4); align-items:flex-start; }
+  .frame-col { flex: 0 0 auto; display:flex; flex-direction:column; gap: var(--space-3); }
+  .frame-label { font-size:12px; color:var(--text-3); } .frame-label b { color: var(--text-2); font-weight:600; }
+  .frame { border-radius: 28px; overflow:hidden; border:1px solid var(--border); box-shadow: var(--shadow-3); background: var(--bg); position:relative; }
+  .frame.mobile { width: 380px; height: 760px; } .frame.tablet-p { width: 540px; height: 760px; }
+  .frame-scroll { height:100%; overflow-y:auto; display:flex; flex-direction:column; }
+
+  /* ---------- in-app header ---------- */
+  .app-header { display:flex; align-items:center; gap: var(--space-3); padding: var(--space-4); border-bottom:1px solid var(--border); background:var(--surface-1); position:sticky; top:0; z-index:5; }
+  .app-header h1 { font-size:1.05rem; flex:1; }
+  .app-header .sub { font-size:11.5px; color:var(--text-3); }
+  .icon-btn { width:32px; height:32px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--text-2); cursor:pointer; flex-shrink:0; }
+  .icon-btn:hover { background:var(--surface-2); }
+
+  /* ---------- room tabs / category tabs (chip style) ---------- */
+  .chip-tabs { display:flex; gap:8px; padding: var(--space-3) var(--space-4); overflow-x:auto; border-bottom:1px solid var(--border); background:var(--surface-1); }
+  .chip-tab { flex-shrink:0; font-size:12.5px; font-weight:600; padding:7px 14px; border-radius:var(--radius-full); background:var(--surface-2); color:var(--text-2); cursor:pointer; white-space:nowrap; }
+  .chip-tab.active { background:var(--ember-soft); color:var(--ember-soft-ink); }
+
+  /* ---------- table grid ---------- */
+  .table-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); padding: var(--space-4); flex:1; }
+  .table-chip { border-radius: var(--radius-md); padding: var(--space-3); display:flex; flex-direction:column; gap:2px; border: 1.5px solid transparent; cursor:pointer; transition: transform var(--dur-fast) var(--ease); }
+  .table-chip:hover { transform: translateY(-1px); }
+  .table-chip .tno { font-family:var(--font-mono); font-size:1.05rem; font-weight:700; }
+  .table-chip .tcap { font-size:10.5px; opacity:.8; }
+  .table-chip .tstatus { font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; margin-top:6px; }
+  .t-free { background: var(--basil-soft); color: var(--basil-soft-ink); }
+  .t-occupied { background: var(--ember-soft); color: var(--ember-soft-ink); border-color: var(--ember); }
+  .t-reserved { background: var(--steel-soft); color: var(--steel-soft-ink); }
+  .t-cleaning { background: var(--turmeric-soft); color: var(--turmeric-soft-ink); }
+  .t-oos { background: var(--surface-2); color: var(--text-3); }
+
+  /* ---------- bottom nav ---------- */
+  .bottom-nav { display:flex; border-top:1px solid var(--border); background:var(--surface-1); }
+  .bn-item { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding: 9px 0 11px; font-size:10.5px; color: var(--text-3); cursor:pointer; }
+  .bn-item.active { color: var(--accent); font-weight:700; }
+
+  /* ---------- dish grid ---------- */
+  .dish-scroll { flex:1; overflow-y:auto; padding: var(--space-4); display:grid; grid-template-columns: repeat(2,1fr); gap: var(--space-3); align-content:start; }
+  .dish-card { background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); overflow:hidden; cursor:pointer; box-shadow: var(--shadow-1); }
+  .dish-thumb { height:64px; display:flex; align-items:center; justify-content:center; font-size:1.3rem; font-weight:700; color:#fff; }
+  .dish-body { padding: var(--space-3); }
+  .dish-body .dname { font-size:12.5px; font-weight:600; margin-bottom:2px; }
+  .dish-body .drow { display:flex; align-items:center; justify-content:space-between; }
+  .dish-body .dprice { font-family:var(--font-mono); font-size:12px; color:var(--text-2); }
+  .add-btn { width:24px; height:24px; border-radius:50%; background:var(--ember-soft); color:var(--ember-soft-ink); display:flex; align-items:center; justify-content:center; font-weight:700; }
+
+  /* ---------- cart bar / sheet ---------- */
+  .cart-bar { display:flex; align-items:center; justify-content:space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--ink-900); color:#fff; }
+  .cart-bar .ci { display:flex; align-items:center; gap:10px; font-size:13px; }
+  .cart-count { background: var(--ember); width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; }
+  .cart-bar .btn-send { background:var(--ember); color:#fff; border:none; border-radius:var(--radius-sm); padding:8px 14px; font-size:12.5px; font-weight:700; }
+
+  .cart-sheet { padding: var(--space-4); border-top:1px solid var(--border); background:var(--surface-1); }
+  .cart-item { display:flex; align-items:center; gap: var(--space-3); padding: var(--space-2) 0; border-bottom:1px solid var(--border); }
+  .cart-item:last-child { border-bottom:none; }
+  .cart-item .ciname { flex:1; font-size:12.5px; } .cart-item .ciname small { display:block; color:var(--paprika); font-size:10.5px; }
+  .stepper { display:flex; align-items:center; gap:6px; }
+  .stepper button { width:22px; height:22px; border-radius:50%; border:1px solid var(--border-strong); background:var(--surface-1); font-weight:700; font-size:12px; }
+  .stepper span { font-family:var(--font-mono); font-size:12.5px; width:14px; text-align:center; }
+
+  /* ---------- ticket / order tracking ---------- */
+  .track-item { display:flex; align-items:flex-start; justify-content:space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-bottom:1px solid var(--border); }
+  .track-item .tiname { font-size:13px; font-weight:600; }
+  .track-item .tinote { font-size:11px; color:var(--text-3); }
+  .badge { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700; padding:3px 9px 3px 7px; border-radius:var(--radius-full); white-space:nowrap; }
+  .badge .dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+  .badge-steel { background:var(--steel-soft); color:var(--steel-soft-ink); }
+  .badge-turmeric { background:var(--turmeric-soft); color:var(--turmeric-soft-ink); }
+  .badge-basil { background:var(--basil-soft); color:var(--basil-soft-ink); }
+  .badge-neutral { background:var(--surface-2); color:var(--text-2); }
+  .link-cancel { font-size:11px; color:var(--paprika); font-weight:600; margin-top:4px; cursor:pointer; }
+  .link-cancel.disabled { color:var(--text-3); cursor:not-allowed; text-decoration: line-through; }
+  .track-actions { padding: var(--space-4); display:flex; gap: var(--space-3); border-top:1px solid var(--border); margin-top:auto; }
+  .btn { appearance:none; border:1px solid transparent; cursor:pointer; font-family:var(--font-ui); font-weight:600; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:var(--radius-sm); padding:0 14px; height:38px; flex:1; }
+  .btn-primary { background:var(--accent); color:var(--accent-ink); }
+  .btn-secondary { background:var(--surface-2); color:var(--text-1); border-color:var(--border-strong); }
+
+  /* ---------- state chips ---------- */
+  .state-row { display:flex; flex-wrap:wrap; gap: var(--space-5); }
+  .state-chip { width: 300px; background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-1); }
+  .chip-label { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--text-3); margin-bottom: var(--space-4); display:flex; align-items:center; gap:6px; }
+  .dot-lg { width:7px; height:7px; border-radius:50%; }
+  .skel { background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%); background-size:400% 100%; animation: shimmer 1.4s ease infinite; border-radius: var(--radius-sm); }
+  @keyframes shimmer { 0% { background-position:100% 0; } 100% { background-position:0 0; } }
+
+  @media (max-width: 720px) {
+    main.page { padding: var(--space-6) var(--space-4) var(--space-8); }
+    .topbar { padding: var(--space-3) var(--space-4); }
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14 6 10Z"/><path d="M10 19a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 21 20H3Z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="crumbs">Écrans <svg class="icon" width="12" height="12"><use href="#i-back" style="transform:rotate(180deg)"/></svg> <b>Interface Serveur</b></div>
+  <div class="topbar-tabs">
+    <a class="active" href="#salle">Plan de salle</a>
+    <a href="#commande">Prise de commande</a>
+    <a href="#suivi">Suivi de commande</a>
+  </div>
+</div>
+
+<main class="page">
+  <section>
+    <div class="eyebrow">Écrans · 03</div>
+    <h2 class="title">Interface Serveur</h2>
+    <p class="lede">Mobile d'abord, une main, en mouvement constant en salle (doc 36 §36.6). Trois écrans qui forment le cœur du parcours 2 (doc 36 §36.3)&nbsp;: choisir une table, composer la commande, suivre son exécution en cuisine — avec la règle d'annulation confirmée par le Product Owner rendue visible directement sur le ticket.</p>
+  </section>
+
+  <!-- ============ PLAN DE SALLE ============ -->
+  <section id="salle">
+    <h3 class="sub">Plan de salle</h3>
+    <p class="lede" style="margin-bottom:var(--space-5)">Couleur = statut, jamais de texte à lire pour comprendre l'état d'une salle en un coup d'œil. Les onglets de salle défilent horizontalement.</p>
+    <div class="gallery">
+      <div class="frame-col">
+        <div class="frame-label"><b>Mobile</b> · 390px cible</div>
+        <div class="frame mobile"><div class="frame-scroll">
+          <div class="app-header">
+            <div><h1>Salles</h1><div class="sub">Le Jardin d'Awa</div></div>
+            <div class="icon-btn"><svg class="icon" width="18" height="18"><use href="#i-bell"/></svg></div>
+          </div>
+          <div class="chip-tabs">
+            <div class="chip-tab active">Terrasse</div>
+            <div class="chip-tab">Salle B</div>
+            <div class="chip-tab">Bar</div>
+          </div>
+          <div class="table-grid">
+            <div class="table-chip t-occupied"><span class="tno">T-01</span><span class="tcap">4 pers.</span><span class="tstatus">Occupée</span></div>
+            <div class="table-chip t-free"><span class="tno">T-02</span><span class="tcap">2 pers.</span><span class="tstatus">Libre</span></div>
+            <div class="table-chip t-reserved"><span class="tno">T-03</span><span class="tcap">6 pers.</span><span class="tstatus">20h30</span></div>
+            <div class="table-chip t-free"><span class="tno">T-04</span><span class="tcap">4 pers.</span><span class="tstatus">Libre</span></div>
+            <div class="table-chip t-cleaning"><span class="tno">T-05</span><span class="tcap">2 pers.</span><span class="tstatus">Nettoyage</span></div>
+            <div class="table-chip t-occupied"><span class="tno">T-06</span><span class="tcap">4 pers.</span><span class="tstatus">Occupée</span></div>
+            <div class="table-chip t-free"><span class="tno">T-07</span><span class="tcap">2 pers.</span><span class="tstatus">Libre</span></div>
+            <div class="table-chip t-oos"><span class="tno">T-08</span><span class="tcap">4 pers.</span><span class="tstatus">Hors service</span></div>
+            <div class="table-chip t-free"><span class="tno">T-09</span><span class="tcap">6 pers.</span><span class="tstatus">Libre</span></div>
+          </div>
+          <div class="bottom-nav">
+            <div class="bn-item active"><svg class="icon" width="18" height="18"><use href="#i-grid"/></svg>Plan de salle</div>
+            <div class="bn-item"><svg class="icon" width="18" height="18"><use href="#i-receipt"/></svg>Mes commandes</div>
+            <div class="bn-item"><svg class="icon" width="18" height="18"><use href="#i-bell"/></svg>Notifications</div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRISE DE COMMANDE ============ -->
+  <section id="commande">
+    <h3 class="sub">Prise de commande — Table 01</h3>
+    <p class="lede" style="margin-bottom:var(--space-5)">Le panier reste toujours visible en barre basse fixe (doc 36 §36.4)&nbsp;: le serveur voit son total sans jamais quitter la grille de plats.</p>
+    <div class="gallery">
+      <div class="frame-col">
+        <div class="frame-label"><b>Mobile</b> · panier réduit</div>
+        <div class="frame mobile"><div class="frame-scroll">
+          <div class="app-header">
+            <div class="icon-btn"><svg class="icon" width="18" height="18"><use href="#i-back"/></svg></div>
+            <div><h1>Table 01</h1><div class="sub">4 personnes · Terrasse</div></div>
+          </div>
+          <div class="chip-tabs">
+            <div class="chip-tab active">Plats</div>
+            <div class="chip-tab">Boissons</div>
+            <div class="chip-tab">Desserts</div>
+          </div>
+          <div class="dish-scroll">
+            <div class="dish-card"><div class="dish-thumb" style="background:linear-gradient(135deg,#c2410c,#a6720a)">PY</div><div class="dish-body"><div class="dname">Poulet Yassa</div><div class="drow"><span class="dprice tabular">3 500 XOF</span><span class="add-btn"><svg class="icon" width="13" height="13"><use href="#i-plus"/></svg></span></div></div></div>
+            <div class="dish-card"><div class="dish-thumb" style="background:linear-gradient(135deg,#3b6e8f,#2b6e4c)">AP</div><div class="dish-body"><div class="dname">Attiéké Poisson</div><div class="drow"><span class="dprice tabular">3 000 XOF</span><span class="add-btn"><svg class="icon" width="13" height="13"><use href="#i-plus"/></svg></span></div></div></div>
+            <div class="dish-card"><div class="dish-thumb" style="background:linear-gradient(135deg,#a6720a,#b42318)">RG</div><div class="dish-body"><div class="dname">Riz au Gras</div><div class="drow"><span class="dprice tabular">2 500 XOF</span><span class="add-btn"><svg class="icon" width="13" height="13"><use href="#i-plus"/></svg></span></div></div></div>
+            <div class="dish-card"><div class="dish-thumb" style="background:linear-gradient(135deg,#2b6e4c,#3b6e8f)">PB</div><div class="dish-body"><div class="dname">Poisson Braisé</div><div class="drow"><span class="dprice tabular">4 000 XOF</span><span class="add-btn"><svg class="icon" width="13" height="13"><use href="#i-plus"/></svg></span></div></div></div>
+          </div>
+          <div class="cart-bar">
+            <div class="ci"><span class="cart-count">3</span>3 articles</div>
+            <div class="ci tabular" style="font-weight:700">9 500 XOF</div>
+            <button class="btn-send">Voir le panier</button>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="frame-col">
+        <div class="frame-label"><b>Mobile</b> · panier ouvert</div>
+        <div class="frame mobile"><div class="frame-scroll" style="justify-content:flex-end">
+          <div class="app-header">
+            <div class="icon-btn"><svg class="icon" width="18" height="18"><use href="#i-back"/></svg></div>
+            <div><h1>Panier — Table 01</h1><div class="sub">3 articles</div></div>
+          </div>
+          <div style="flex:1"></div>
+          <div class="cart-sheet">
+            <div class="cart-item"><div class="ciname">Poulet Yassa<small>Sans piment</small></div><div class="stepper"><button>–</button><span>2</span><button>+</button></div></div>
+            <div class="cart-item"><div class="ciname">Attiéké Poisson</div><div class="stepper"><button>–</button><span>1</span><button>+</button></div></div>
+            <div style="display:flex;justify-content:space-between;padding:var(--space-3) 0;font-weight:700"><span>Total</span><span class="tabular">9 500 XOF</span></div>
+            <button class="btn btn-primary" style="width:100%">Envoyer en cuisine</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SUIVI DE COMMANDE ============ -->
+  <section id="suivi">
+    <h3 class="sub">Suivi de commande — Table 01 <span class="badge badge-turmeric" style="margin-left:8px"><span class="dot"></span>En cuisine</span></h3>
+    <p class="lede" style="margin-bottom:var(--space-5)">Le lien « Annuler » n'apparaît que sur un plat encore <em>en file</em> — dès que la cuisine passe le Poulet Yassa en préparation, l'action disparaît d'elle-même (doc 21 §21.1, règle confirmée par le Product Owner). C'est la traduction directe du Parcours 4 du doc 36.</p>
+    <div class="gallery">
+      <div class="frame-col">
+        <div class="frame-label"><b>Mobile</b></div>
+        <div class="frame mobile"><div class="frame-scroll">
+          <div class="app-header">
+            <div class="icon-btn"><svg class="icon" width="18" height="18"><use href="#i-back"/></svg></div>
+            <div><h1>Table 01</h1><div class="sub">Envoyée il y a 6 min</div></div>
+            <div class="icon-btn" style="color:var(--turmeric)"><svg class="icon" width="16" height="16"><use href="#i-clock"/></svg></div>
+          </div>
+
+          <div style="flex:1">
+            <div class="track-item">
+              <div><div class="tiname">2× Poulet Yassa</div><div class="tinote">Sans piment</div><div class="link-cancel">Annuler ce plat</div></div>
+              <span class="badge badge-steel"><span class="dot"></span>En file</span>
+            </div>
+            <div class="track-item">
+              <div><div class="tiname">1× Attiéké Poisson</div><div class="link-cancel disabled">Préparation commencée</div></div>
+              <span class="badge badge-turmeric"><span class="dot"></span>En préparation</span>
+            </div>
+            <div class="track-item">
+              <div><div class="tiname">3× Jus de Bissap</div></div>
+              <span class="badge badge-basil"><span class="dot"></span>Prêt</span>
+            </div>
+          </div>
+
+          <div class="track-actions">
+            <button class="btn btn-secondary">Ajouter un plat</button>
+            <button class="btn btn-primary">Demander l'addition</button>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="frame-col">
+        <div class="frame-label"><b>Tablette (portrait)</b> · même écran, plus d'air</div>
+        <div class="frame tablet-p"><div class="frame-scroll">
+          <div class="app-header">
+            <div class="icon-btn"><svg class="icon" width="18" height="18"><use href="#i-back"/></svg></div>
+            <div><h1>Table 01 — Terrasse</h1><div class="sub">Envoyée il y a 6 min · Awa K.</div></div>
+          </div>
+          <div style="flex:1">
+            <div class="track-item">
+              <div><div class="tiname">2× Poulet Yassa</div><div class="tinote">Sans piment</div><div class="link-cancel">Annuler ce plat</div></div>
+              <span class="badge badge-steel"><span class="dot"></span>En file</span>
+            </div>
+            <div class="track-item">
+              <div><div class="tiname">1× Attiéké Poisson</div><div class="link-cancel disabled">Préparation commencée</div></div>
+              <span class="badge badge-turmeric"><span class="dot"></span>En préparation</span>
+            </div>
+            <div class="track-item">
+              <div><div class="tiname">3× Jus de Bissap</div></div>
+              <span class="badge badge-basil"><span class="dot"></span>Prêt</span>
+            </div>
+            <div class="track-item" style="border-bottom:none">
+              <div><div class="tiname">1× Salade de Fruits</div></div>
+              <span class="badge badge-neutral"><span class="dot"></span>Servi</span>
+            </div>
+          </div>
+          <div class="track-actions">
+            <button class="btn btn-secondary">Ajouter un plat</button>
+            <button class="btn btn-primary">Demander l'addition</button>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STATES ============ -->
+  <h3 class="sub">États</h3>
+  <div class="state-row">
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--text-3)"></span>Chargement du menu</div>
+      <div class="skel" style="height:64px;margin-bottom:8px"></div>
+      <div class="skel" style="height:64px;margin-bottom:8px"></div>
+      <div class="skel" style="height:14px;width:60%"></div>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Envoi refusé — stock</div>
+      <div style="display:flex;gap:8px;align-items:flex-start;background:var(--paprika-soft);color:var(--paprika-soft-ink);padding:10px 12px;border-radius:var(--radius-sm);font-size:12.5px">
+        <svg class="icon" width="15" height="15" style="flex-shrink:0;margin-top:1px"><use href="#i-warn"/></svg>
+        <div><strong>Poisson Braisé indisponible.</strong> Stock de filet de bar épuisé — retirez l'article ou proposez une alternative.</div>
+      </div>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--basil)"></span>Aucune table dans cette salle</div>
+      <div style="text-align:center;padding:var(--space-4) 0">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);color:var(--text-3);display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg class="icon" width="16" height="16"><use href="#i-book"/></svg></div>
+        <p style="font-size:12.5px;color:var(--text-2)">Aucune table configurée dans « Bar ». Ajoutez-en depuis Salles &amp; tables.</p>
+      </div>
+    </div>
+  </div>
+</main>

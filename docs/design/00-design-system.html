@@ -1,0 +1,1030 @@
+<title>QuickTable — Design System</title>
+<style>
+  /* ============================================================
+     QUICKTABLE DESIGN SYSTEM
+     Palette  : Ink (warm charcoal) · Porcelain (warm paper) ·
+                Ember (primary/copper) · Basil (success) ·
+                Turmeric (warning) · Paprika (danger) · Steel (info)
+     Type     : system grotesk (UI/display) + system mono (data)
+     Layout   : sticky wayfinding rail + scannable specimen column
+     ============================================================ */
+
+  /* ---------- 1. TOKENS — LIGHT (default) ---------- */
+  :root {
+    --ink-900: #1c1712;
+    --ink-800: #241f1a;
+    --ink-700: #362f27;
+    --ink-600: #4f463a;
+    --ink-500: #6e6252;
+    --ink-400: #948572;
+    --ink-300: #b9ac98;
+    --ink-200: #d6ccbe;
+    --ink-100: #e8e1d7;
+    --ink-50:  #f3eee7;
+    --ink-0:   #fbf8f3;
+
+    --ember:      #c2410c;
+    --ember-ink:  #ffffff;
+    --ember-soft: #f3e2d4;
+    --ember-soft-ink: #8a3208;
+
+    --basil:      #2b6e4c;
+    --basil-soft: #dfeee4;
+    --basil-soft-ink: #1e5138;
+
+    --turmeric:      #a6720a;
+    --turmeric-soft: #f3e6c8;
+    --turmeric-soft-ink: #7a5406;
+
+    --paprika:      #b42318;
+    --paprika-soft: #f5dcda;
+    --paprika-soft-ink: #8a1a11;
+
+    --steel:      #3b6e8f;
+    --steel-soft: #dde9ef;
+    --steel-soft-ink: #2b5066;
+
+    --bg:        var(--ink-0);
+    --surface-1: #ffffff;
+    --surface-2: var(--ink-50);
+    --border:    var(--ink-200);
+    --border-strong: var(--ink-300);
+    --text-1:    var(--ink-900);
+    --text-2:    var(--ink-600);
+    --text-3:    var(--ink-400);
+    --accent:    var(--ember);
+    --accent-ink: var(--ember-ink);
+    --focus-ring: #c2410c;
+
+    --shadow-1: 0 1px 1px rgba(28,23,18,.04), 0 1px 2px rgba(28,23,18,.06);
+    --shadow-2: 0 2px 4px rgba(28,23,18,.05), 0 6px 12px rgba(28,23,18,.08);
+    --shadow-3: 0 8px 16px rgba(28,23,18,.09), 0 16px 32px rgba(28,23,18,.10);
+    --shadow-4: 0 16px 32px rgba(28,23,18,.14), 0 32px 64px rgba(28,23,18,.16);
+
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 22px;
+    --radius-full: 999px;
+
+    --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+    --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px;
+    --space-9: 48px; --space-10: 64px; --space-11: 80px;
+
+    --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 280ms;
+    --ease: cubic-bezier(.2,.8,.2,1);
+
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, "Liberation Mono", monospace;
+
+    color-scheme: light;
+  }
+
+  /* ---------- 2. TOKENS — DARK (OS preference) ---------- */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #16120e;
+      --surface-1: #201a15;
+      --surface-2: #2a231c;
+      --border:    #3c3226;
+      --border-strong: #4d4131;
+      --text-1:    var(--ink-50);
+      --text-2:    var(--ink-200);
+      --text-3:    var(--ink-400);
+
+      --ember: #e2711f;
+      --ember-ink: #1c1712;
+      --ember-soft: #3a2213;
+      --ember-soft-ink: #f3c39a;
+
+      --basil: #4f9c74;
+      --basil-soft: #1c3327;
+      --basil-soft-ink: #a9dcc0;
+
+      --turmeric: #d9a441;
+      --turmeric-soft: #382c14;
+      --turmeric-soft-ink: #f4d79a;
+
+      --paprika: #e5695c;
+      --paprika-soft: #3a1c17;
+      --paprika-soft-ink: #f3aba3;
+
+      --steel: #7fb2d6;
+      --steel-soft: #1c2c35;
+      --steel-soft-ink: #b7dcef;
+
+      --accent: var(--ember);
+      --accent-ink: var(--ember-ink);
+      --focus-ring: #e2711f;
+
+      --shadow-1: 0 1px 0 rgba(0,0,0,.5);
+      --shadow-2: 0 2px 0 rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.45);
+      --shadow-3: 0 12px 28px rgba(0,0,0,.55);
+      --shadow-4: 0 24px 56px rgba(0,0,0,.65);
+      color-scheme: dark;
+    }
+  }
+
+  /* ---------- 3. TOKENS — explicit viewer toggle (wins both directions) ---------- */
+  :root[data-theme="dark"] {
+    --bg: #16120e; --surface-1: #201a15; --surface-2: #2a231c;
+    --border: #3c3226; --border-strong: #4d4131;
+    --text-1: var(--ink-50); --text-2: var(--ink-200); --text-3: var(--ink-400);
+    --ember: #e2711f; --ember-ink: #1c1712; --ember-soft: #3a2213; --ember-soft-ink: #f3c39a;
+    --basil: #4f9c74; --basil-soft: #1c3327; --basil-soft-ink: #a9dcc0;
+    --turmeric: #d9a441; --turmeric-soft: #382c14; --turmeric-soft-ink: #f4d79a;
+    --paprika: #e5695c; --paprika-soft: #3a1c17; --paprika-soft-ink: #f3aba3;
+    --steel: #7fb2d6; --steel-soft: #1c2c35; --steel-soft-ink: #b7dcef;
+    --accent: var(--ember); --accent-ink: var(--ember-ink); --focus-ring: #e2711f;
+    --shadow-1: 0 1px 0 rgba(0,0,0,.5);
+    --shadow-2: 0 2px 0 rgba(0,0,0,.4), 0 8px 20px rgba(0,0,0,.45);
+    --shadow-3: 0 12px 28px rgba(0,0,0,.55);
+    --shadow-4: 0 24px 56px rgba(0,0,0,.65);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: var(--ink-0); --surface-1: #ffffff; --surface-2: var(--ink-50);
+    --border: var(--ink-200); --border-strong: var(--ink-300);
+    --text-1: var(--ink-900); --text-2: var(--ink-600); --text-3: var(--ink-400);
+    --ember: #c2410c; --ember-ink: #ffffff; --ember-soft: #f3e2d4; --ember-soft-ink: #8a3208;
+    --basil: #2b6e4c; --basil-soft: #dfeee4; --basil-soft-ink: #1e5138;
+    --turmeric: #a6720a; --turmeric-soft: #f3e6c8; --turmeric-soft-ink: #7a5406;
+    --paprika: #b42318; --paprika-soft: #f5dcda; --paprika-soft-ink: #8a1a11;
+    --steel: #3b6e8f; --steel-soft: #dde9ef; --steel-soft-ink: #2b5066;
+    --accent: var(--ember); --accent-ink: var(--ember-ink); --focus-ring: #c2410c;
+    --shadow-1: 0 1px 1px rgba(28,23,18,.04), 0 1px 2px rgba(28,23,18,.06);
+    --shadow-2: 0 2px 4px rgba(28,23,18,.05), 0 6px 12px rgba(28,23,18,.08);
+    --shadow-3: 0 8px 16px rgba(28,23,18,.09), 0 16px 32px rgba(28,23,18,.10);
+    --shadow-4: 0 16px 32px rgba(28,23,18,.14), 0 32px 64px rgba(28,23,18,.16);
+    color-scheme: light;
+  }
+
+  /* ---------- 4. RESET / BASE ---------- */
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text-1);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  img, svg { display: block; max-width: 100%; }
+  a { color: var(--accent); }
+  h1,h2,h3,h4,p,ul,ol,dl,figure { margin: 0; }
+  h1,h2,h3,h4 { text-wrap: balance; font-weight: 700; letter-spacing: -0.01em; }
+  ::selection { background: var(--ember-soft); color: var(--ember-soft-ink); }
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
+  .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+
+  /* ---------- 5. SHELL LAYOUT ---------- */
+  .shell {
+    display: grid;
+    grid-template-columns: 248px minmax(0,1fr);
+    max-width: 1360px;
+    margin: 0 auto;
+  }
+  .rail {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    padding: var(--space-6) var(--space-5) var(--space-8);
+    border-right: 1px solid var(--border);
+  }
+  .rail-brand {
+    display: flex; align-items: center; gap: var(--space-2);
+    margin-bottom: var(--space-7);
+  }
+  .rail-brand .mark { color: var(--accent); }
+  .rail-brand strong { font-size: 15px; letter-spacing: -0.01em; }
+  .rail-brand span { display:block; font-size: 11px; color: var(--text-3); letter-spacing: .04em; text-transform: uppercase; }
+  .rail nav { display: flex; flex-direction: column; gap: var(--space-6); }
+  .rail-group-title {
+    font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-3); margin-bottom: var(--space-2);
+  }
+  .rail a {
+    display: block; color: var(--text-2); text-decoration: none; font-size: 13.5px;
+    padding: 5px 0; border-radius: var(--radius-xs);
+    transition: color var(--dur-fast) var(--ease);
+  }
+  .rail a:hover { color: var(--text-1); }
+
+  .content { min-width: 0; padding: var(--space-8) var(--space-9) var(--space-11); }
+  section { padding-top: var(--space-11); border-top: 1px solid var(--border); margin-top: var(--space-11); }
+  section:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: var(--space-2);
+    font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: var(--space-3);
+  }
+  .eyebrow::before { content: ""; width: 14px; height: 1.5px; background: var(--accent); display:block; }
+  section > h2 { font-size: 1.7rem; margin-bottom: var(--space-2); }
+  .section-lede { max-width: 62ch; color: var(--text-2); font-size: 15px; margin-bottom: var(--space-7); }
+  h3.sub { font-size: 1.05rem; font-weight: 600; margin: var(--space-8) 0 var(--space-4); }
+  h3.sub:first-of-type { margin-top: var(--space-6); }
+
+  /* ---------- 6. ICON SPRITE (geometric, stroke-based, 1.6px) ---------- */
+  .icon { width: 18px; height: 18px; stroke: currentColor; stroke-width: 1.6; fill: none; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+  /* ---------- 7. SPECIMEN SCAFFOLDING ---------- */
+  .specimen {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: var(--space-6); box-shadow: var(--shadow-1);
+  }
+  .specimen-row { display: flex; flex-wrap: wrap; gap: var(--space-5); align-items: flex-start; }
+  .specimen-label {
+    font-size: 12px; color: var(--text-3); margin-top: var(--space-2);
+    font-family: var(--font-mono);
+  }
+  .scroll-x { overflow-x: auto; }
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: var(--space-3); }
+
+  /* ---------- 8. HERO / OVERVIEW ---------- */
+  .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: var(--space-9); align-items: center; }
+  .hero h1 { font-size: 2.5rem; line-height: 1.1; margin-bottom: var(--space-4); }
+  .hero p.lede { font-size: 1.05rem; color: var(--text-2); max-width: 46ch; margin-bottom: var(--space-6); }
+  .hero-meta { display: flex; gap: var(--space-6); }
+  .hero-meta div strong { display:block; font-size: 1.3rem; font-family: var(--font-mono); }
+  .hero-meta div span { font-size: 12px; color: var(--text-3); }
+
+  /* ---------- 9. TICKET CARD (thesis component) ---------- */
+  .ticket {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-3); padding: var(--space-5); width: 100%; max-width: 340px;
+  }
+  .ticket-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-4); }
+  .ticket-head .table-no { font-family: var(--font-mono); font-size: 1.6rem; font-weight: 700; }
+  .ticket-head .table-sub { font-size: 12px; color: var(--text-3); }
+  .ticket-timer { font-family: var(--font-mono); font-size: 13px; color: var(--turmeric); display:flex; align-items:center; gap:4px; }
+  .ticket-items { display: flex; flex-direction: column; gap: var(--space-3); margin-bottom: var(--space-4); }
+  .ticket-item { display: flex; justify-content: space-between; gap: var(--space-3); font-size: 13.5px; }
+  .ticket-item .qty { font-family: var(--font-mono); color: var(--text-3); width: 20px; flex-shrink:0; }
+  .ticket-item .name { flex: 1; }
+  .ticket-item .note { display:block; font-size: 11.5px; color: var(--paprika); margin-top: 2px; }
+  .ticket-foot { display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-3); border-top: 1px dashed var(--border-strong); }
+
+  /* ---------- 10. COLOR SWATCHES ---------- */
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: var(--space-4); }
+  .swatch { border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border); }
+  .swatch-fill { height: 64px; }
+  .swatch-meta { padding: var(--space-3); background: var(--surface-1); }
+  .swatch-meta strong { display: block; font-size: 13px; }
+  .swatch-meta span { display:block; font-size: 11.5px; color: var(--text-3); font-family: var(--font-mono); margin-top: 2px; }
+
+  /* ---------- 11. TYPE SPECIMENS ---------- */
+  .type-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-5); padding: var(--space-4) 0; border-bottom: 1px solid var(--border); }
+  .type-row:last-child { border-bottom: none; }
+  .type-row .sample { flex: 1; min-width: 0; }
+  .type-meta { font-family: var(--font-mono); font-size: 11.5px; color: var(--text-3); white-space: nowrap; }
+  .t-display { font-size: 2.6rem; font-weight: 700; letter-spacing: -.02em; line-height: 1.05; }
+  .t-h1 { font-size: 2.1rem; font-weight: 700; letter-spacing: -.015em; }
+  .t-h2 { font-size: 1.65rem; font-weight: 700; }
+  .t-h3 { font-size: 1.3rem; font-weight: 600; }
+  .t-h4 { font-size: 1.08rem; font-weight: 600; }
+  .t-body-l { font-size: 1.0625rem; font-weight: 400; }
+  .t-body-m { font-size: .9375rem; font-weight: 400; }
+  .t-body-s { font-size: .8125rem; font-weight: 400; color: var(--text-2); }
+  .t-caption { font-size: .72rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-3); }
+  .t-mono { font-family: var(--font-mono); font-size: .9375rem; }
+
+  /* ---------- 12. SPACING / RADIUS / SHADOW SPECIMENS ---------- */
+  .space-bars { display: flex; flex-direction: column; gap: var(--space-3); }
+  .space-bar-row { display: flex; align-items: center; gap: var(--space-4); }
+  .space-bar-row .bar { background: var(--accent); height: 10px; border-radius: 2px; }
+  .space-bar-row .lbl { font-family: var(--font-mono); font-size: 12px; color: var(--text-3); width: 90px; }
+
+  .radius-grid, .shadow-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: var(--space-5); }
+  .radius-box { width: 100%; height: 80px; background: var(--surface-2); border: 1px solid var(--border-strong); }
+  .shadow-box { width: 100%; height: 80px; background: var(--surface-1); border-radius: var(--radius-md); }
+
+  /* ---------- 13. BUTTONS ---------- */
+  .btn {
+    appearance: none; border: 1px solid transparent; cursor: pointer;
+    font-family: var(--font-ui); font-weight: 600; font-size: 13.5px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: var(--radius-sm); padding: 0 16px; height: 38px;
+    transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-sm { height: 32px; padding: 0 12px; font-size: 12.5px; }
+  .btn-lg { height: 44px; padding: 0 20px; font-size: 14.5px; }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-secondary { background: var(--surface-2); color: var(--text-1); border-color: var(--border-strong); }
+  .btn-secondary:hover { background: var(--surface-1); border-color: var(--text-3); }
+  .btn-ghost { background: transparent; color: var(--text-1); }
+  .btn-ghost:hover { background: var(--surface-2); }
+  .btn-danger { background: var(--paprika-soft); color: var(--paprika-soft-ink); }
+  .btn-danger:hover { background: var(--paprika); color: #fff; }
+  .btn[disabled] { opacity: .45; cursor: not-allowed; }
+  .btn-loading { position: relative; color: transparent !important; pointer-events: none; }
+  .btn-loading::after {
+    content: ""; position: absolute; width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid currentColor; border-top-color: transparent; color: var(--accent-ink);
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---------- 14. INPUTS ---------- */
+  .field { display: flex; flex-direction: column; gap: 6px; width: 220px; }
+  .field label { font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+  .field .hint { font-size: 11.5px; color: var(--text-3); }
+  .field .error-text { font-size: 11.5px; color: var(--paprika); }
+  .input, select.input, textarea.input {
+    font-family: var(--font-ui); font-size: 13.5px; color: var(--text-1);
+    background: var(--surface-1); border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm); padding: 0 12px; height: 38px; width: 100%;
+    transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+  }
+  textarea.input { height: auto; padding: 10px 12px; min-height: 72px; resize: vertical; }
+  .input::placeholder { color: var(--text-3); }
+  .input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--ember-soft); }
+  .input.is-error { border-color: var(--paprika); }
+  .input.is-error:focus { box-shadow: 0 0 0 3px var(--paprika-soft); }
+  .input[disabled] { background: var(--surface-2); color: var(--text-3); cursor: not-allowed; }
+
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+  .switch { position: relative; width: 38px; height: 22px; border-radius: 999px; background: var(--border-strong); border: none; cursor: pointer; flex-shrink:0; }
+  .switch::after { content:""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: var(--shadow-1); transition: transform var(--dur-base) var(--ease); }
+  .switch.on { background: var(--basil); }
+  .switch.on::after { transform: translateX(16px); }
+  .switch.off-alert { background: var(--paprika); }
+
+  /* ---------- 15. BADGES / STATUS PILLS ---------- */
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600;
+    padding: 3px 10px 3px 8px; border-radius: var(--radius-full); white-space: nowrap;
+  }
+  .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge-neutral { background: var(--surface-2); color: var(--text-2); }
+  .badge-steel   { background: var(--steel-soft); color: var(--steel-soft-ink); }
+  .badge-turmeric{ background: var(--turmeric-soft); color: var(--turmeric-soft-ink); }
+  .badge-basil   { background: var(--basil-soft); color: var(--basil-soft-ink); }
+  .badge-paprika { background: var(--paprika-soft); color: var(--paprika-soft-ink); }
+  .badge-ember   { background: var(--ember-soft); color: var(--ember-soft-ink); }
+
+  /* ---------- 16. CARDS ---------- */
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-1); }
+  .card-pad { padding: var(--space-5); }
+  .kpi-card { display: flex; flex-direction: column; gap: var(--space-2); }
+  .kpi-card .kpi-label { font-size: 12px; color: var(--text-3); }
+  .kpi-card .kpi-value { font-family: var(--font-mono); font-size: 1.65rem; font-weight: 700; }
+  .kpi-card .kpi-delta { font-size: 12px; font-weight: 600; }
+  .kpi-card .kpi-delta.up { color: var(--basil); }
+  .kpi-card .kpi-delta.down { color: var(--paprika); }
+  .spark { display: flex; align-items: flex-end; gap: 3px; height: 32px; margin-top: var(--space-2); }
+  .spark i { display:block; width: 5px; background: var(--accent); opacity: .3; border-radius: 1px; }
+  .spark i:last-child { opacity: 1; }
+
+  /* ---------- 17. TABLE ---------- */
+  table.data { width: 100%; border-collapse: collapse; font-size: 13.5px; min-width: 560px; }
+  table.data th {
+    text-align: left; font-size: 11.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--text-3);
+    font-weight: 600; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-strong);
+  }
+  table.data td { padding: var(--space-3); border-bottom: 1px solid var(--border); vertical-align: middle; }
+  table.data tbody tr { transition: background var(--dur-fast) var(--ease); }
+  table.data tbody tr:hover { background: var(--surface-2); }
+  table.data td.num { font-family: var(--font-mono); text-align: right; }
+
+  /* ---------- 18. NAV PATTERN PREVIEW ---------- */
+  .nav-preview { display: grid; grid-template-columns: 216px 1fr; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-2); }
+  .nav-preview .sb { background: var(--surface-2); padding: var(--space-4); display:flex; flex-direction:column; gap: 2px; border-right: 1px solid var(--border); }
+  .nav-preview .sb .grp { font-size: 10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color: var(--text-3); margin: var(--space-3) 0 4px; }
+  .nav-preview .sb .grp:first-child { margin-top: 0; }
+  .nav-item { display: flex; align-items: center; gap: 9px; font-size: 13px; padding: 7px 9px; border-radius: var(--radius-sm); color: var(--text-2); }
+  .nav-item.active { background: var(--ember-soft); color: var(--ember-soft-ink); font-weight: 600; }
+  .nav-preview .tb { padding: var(--space-4) var(--space-5); }
+  .topbar-preview { display:flex; align-items:center; justify-content: space-between; gap: var(--space-4); padding-bottom: var(--space-4); border-bottom: 1px solid var(--border); margin-bottom: var(--space-4); }
+  .crumbs { font-size: 12.5px; color: var(--text-3); display:flex; align-items:center; gap:6px; }
+  .crumbs b { color: var(--text-1); font-weight: 600; }
+
+  /* ---------- 19. TABS ---------- */
+  .tabs { display: flex; gap: var(--space-6); border-bottom: 1px solid var(--border); }
+  .tab { padding: 10px 2px; font-size: 13.5px; font-weight: 600; color: var(--text-3); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .tab.active { color: var(--text-1); border-color: var(--accent); }
+
+  /* ---------- 20. TOASTS ---------- */
+  .toast { display:flex; align-items:flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; box-shadow: var(--shadow-3); max-width: 320px; }
+  .toast-success { background: var(--surface-1); border: 1px solid var(--basil); }
+  .toast-error { background: var(--surface-1); border: 1px solid var(--paprika); }
+  .toast-info { background: var(--surface-1); border: 1px solid var(--steel); }
+  .toast strong { display:block; margin-bottom: 2px; }
+  .toast .ic-success { color: var(--basil); } .toast .ic-error { color: var(--paprika); } .toast .ic-info { color: var(--steel); }
+
+  /* ---------- 21. MODAL / DRAWER preview (static demonstration) ---------- */
+  .modal-demo-wrap { position: relative; background: var(--surface-2); border-radius: var(--radius-md); padding: var(--space-9) var(--space-6); display:flex; align-items:center; justify-content:center; border: 1px solid var(--border); }
+  .modal { width: 100%; max-width: 360px; background: var(--surface-1); border-radius: var(--radius-lg); box-shadow: var(--shadow-4); padding: var(--space-6); }
+  .modal h4 { margin-bottom: 6px; } .modal p { color: var(--text-2); font-size: 13.5px; margin-bottom: var(--space-5); }
+  .modal .actions { display:flex; justify-content:flex-end; gap: var(--space-3); }
+  .drawer { width: 100%; max-width: 300px; background: var(--surface-1); border-left: 1px solid var(--border); box-shadow: var(--shadow-4); padding: var(--space-6); margin-left: auto; border-radius: var(--radius-lg) 0 0 var(--radius-lg); }
+
+  /* ---------- 22. SKELETON / EMPTY / ERROR / SUCCESS STATES ---------- */
+  .skel { background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%); background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: var(--radius-sm); }
+  @keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+  .state-block { text-align: center; padding: var(--space-9) var(--space-6); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); }
+  .state-block .ic-wrap { width: 44px; height: 44px; border-radius: 50%; display:flex; align-items:center; justify-content:center; margin: 0 auto var(--space-4); }
+  .state-block h4 { margin-bottom: 6px; }
+  .state-block p { color: var(--text-2); font-size: 13.5px; max-width: 34ch; margin: 0 auto var(--space-5); }
+
+  /* ---------- 22bis. ACCESSIBILITÉ — do/don't, ligne actionnable, panneau notifications ---------- */
+  .a11y-pair { display:grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); margin-bottom: var(--space-5); }
+  .a11y-block { border-radius: var(--radius-md); padding: var(--space-4); border: 1.5px solid; }
+  .a11y-block.dont { background: var(--paprika-soft); border-color: var(--paprika); }
+  .a11y-block.do { background: var(--basil-soft); border-color: var(--basil); }
+  .a11y-block .lbl { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; display:flex; align-items:center; gap:6px; }
+  .a11y-block.dont .lbl { color: var(--paprika-soft-ink); } .a11y-block.do .lbl { color: var(--basil-soft-ink); }
+  .a11y-block pre { margin:0; font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; line-height:1.6; }
+  .a11y-block.dont pre { color: var(--paprika-soft-ink); } .a11y-block.do pre { color: var(--basil-soft-ink); }
+  .a11y-checklist { display:flex; flex-direction:column; gap: 10px; }
+  .a11y-checklist li { display:flex; gap:10px; font-size: 13.5px; align-items:flex-start; list-style:none; }
+  .a11y-checklist li svg { color: var(--basil); flex-shrink:0; margin-top:3px; }
+
+  .notif-panel { width: 320px; background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-3); overflow:hidden; }
+  .notif-panel-head { display:flex; justify-content:space-between; align-items:center; padding: var(--space-4); border-bottom:1px solid var(--border); }
+  .notif-panel-head h4 { font-size: 13.5px; }
+  .notif-panel-head button { font-size: 11.5px; font-weight:600; color: var(--accent); background:none; border:none; cursor:pointer; }
+  .notif-item { display:flex; gap:10px; padding: var(--space-3) var(--space-4); border-bottom:1px solid var(--border); text-align:left; width:100%; background:none; border-left:3px solid transparent; cursor:pointer; }
+  .notif-item:last-child { border-bottom:none; }
+  .notif-item.unread { background: var(--ember-soft); border-left-color: var(--accent); }
+  .notif-item .nic { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .notif-item p { font-size:12.5px; color:var(--text-1); margin:0; } .notif-item time { font-size:11px; color:var(--text-3); }
+
+  .row-selected { background: var(--ember-soft) !important; box-shadow: inset 3px 0 0 var(--accent); }
+
+  .switch-legend { display:flex; flex-direction:column; gap:10px; margin-top: var(--space-4); }
+  .switch-legend .lg-row { display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--text-2); }
+
+  /* ---------- 23. RESPONSIVE ---------- */
+  @media (max-width: 900px) {
+    .shell { grid-template-columns: 1fr; }
+    .rail { position: sticky; height: auto; top: 0; z-index: 20; background: var(--bg); border-right:none; border-bottom: 1px solid var(--border); padding: var(--space-3) var(--space-5); }
+    .rail-brand { margin-bottom: var(--space-3); }
+    .rail nav { flex-direction: row; overflow-x: auto; gap: var(--space-6); padding-bottom: 2px; }
+    .rail-group-title { display: none; }
+    .rail a { white-space: nowrap; padding: 4px 0; }
+    .content { padding: var(--space-6) var(--space-5) var(--space-9); }
+    .hero { grid-template-columns: 1fr; }
+    .nav-preview { grid-template-columns: 1fr; }
+    .nav-preview .sb { border-right:none; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; }
+  }
+</style>
+
+<!-- ============== ICON SPRITE (geometric / stroke-based) ============== -->
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3s5 4.5 5 9.5a5 5 0 1 1-10 0c0-1.6.8-2.8 1.6-3.8.2 1.5 1 2 1.5 1.5C9.6 8 12 6 12 3z"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M3 8 12 3l9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><path d="M12 13v9"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.7 14.7c2.3.4 4 2 4.8 4.8"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M11 20V4M18 20v-7"/><path d="M2 20h20"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18 6l-1.7 1.7M7.7 16.3 6 18M18 18l-1.7-1.7M7.7 7.7 6 6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14 6 10Z"/><path d="M10 19a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 21 20H3Z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4.2 2.4"/></symbol>
+  <symbol id="i-a11y" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15l2-6 2 4 2-4 2 6"/><path d="M7 9h.01M17 9h.01"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+</svg>
+
+<div class="shell">
+
+  <!-- ============== RAIL / WAYFINDING ============== -->
+  <aside class="rail">
+    <div class="rail-brand">
+      <svg class="icon mark" viewBox="0 0 24 24" width="22" height="22"><use href="#i-mark"/></svg>
+      <div><strong>QuickTable</strong><span>Design System v1.1</span></div>
+    </div>
+    <nav>
+      <div>
+        <div class="rail-group-title">Fondations</div>
+        <a href="#overview">Vue d'ensemble</a>
+        <a href="#color">Couleur</a>
+        <a href="#type">Typographie</a>
+        <a href="#space">Espacement &amp; grille</a>
+        <a href="#radius">Radius</a>
+        <a href="#elevation">Élévation</a>
+        <a href="#motion">Mouvement</a>
+        <a href="#icons">Iconographie</a>
+        <a href="#a11y">Accessibilité</a>
+      </div>
+      <div>
+        <div class="rail-group-title">Composants</div>
+        <a href="#buttons">Boutons</a>
+        <a href="#forms">Champs &amp; formulaires</a>
+        <a href="#status">Statuts &amp; badges</a>
+        <a href="#cards">Cartes</a>
+        <a href="#table">Tableaux</a>
+        <a href="#nav">Navigation</a>
+        <a href="#notif-panel">Panneau de notifications</a>
+        <a href="#tabs">Onglets</a>
+        <a href="#overlays">Dialogues &amp; tiroirs</a>
+        <a href="#toasts">Notifications (toast)</a>
+        <a href="#states">États (skeleton, vide, erreur)</a>
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ============== MAIN CONTENT ============== -->
+  <main class="content">
+
+    <!-- OVERVIEW -->
+    <section id="overview">
+      <div class="hero">
+        <div>
+          <div class="eyebrow">Système de design</div>
+          <h1>Précis en cuisine.<br>Chaleureux en salle.</h1>
+          <p class="lede">QuickTable doit s'apprendre en 15 minutes et se piloter toute une journée sans fatigue. Chaque token ci-dessous sert cet objectif&nbsp;: peu de couleurs, une hiérarchie typographique nette, des états qui se lisent d'un coup d'œil — jamais de décor sans fonction.</p>
+          <div class="hero-meta">
+            <div><strong>6</strong><span>couleurs nommées</span></div>
+            <div><strong>10</strong><span>niveaux d'espacement</span></div>
+            <div><strong>2</strong><span>familles (UI + data)</span></div>
+            <div><strong>AA</strong><span>contraste minimum</span></div>
+          </div>
+        </div>
+        <div class="ticket">
+          <div class="ticket-head">
+            <div><div class="table-no">T-12</div><div class="table-sub">Terrasse · Salle B</div></div>
+            <div class="ticket-timer"><svg class="icon" width="13" height="13"><use href="#i-clock"/></svg>6:42</div>
+          </div>
+          <div class="ticket-items">
+            <div class="ticket-item"><span class="qty">2×</span><span class="name">Poulet Yassa<span class="note">Sans piment</span></span></div>
+            <div class="ticket-item"><span class="qty">1×</span><span class="name">Attiéké Poisson</span></div>
+            <div class="ticket-item"><span class="qty">3×</span><span class="name">Jus de bissap</span></div>
+          </div>
+          <div class="ticket-foot">
+            <span class="badge badge-turmeric"><span class="dot"></span>En préparation</span>
+            <span class="badge badge-steel"><span class="dot"></span>File d'attente</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLOR -->
+    <section id="color">
+      <div class="eyebrow">Fondations</div>
+      <h2>Couleur</h2>
+      <p class="section-lede">Une base neutre chaude (Encre → Porcelaine), un accent unique (Ambre) réservé aux actions et à la marque, et quatre couleurs sémantiques qui ne servent jamais à autre chose qu'à signaler un état. Le mode sombre n'est pas un simple inversement&nbsp;: l'accent est éclairci pour rester lisible sur fond profond.</p>
+
+      <h3 class="sub">Neutres — Encre &amp; Porcelaine</h3>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="swatch-fill" style="background:var(--ink-900)"></div><div class="swatch-meta"><strong>Encre 900</strong><span>#1C1712</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--ink-700)"></div><div class="swatch-meta"><strong>Encre 700</strong><span>#362F27</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--ink-500)"></div><div class="swatch-meta"><strong>Encre 500</strong><span>#6E6252</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--ink-300)"></div><div class="swatch-meta"><strong>Encre 300</strong><span>#B9AC98</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--ink-100)"></div><div class="swatch-meta"><strong>Encre 100</strong><span>#E8E1D7</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--ink-0);border-bottom:1px solid var(--border)"></div><div class="swatch-meta"><strong>Porcelaine</strong><span>#FBF8F3</span></div></div>
+      </div>
+
+      <h3 class="sub">Accent &amp; sémantique</h3>
+      <div class="swatch-grid">
+        <div class="swatch"><div class="swatch-fill" style="background:var(--ember)"></div><div class="swatch-meta"><strong>Ambre</strong><span>Actions, marque</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--basil)"></div><div class="swatch-meta"><strong>Basilic</strong><span>Succès, disponible</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--turmeric)"></div><div class="swatch-meta"><strong>Curcuma</strong><span>Avertissement, en cours</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--paprika)"></div><div class="swatch-meta"><strong>Paprika</strong><span>Erreur, critique</span></div></div>
+        <div class="swatch"><div class="swatch-fill" style="background:var(--steel)"></div><div class="swatch-meta"><strong>Acier</strong><span>Information, neutre actif</span></div></div>
+      </div>
+      <p class="specimen-label" style="margin-top:var(--space-4)">Règle&nbsp;: l'Ambre ne sert jamais à signaler un état (succès/erreur) — il reste exclusif aux actions et à la marque, pour que sa présence garde du poids.</p>
+    </section>
+
+    <!-- TYPE -->
+    <section id="type">
+      <div class="eyebrow">Fondations</div>
+      <h2>Typographie</h2>
+      <p class="section-lede">Une seule famille d'interface (chasse système, excellent support des accents FR/IT/ES) et une famille mono réservée aux données — prix, horaires, identifiants — pour que les chiffres s'alignent en colonnes et se distinguent visuellement du texte courant.</p>
+      <div class="specimen">
+        <div class="type-row"><div class="sample t-display">Service de 19h</div><div class="type-meta">Display · 2.6rem · 700</div></div>
+        <div class="type-row"><div class="sample t-h1">Commandes de la salle</div><div class="type-meta">H1 · 2.1rem · 700</div></div>
+        <div class="type-row"><div class="sample t-h2">Table 12 — Terrasse</div><div class="type-meta">H2 · 1.65rem · 700</div></div>
+        <div class="type-row"><div class="sample t-h3">Poulet Yassa</div><div class="type-meta">H3 · 1.3rem · 600</div></div>
+        <div class="type-row"><div class="sample t-h4">Détail du paiement</div><div class="type-meta">H4 · 1.08rem · 600</div></div>
+        <div class="type-row"><div class="sample t-body-l">Le plat a été envoyé en cuisine à 19h42.</div><div class="type-meta">Body L · 1.06rem</div></div>
+        <div class="type-row"><div class="sample t-body-m">Le stock de citron vert est sous le seuil d'alerte.</div><div class="type-meta">Body M (base) · .94rem</div></div>
+        <div class="type-row"><div class="sample t-body-s">Modifié il y a 3 minutes par Awa K.</div><div class="type-meta">Body S · .81rem</div></div>
+        <div class="type-row"><div class="sample t-caption">Mode de paiement</div><div class="type-meta">Caption · .72rem · uppercase</div></div>
+        <div class="type-row"><div class="sample t-mono tabular">12&nbsp;450 XOF</div><div class="type-meta">Data / mono · tabular-nums</div></div>
+      </div>
+    </section>
+
+    <!-- SPACE -->
+    <section id="space">
+      <div class="eyebrow">Fondations</div>
+      <h2>Espacement &amp; grille</h2>
+      <p class="section-lede">Grille de base 4px. L'espacement se pose sur les conteneurs (flex/grid + gap), jamais en marges empilées entre éléments frères.</p>
+      <div class="specimen">
+        <div class="space-bars">
+          <div class="space-bar-row"><span class="lbl">space-1 · 4px</span><span class="bar" style="width:4px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-2 · 8px</span><span class="bar" style="width:8px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-3 · 12px</span><span class="bar" style="width:12px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-4 · 16px</span><span class="bar" style="width:16px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-5 · 20px</span><span class="bar" style="width:20px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-6 · 24px</span><span class="bar" style="width:24px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-7 · 32px</span><span class="bar" style="width:32px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-8 · 40px</span><span class="bar" style="width:40px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-9 · 48px</span><span class="bar" style="width:48px"></span></div>
+          <div class="space-bar-row"><span class="lbl">space-10 · 64px</span><span class="bar" style="width:64px"></span></div>
+        </div>
+      </div>
+      <h3 class="sub">Points de rupture (doc 36 §36.6)</h3>
+      <div class="scroll-x">
+        <table class="data">
+          <thead><tr><th>Cible</th><th>Largeur</th><th>Interface principale</th></tr></thead>
+          <tbody>
+            <tr><td>Mobile</td><td class="num">360–599px</td><td>Client QR Code, Serveur</td></tr>
+            <tr><td>Tablette</td><td class="num">600–1023px</td><td>KDS, Caisse, Serveur (paysage)</td></tr>
+            <tr><td>Laptop</td><td class="num">1024–1439px</td><td>Back-office (dégradé)</td></tr>
+            <tr><td>Desktop</td><td class="num">1440px+</td><td>Back-office, Platform Admin</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- RADIUS -->
+    <section id="radius">
+      <div class="eyebrow">Fondations</div>
+      <h2>Radius</h2>
+      <p class="section-lede">Le radius encode la densité&nbsp;: plus un élément est dense en données (tableau, champ), plus il reste sobre. Les surfaces d'attention (modales) et les pastilles s'arrondissent davantage.</p>
+      <div class="radius-grid">
+        <div><div class="radius-box" style="border-radius:var(--radius-xs)"></div><div class="specimen-label">xs · 4px · cases, chips internes</div></div>
+        <div><div class="radius-box" style="border-radius:var(--radius-sm)"></div><div class="specimen-label">sm · 6px · champs, boutons</div></div>
+        <div><div class="radius-box" style="border-radius:var(--radius-md)"></div><div class="specimen-label">md · 10px · cartes, tableaux</div></div>
+        <div><div class="radius-box" style="border-radius:var(--radius-lg)"></div><div class="specimen-label">lg · 16px · modales, tiroirs</div></div>
+        <div><div class="radius-box" style="border-radius:var(--radius-full)"></div><div class="specimen-label">full · pastilles, avatars</div></div>
+      </div>
+    </section>
+
+    <!-- ELEVATION -->
+    <section id="elevation">
+      <div class="eyebrow">Fondations</div>
+      <h2>Élévation</h2>
+      <p class="section-lede">En clair, l'élévation est une ombre portée douce sur fond chaud. En sombre, l'ombre perd son sens (fond déjà profond)&nbsp;: l'élévation devient une bordure plus claire et un halo très subtil.</p>
+      <div class="shadow-grid">
+        <div><div class="shadow-box" style="box-shadow:var(--shadow-1)"></div><div class="specimen-label">niveau 1 · survol</div></div>
+        <div><div class="shadow-box" style="box-shadow:var(--shadow-2)"></div><div class="specimen-label">niveau 2 · carte</div></div>
+        <div><div class="shadow-box" style="box-shadow:var(--shadow-3)"></div><div class="specimen-label">niveau 3 · popover</div></div>
+        <div><div class="shadow-box" style="box-shadow:var(--shadow-4)"></div><div class="specimen-label">niveau 4 · modale</div></div>
+      </div>
+    </section>
+
+    <!-- MOTION -->
+    <section id="motion">
+      <div class="eyebrow">Fondations</div>
+      <h2>Mouvement</h2>
+      <p class="section-lede">Le mouvement confirme une action, il ne divertit jamais. Trois durées, une seule courbe. <code class="t-mono">prefers-reduced-motion</code> désactive tout.</p>
+      <div class="specimen specimen-row">
+        <button class="btn btn-secondary" onmouseover="" style="transition:transform var(--dur-fast) var(--ease)">120ms — survol</button>
+        <button class="btn btn-secondary">180ms — apparition</button>
+        <button class="btn btn-secondary">280ms — panneau</button>
+      </div>
+      <p class="specimen-label" style="margin-top:var(--space-3)">Survolez les boutons ci-dessus et les composants des sections suivantes&nbsp;: les transitions sont réellement actives sur cette page.</p>
+    </section>
+
+    <!-- ICONS -->
+    <section id="icons">
+      <div class="eyebrow">Fondations</div>
+      <h2>Iconographie</h2>
+      <p class="section-lede">Trait uniforme 1.6px, angles arrondis, grille 24px, jamais de remplissage plein — pour rester lisible à petite taille sur une tablette de cuisine comme sur un dashboard desktop.</p>
+      <div class="grid-cards">
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-grid"/></svg><span class="specimen-label">Dashboard</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-table"/></svg><span class="specimen-label">Tables</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-book"/></svg><span class="specimen-label">Menu</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-flame"/></svg><span class="specimen-label">Cuisine</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-box"/></svg><span class="specimen-label">Stock</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-receipt"/></svg><span class="specimen-label">Commandes</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-card"/></svg><span class="specimen-label">Paiements</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-calendar"/></svg><span class="specimen-label">Réservations</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-users"/></svg><span class="specimen-label">Clients</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-chart"/></svg><span class="specimen-label">Statistiques</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-gear"/></svg><span class="specimen-label">Paramètres</span></div>
+        <div class="specimen" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:var(--space-4)"><svg class="icon" width="22" height="22"><use href="#i-bell"/></svg><span class="specimen-label">Notifications</span></div>
+      </div>
+    </section>
+
+    <!-- ACCESSIBILITÉ (ajouté suite à l'audit UX du 2026-07-13) -->
+    <section id="a11y">
+      <div class="eyebrow">Fondations</div>
+      <h2>Accessibilité</h2>
+      <p class="section-lede">Issu de l'audit UX du 2026-07-13 (voir <code class="t-mono">AUDIT-UX.md</code>) — non négociable, applicable à tout nouvel écran. Cible WCAG AA.</p>
+
+      <h3 class="sub">Règle n°1 — jamais de contrôle interactif en <code class="t-mono">&lt;div&gt;</code></h3>
+      <div class="a11y-pair">
+        <div class="a11y-block dont">
+          <div class="lbl"><svg class="icon" width="14" height="14"><use href="#i-warn"/></svg>À éviter</div>
+          <pre>&lt;div class="btn-primary"
+     onclick="submit()"&gt;
+  Envoyer en cuisine
+&lt;/div&gt;</pre>
+        </div>
+        <div class="a11y-block do">
+          <div class="lbl"><svg class="icon" width="14" height="14"><use href="#i-check"/></svg>À faire</div>
+          <pre>&lt;button class="btn-primary"
+        type="button"&gt;
+  Envoyer en cuisine
+&lt;/button&gt;</pre>
+        </div>
+      </div>
+      <p class="specimen-label" style="margin-bottom:var(--space-6)">Un <code class="t-mono">&lt;div&gt;</code> n'est ni focusable au clavier, ni annoncé comme bouton par un lecteur d'écran, ni activable par Entrée/Espace. Cette règle s'applique aux onglets, chips de filtre, éléments de sidebar, cartes de sélection — tout ce qui répond à un clic.</p>
+
+      <h3 class="sub">Checklist appliquée à chaque écran</h3>
+      <div class="specimen">
+        <ul class="a11y-checklist">
+          <li><svg class="icon" width="15" height="15"><use href="#i-check"/></svg>Tout bouton dont le seul contenu est une icône porte un <code class="t-mono">aria-label</code> décrivant l'action (« Notifications », pas « bouton »).</li>
+          <li><svg class="icon" width="15" height="15"><use href="#i-check"/></svg>Le focus clavier est toujours visible (<code class="t-mono">:focus-visible</code>, jamais <code class="t-mono">outline:none</code> sans remplacement).</li>
+          <li><svg class="icon" width="15" height="15"><use href="#i-check"/></svg>Aucune information n'est portée par la couleur seule — chaque badge de statut porte aussi un libellé texte (doc 08/21).</li>
+          <li><svg class="icon" width="15" height="15"><use href="#i-check"/></svg>Contraste texte/fond ≥ 4,5:1 pour le texte courant, vérifié explicitement sur les paires badge « soft / soft-ink » en clair <em>et</em> en sombre (pas seulement en clair).</li>
+          <li><svg class="icon" width="15" height="15"><use href="#i-check"/></svg>Toute zone alimentée par un événement temps réel (Socket.IO, doc 10) est une région <code class="t-mono">aria-live="polite"</code> côté implémentation — annonce courte, jamais la lecture intégrale du contenu ajouté.</li>
+          <li><svg class="icon" width="15" height="15"><use href="#i-check"/></svg>Une ligne de tableau cliquable (ouverture d'un tiroir) est un <code class="t-mono">&lt;button&gt;</code> pleine-largeur ou porte <code class="t-mono">role="button" tabindex="0"</code> avec gestion clavier — jamais un <code class="t-mono">&lt;tr&gt;</code> nu.</li>
+          <li><svg class="icon" width="15" height="15"><use href="#i-check"/></svg><code class="t-mono">prefers-reduced-motion</code> désactive toutes les transitions (doc §Mouvement).</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- BUTTONS -->
+    <section id="buttons">
+      <div class="eyebrow">Composants</div>
+      <h2>Boutons</h2>
+      <p class="section-lede">Quatre intentions, trois tailles. Le survol et le focus sont réellement interactifs ci-dessous.</p>
+      <div class="specimen" style="display:flex;flex-direction:column;gap:var(--space-6)">
+        <div class="specimen-row">
+          <button class="btn btn-primary">Envoyer en cuisine</button>
+          <button class="btn btn-secondary">Modifier</button>
+          <button class="btn btn-ghost">Annuler</button>
+          <button class="btn btn-danger">Supprimer la table</button>
+        </div>
+        <div class="specimen-row">
+          <button class="btn btn-primary btn-sm">Small</button>
+          <button class="btn btn-primary">Medium</button>
+          <button class="btn btn-primary btn-lg">Large</button>
+        </div>
+        <div class="specimen-row">
+          <button class="btn btn-primary" disabled>Indisponible</button>
+          <button class="btn btn-primary btn-loading">Encaissement…</button>
+          <button class="btn btn-secondary"><svg class="icon" width="15" height="15"><use href="#i-plus"/></svg>Nouvelle commande</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- FORMS -->
+    <section id="forms">
+      <div class="eyebrow">Composants</div>
+      <h2>Champs &amp; formulaires</h2>
+      <p class="section-lede">États par défaut, focus, erreur et désactivé — testez le focus clavier (Tab) sur les champs ci-dessous.</p>
+      <div class="specimen specimen-row">
+        <div class="field"><label for="f1">Nom du plat</label><input id="f1" class="input" placeholder="Ex. Poulet Yassa"></div>
+        <div class="field"><label for="f2">Prix (XOF)</label><input id="f2" class="input tabular" value="3 500"></div>
+        <div class="field"><label for="f3">Catégorie</label><select id="f3" class="input"><option>Plats</option><option>Boissons</option><option>Desserts</option></select></div>
+        <div class="field"><label for="f4">Email invalide</label><input id="f4" class="input is-error" value="awa@restaurant"><span class="error-text">Adresse email incomplète.</span></div>
+        <div class="field"><label for="f5">Verrouillé</label><input id="f5" class="input" value="Bénin (XOF)" disabled></div>
+      </div>
+      <div class="specimen specimen-row" style="margin-top:var(--space-4)">
+        <div class="check-row"><input type="checkbox" checked> Autoriser la commande client via QR Code</div>
+        <div class="check-row"><button class="switch on" role="switch" aria-checked="true"></button> Notifications par email</div>
+        <div class="field" style="width:280px"><label for="f6">Notes de préparation</label><textarea id="f6" class="input" placeholder="Ex. sans arachide, bien cuit…"></textarea></div>
+      </div>
+
+      <h3 class="sub">Interrupteur à 3 états — pas un simple on/off</h3>
+      <p class="specimen-label" style="margin-bottom:var(--space-4)">Précisé suite à l'audit UX (doc « Menu », écran 07)&nbsp;: l'interrupteur de disponibilité d'un plat porte trois états visuels distincts, pas deux — la couleur seule ne suffirait pas à distinguer une désactivation volontaire d'une rupture de stock, d'où le rappel explicite ici.</p>
+      <div class="specimen">
+        <div class="switch-legend">
+          <div class="lg-row"><button class="switch on" role="switch" aria-checked="true" aria-label="Disponible"></button>Disponible — activé manuellement</div>
+          <div class="lg-row"><button class="switch" role="switch" aria-checked="false" aria-label="Indisponible"></button>Indisponible — désactivé manuellement par le restaurant</div>
+          <div class="lg-row"><button class="switch off-alert" role="switch" aria-checked="false" aria-label="Indisponible, rupture de stock"></button>Indisponible — désactivation <strong>automatique</strong> liée à une rupture de stock (<code class="t-mono">StockLevelLow</code>, doc 20)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATUS -->
+    <section id="status">
+      <div class="eyebrow">Composants</div>
+      <h2>Statuts &amp; badges</h2>
+      <p class="section-lede">Chaque badge encode un état de la machine à état correspondante (doc 21) — jamais de couleur ajoutée pour décorer.</p>
+      <h3 class="sub">Commande &amp; article (doc 21 §21.1)</h3>
+      <div class="specimen specimen-row">
+        <span class="badge badge-neutral"><span class="dot"></span>Ouverte</span>
+        <span class="badge badge-steel"><span class="dot"></span>En file (queued)</span>
+        <span class="badge badge-turmeric"><span class="dot"></span>En préparation</span>
+        <span class="badge badge-basil"><span class="dot"></span>Prêt</span>
+        <span class="badge badge-neutral"><span class="dot"></span>Servi</span>
+        <span class="badge badge-turmeric"><span class="dot"></span>Partiellement payée</span>
+        <span class="badge badge-basil"><span class="dot"></span>Payée</span>
+        <span class="badge badge-paprika"><span class="dot"></span>Annulée</span>
+      </div>
+      <h3 class="sub">Table (doc 05)</h3>
+      <div class="specimen specimen-row">
+        <span class="badge badge-basil"><span class="dot"></span>Libre</span>
+        <span class="badge badge-ember"><span class="dot"></span>Occupée</span>
+        <span class="badge badge-steel"><span class="dot"></span>Réservée</span>
+        <span class="badge badge-turmeric"><span class="dot"></span>Nettoyage</span>
+        <span class="badge badge-paprika"><span class="dot"></span>Hors service</span>
+      </div>
+    </section>
+
+    <!-- CARDS -->
+    <section id="cards">
+      <div class="eyebrow">Composants</div>
+      <h2>Cartes</h2>
+      <p class="section-lede">La carte KPI porte toujours trois informations&nbsp;: la valeur, la tendance, et un repère visuel — jamais un chiffre isolé sans contexte.</p>
+      <div class="grid-cards" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
+        <div class="card card-pad kpi-card">
+          <span class="kpi-label">Chiffre d'affaires — aujourd'hui</span>
+          <span class="kpi-value tabular">412 300 XOF</span>
+          <span class="kpi-delta up">↑ 12% vs hier</span>
+          <div class="spark"><i style="height:40%"></i><i style="height:55%"></i><i style="height:35%"></i><i style="height:70%"></i><i style="height:50%"></i><i style="height:90%"></i><i style="height:100%"></i></div>
+        </div>
+        <div class="card card-pad kpi-card">
+          <span class="kpi-label">Commandes en cours</span>
+          <span class="kpi-value tabular">14</span>
+          <span class="kpi-delta down">↓ 2 vs il y a 1h</span>
+        </div>
+        <div class="card card-pad kpi-card">
+          <span class="kpi-label">Panier moyen</span>
+          <span class="kpi-value tabular">8 950 XOF</span>
+          <span class="kpi-delta up">↑ 4%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <section id="table">
+      <div class="eyebrow">Composants</div>
+      <h2>Tableaux</h2>
+      <p class="section-lede">Chiffres alignés en mono tabulaire, ligne survolée mise en évidence, débordement contenu dans son propre conteneur.</p>
+      <div class="specimen scroll-x">
+        <table class="data">
+          <thead><tr><th>Commande</th><th>Table</th><th>Serveur</th><th>Statut</th><th>Total</th></tr></thead>
+          <tbody>
+            <tr><td class="t-mono">#Q-2291</td><td>T-12</td><td>Awa K.</td><td><span class="badge badge-turmeric"><span class="dot"></span>En préparation</span></td><td class="num">18 500 XOF</td></tr>
+            <tr><td class="t-mono">#Q-2290</td><td>T-04</td><td>Iréné D.</td><td><span class="badge badge-basil"><span class="dot"></span>Prêt</span></td><td class="num">12 000 XOF</td></tr>
+            <tr><td class="t-mono">#Q-2289</td><td>T-09</td><td>Awa K.</td><td><span class="badge badge-basil"><span class="dot"></span>Payée</span></td><td class="num">27 300 XOF</td></tr>
+            <tr><td class="t-mono">#Q-2288</td><td>T-02</td><td>Iréné D.</td><td><span class="badge badge-paprika"><span class="dot"></span>Annulée</span></td><td class="num">0 XOF</td></tr>
+            <tr class="row-selected"><td class="t-mono">#Q-2287</td><td>T-07</td><td>Iréné D.</td><td><span class="badge badge-turmeric"><span class="dot"></span>Partiellement payée</span></td><td class="num">6 000 XOF</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="specimen-label" style="margin-top:var(--space-3)">Dernière ligne&nbsp;: état « sélectionnée » (<code class="t-mono">.row-selected</code>, ajouté suite à l'audit UX) — appliqué à la ligne dont le tiroir de détail est ouvert, pour rendre explicite le lien entre une liste et son panneau d'édition. Absent des écrans Menu/Employés/Stock/Platform Admin avant cette revue.</p>
+    </section>
+
+    <!-- NAV -->
+    <section id="nav">
+      <div class="eyebrow">Composants</div>
+      <h2>Navigation — spécification canonique</h2>
+      <p class="section-lede">Source unique de vérité de la sidebar back-office, alignée sur l'inventaire d'écrans du doc 36 §36.2-A. <strong>Corrigé suite à l'audit UX du 2026-07-13</strong>&nbsp;: les sidebars des écrans 02/07/08/09/10/11 avaient dérivé indépendamment (entrées manquantes ou orphelines) — cette liste est désormais reproduite à l'identique partout. La sidebar est générée depuis les permissions résolues (doc 08 §8.7)&nbsp;: un caissier ne voit jamais l'entrée « Employés ».</p>
+      <div class="nav-preview">
+        <div class="sb">
+          <div class="grp">Vue d'ensemble</div>
+          <div class="nav-item active"><svg class="icon" width="16" height="16"><use href="#i-grid"/></svg>Dashboard</div>
+          <div class="grp">Opérations</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-table"/></svg>Salles &amp; tables</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-receipt"/></svg>Commandes</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-calendar"/></svg>Réservations</div>
+          <div class="grp">Catalogue</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-book"/></svg>Menu</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-box"/></svg>Stock</div>
+          <div class="grp">Équipe &amp; clients</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-users"/></svg>Employés</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-users"/></svg>Clients</div>
+          <div class="grp">Pilotage</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-chart"/></svg>Statistiques</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-card"/></svg>Abonnement</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-log"/></svg>Journal d'audit</div>
+          <div class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-gear"/></svg>Paramètres</div>
+        </div>
+        <div class="tb">
+          <div class="topbar-preview">
+            <div class="crumbs">Commandes <svg class="icon" width="12" height="12"><use href="#i-chevron"/></svg> <b>#Q-2291</b></div>
+            <div style="display:flex;gap:var(--space-4);align-items:center">
+              <svg class="icon" width="17" height="17"><use href="#i-search"/></svg>
+              <svg class="icon" width="17" height="17"><use href="#i-bell"/></svg>
+              <div style="width:26px;height:26px;border-radius:50%;background:var(--ember-soft);color:var(--ember-soft-ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700">AK</div>
+            </div>
+          </div>
+          <h4 style="margin-bottom:var(--space-2)">Table 12 — 3 articles</h4>
+          <p class="t-body-s">Envoyée en cuisine à 19h42 par Awa K.</p>
+        </div>
+      </div>
+      <p class="specimen-label" style="margin-top:var(--space-4)">Aucune entrée « Paiements » autonome&nbsp;: les paiements se consultent depuis le détail d'une commande et depuis l'interface Caisse dédiée (doc 05), pas depuis un écran back-office séparé — une entrée orphelin de ce type a été retirée lors de l'audit.</p>
+    </section>
+
+    <!-- NOTIFICATION PANEL (ajouté suite à l'audit UX — référencé partout via la cloche, jamais montré) -->
+    <section id="notif-panel">
+      <div class="eyebrow">Composants</div>
+      <h2>Panneau de notifications</h2>
+      <p class="section-lede">Ouvert depuis l'icône cloche de la topbar, présente sur tous les écrans back-office — jusqu'ici jamais représenté explicitement.</p>
+      <div class="specimen" style="display:flex;justify-content:center">
+        <div class="notif-panel">
+          <div class="notif-panel-head"><h4>Notifications</h4><button type="button">Tout marquer comme lu</button></div>
+          <button type="button" class="notif-item unread"><div class="nic" style="background:var(--turmeric-soft);color:var(--turmeric-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-warn"/></svg></div><div><p><strong>Stock bas —</strong> Citron vert (2 restants)</p><time>Il y a 14 min</time></div></button>
+          <button type="button" class="notif-item unread"><div class="nic" style="background:var(--steel-soft);color:var(--steel-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-calendar"/></svg></div><div><p><strong>Réservation confirmée —</strong> 6 pers., 20h30</p><time>Il y a 22 min</time></div></button>
+          <button type="button" class="notif-item"><div class="nic" style="background:var(--basil-soft);color:var(--basil-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-check"/></svg></div><div><p><strong>Paiement encaissé —</strong> Table 09, 27 300 XOF</p><time>Hier, 22h04</time></div></button>
+        </div>
+      </div>
+      <p class="specimen-label" style="margin-top:var(--space-3)">Chaque notification est un <code class="t-mono">&lt;button&gt;</code> pleine-largeur (accessibilité, cf. doc §Accessibilité) — un liseré et un fond teinté marquent les notifications non lues, jamais la couleur seule.</p>
+    </section>
+
+    <!-- TABS -->
+    <section id="tabs">
+      <div class="eyebrow">Composants</div>
+      <h2>Onglets</h2>
+      <div class="specimen">
+        <div class="tabs">
+          <div class="tab active">Aujourd'hui</div>
+          <div class="tab">Cette semaine</div>
+          <div class="tab">Ce mois</div>
+          <div class="tab">Personnalisé</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OVERLAYS -->
+    <section id="overlays">
+      <div class="eyebrow">Composants</div>
+      <h2>Dialogues &amp; tiroirs</h2>
+      <p class="section-lede">Démonstration statique — en application réelle ces panneaux s'ouvrent par-dessus un fond assombri.</p>
+      <div class="specimen-row">
+        <div class="modal-demo-wrap" style="flex:1;min-width:280px">
+          <div class="modal">
+            <h4>Annuler ce plat ?</h4>
+            <p>Le Poulet Yassa n'est pas encore en préparation — l'annulation est possible et le stock sera réintégré.</p>
+            <div class="actions"><button class="btn btn-ghost btn-sm">Retour</button><button class="btn btn-danger btn-sm">Annuler le plat</button></div>
+          </div>
+        </div>
+        <div class="modal-demo-wrap" style="flex:1;min-width:280px">
+          <div class="drawer">
+            <h4 style="margin-bottom:var(--space-4)">Diviser l'addition</h4>
+            <div class="field" style="width:100%;margin-bottom:var(--space-3)"><label>Mode</label><select class="input"><option>Également entre convives</option><option>Par article</option></select></div>
+            <div class="field" style="width:100%;margin-bottom:var(--space-5)"><label>Nombre de convives</label><input class="input tabular" value="4"></div>
+            <button class="btn btn-primary" style="width:100%">Générer les parts</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TOASTS -->
+    <section id="toasts">
+      <div class="eyebrow">Composants</div>
+      <h2>Notifications</h2>
+      <div class="specimen" style="display:flex;flex-direction:column;gap:var(--space-3)">
+        <div class="toast toast-success"><svg class="icon ic-success" width="16" height="16"><use href="#i-check"/></svg><div><strong>Paiement enregistré</strong>Table 12 — 18 500 XOF réglés en espèces.</div></div>
+        <div class="toast toast-error"><svg class="icon ic-error" width="16" height="16"><use href="#i-warn"/></svg><div><strong>Stock insuffisant</strong>Il ne reste plus de citron vert pour ce plat.</div></div>
+        <div class="toast toast-info"><svg class="icon ic-info" width="16" height="16"><use href="#i-bell"/></svg><div><strong>Nouvelle réservation</strong>4 personnes, ce soir 20h30.</div></div>
+      </div>
+    </section>
+
+    <!-- STATES -->
+    <section id="states">
+      <div class="eyebrow">Composants</div>
+      <h2>États — chargement, vide, erreur, succès</h2>
+      <h3 class="sub">Skeleton (chargement)</h3>
+      <div class="specimen" style="display:flex;flex-direction:column;gap:var(--space-3)">
+        <div class="skel" style="height:14px;width:40%"></div>
+        <div class="skel" style="height:36px;width:100%"></div>
+        <div class="skel" style="height:36px;width:100%"></div>
+        <div class="skel" style="height:36px;width:70%"></div>
+      </div>
+      <h3 class="sub">Vide, erreur, succès</h3>
+      <div class="grid-cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+        <div class="state-block">
+          <div class="ic-wrap" style="background:var(--surface-2);color:var(--text-3)"><svg class="icon" width="20" height="20"><use href="#i-book"/></svg></div>
+          <h4>Aucun plat pour l'instant</h4>
+          <p>Ajoutez votre premier plat pour que les serveurs puissent commencer à prendre commande.</p>
+          <button class="btn btn-primary btn-sm">Ajouter un plat</button>
+        </div>
+        <div class="state-block">
+          <div class="ic-wrap" style="background:var(--paprika-soft);color:var(--paprika-soft-ink)"><svg class="icon" width="20" height="20"><use href="#i-warn"/></svg></div>
+          <h4>Le paiement a échoué</h4>
+          <p>Le prestataire a refusé la transaction. Vérifiez le montant ou choisissez un autre mode de paiement.</p>
+          <button class="btn btn-secondary btn-sm">Réessayer</button>
+        </div>
+        <div class="state-block">
+          <div class="ic-wrap" style="background:var(--basil-soft);color:var(--basil-soft-ink)"><svg class="icon" width="20" height="20"><use href="#i-check"/></svg></div>
+          <h4>Service clôturé</h4>
+          <p>Toutes les tables sont réglées. Le rapport du jour est disponible dans Statistiques.</p>
+          <button class="btn btn-ghost btn-sm">Voir le rapport</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>

@@ -1,0 +1,462 @@
+<title>QuickTable — Écrans : Authentification</title>
+<style>
+  /* ====== TOKENS (identiques au Design System v1, dupliqués — CSP interdit le partage de fichier) ====== */
+  :root {
+    --ink-900:#1c1712; --ink-800:#241f1a; --ink-700:#362f27; --ink-600:#4f463a; --ink-500:#6e6252;
+    --ink-400:#948572; --ink-300:#b9ac98; --ink-200:#d6ccbe; --ink-100:#e8e1d7; --ink-50:#f3eee7; --ink-0:#fbf8f3;
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16);
+    --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-xl:22px; --radius-full:999px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px; --space-9:48px; --space-10:64px;
+    --dur-fast:120ms; --dur-base:180ms; --dur-slow:280ms; --ease:cubic-bezier(.2,.8,.2,1);
+    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+      --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+      --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+      --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+      --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+      --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+      --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+      --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+      --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+      --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  }
+  :root[data-theme="dark"] { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+    --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+    --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+    --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+    --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+    --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+    --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+    --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+    --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  :root[data-theme="light"] { --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16); color-scheme:light; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--surface-2); color:var(--text-1); font-family:var(--font-ui); font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4,p { margin:0; } h1,h2,h3,h4 { text-wrap:balance; font-weight:700; letter-spacing:-.01em; }
+  :focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; border-radius:var(--radius-xs); }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+  .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  a { color: var(--accent); }
+
+  /* ---------- page chrome ---------- */
+  .topbar { position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--border); padding: var(--space-4) var(--space-7); display:flex; align-items:center; justify-content:space-between; }
+  .crumbs { font-size:13px; color:var(--text-3); display:flex; align-items:center; gap:6px; }
+  .crumbs b { color:var(--text-1); font-weight:600; }
+  .crumbs .icon { width:12px; height:12px; stroke:currentColor; stroke-width:1.6; fill:none; }
+  .topbar-tabs { display:flex; gap: var(--space-6); }
+  .topbar-tabs a { font-size:13px; font-weight:600; color:var(--text-3); text-decoration:none; padding: 4px 0; border-bottom:2px solid transparent; }
+  .topbar-tabs a.active, .topbar-tabs a:hover { color:var(--text-1); border-color:var(--accent); }
+
+  main { max-width: 1280px; margin: 0 auto; padding: var(--space-9) var(--space-7) var(--space-11); }
+  section { margin-top: var(--space-11); }
+  section:first-of-type { margin-top: 0; }
+  .eyebrow { display:inline-flex; align-items:center; gap:var(--space-2); font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:var(--space-3); }
+  .eyebrow::before { content:""; width:14px; height:1.5px; background:var(--accent); display:block; }
+  section > h2 { font-size:1.6rem; margin-bottom: var(--space-2); }
+  .lede { max-width: 62ch; color: var(--text-2); font-size:14.5px; margin-bottom: var(--space-7); }
+  h3.sub { font-size:1rem; font-weight:600; margin: var(--space-7) 0 var(--space-4); display:flex; align-items:center; gap:var(--space-3); }
+  h3.sub .tag { font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:2px 8px; border-radius:var(--radius-full); }
+
+  .icon { stroke:currentColor; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+
+  /* ---------- device gallery / container-query frames ---------- */
+  .gallery { display:flex; gap: var(--space-6); overflow-x:auto; padding: var(--space-2) var(--space-1) var(--space-4); }
+  .frame-col { flex: 0 0 auto; display:flex; flex-direction:column; gap: var(--space-3); }
+  .frame-label { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-3); }
+  .frame-label b { color: var(--text-2); font-weight:600; }
+  .frame {
+    container-type: inline-size; container-name: screen;
+    border-radius: var(--radius-lg); overflow:hidden; border:1px solid var(--border); box-shadow: var(--shadow-3);
+    background: var(--bg); height: 620px;
+  }
+  .frame.desktop { width: 1040px; } .frame.tablet { width: 700px; } .frame.mobile { width: 380px; }
+  .frame-scroll { height:100%; overflow:auto; }
+
+  /* ---------- LOGIN screen (built once, reflows via container queries) ---------- */
+  .login-screen { min-height:100%; display:flex; }
+  .login-brand {
+    flex: 1 1 46%; background: var(--ink-900); color: var(--ink-50); padding: var(--space-8);
+    display:flex; flex-direction:column; justify-content:space-between; position:relative;
+  }
+  :root[data-theme="dark"] .login-brand, :root:not([data-theme="light"]) .login-brand { background: #0f0c09; }
+  .login-brand .brandmark { display:flex; align-items:center; gap:8px; color: var(--ember); }
+  .login-brand .brandmark b { color: var(--ink-50); font-size:15px; }
+  .login-brand h2 { color:#fff; font-size:1.7rem; line-height:1.2; max-width: 20ch; margin: var(--space-8) 0 var(--space-4); }
+  .login-brand p { color: var(--ink-300); font-size:13.5px; max-width:32ch; }
+  .brand-ticket { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12); border-radius: var(--radius-md); padding: var(--space-4); backdrop-filter: blur(2px); }
+  .brand-ticket .row { display:flex; justify-content:space-between; font-size:12.5px; color: var(--ink-200); padding: 4px 0; }
+  .brand-ticket .row b { color:#fff; font-family: var(--font-mono); }
+
+  .login-form-wrap { flex: 1 1 54%; display:flex; align-items:center; justify-content:center; padding: var(--space-8); }
+  .login-form { width: 100%; max-width: 340px; }
+  .login-form .locale { display:flex; justify-content:flex-end; gap: var(--space-3); font-size:12.5px; margin-bottom: var(--space-6); }
+  .login-form .locale span { color: var(--text-3); cursor:pointer; }
+  .login-form .locale span.active { color: var(--text-1); font-weight:700; }
+  .login-form h1 { font-size:1.5rem; margin-bottom:4px; }
+  .login-form .sub { color: var(--text-2); font-size:13.5px; margin-bottom: var(--space-6); }
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom: var(--space-4); }
+  .field label { font-size:12.5px; font-weight:600; color:var(--text-2); }
+  .field .hint, .field .error-text { font-size:11.5px; }
+  .field .error-text { color: var(--paprika); }
+  .input { font-family:var(--font-ui); font-size:13.5px; color:var(--text-1); background:var(--surface-1); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:0 12px; height:40px; width:100%; transition:border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease); }
+  .input::placeholder { color: var(--text-3); }
+  .input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--ember-soft); }
+  .input.is-error { border-color:var(--paprika); }
+  .input.is-error:focus { box-shadow: 0 0 0 3px var(--paprika-soft); }
+  .input[disabled] { background: var(--surface-2); color: var(--text-3); }
+  .row-between { display:flex; align-items:center; justify-content:space-between; margin: 2px 0 var(--space-6); font-size:13px; }
+  .check-row { display:flex; align-items:center; gap:7px; color: var(--text-2); }
+  .btn { appearance:none; border:1px solid transparent; cursor:pointer; font-family:var(--font-ui); font-weight:600; font-size:13.5px; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:var(--radius-sm); padding:0 16px; height:40px; width:100%; transition:filter var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background:var(--accent); color:var(--accent-ink); }
+  .btn-primary:hover { filter:brightness(1.08); }
+  .btn-primary[disabled] { opacity:.4; cursor:not-allowed; }
+  .btn-secondary { background:var(--surface-2); color:var(--text-1); border-color:var(--border-strong); }
+  .btn-loading { position:relative; color:transparent !important; pointer-events:none; }
+  .btn-loading::after { content:""; position:absolute; width:15px; height:15px; border-radius:50%; border:2px solid currentColor; border-top-color:transparent; color:var(--accent-ink); animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .foot-link { text-align:center; font-size:13px; color:var(--text-2); margin-top: var(--space-6); }
+  .banner { display:flex; gap:8px; align-items:flex-start; font-size:12.5px; padding:10px 12px; border-radius:var(--radius-sm); margin-bottom: var(--space-5); }
+  .banner-error { background: var(--paprika-soft); color: var(--paprika-soft-ink); }
+  .banner-success { background: var(--basil-soft); color: var(--basil-soft-ink); }
+
+  /* collapse split panel under 860px container width (tablet/mobile frames) */
+  @container screen (max-width: 860px) {
+    .login-screen { flex-direction: column; }
+    .login-brand { flex: 0 0 auto; padding: var(--space-6); }
+    .login-brand h2 { font-size:1.3rem; margin: var(--space-5) 0 var(--space-3); }
+    .brand-ticket { display:none; }
+    .login-form-wrap { padding: var(--space-6); }
+  }
+  @container screen (max-width: 480px) {
+    .login-brand { padding: var(--space-5); }
+    .login-brand p { display:none; }
+    .login-form-wrap { padding: var(--space-5) var(--space-4); align-items:flex-start; padding-top: var(--space-7); }
+  }
+
+  /* ---------- wireframe (low-fi) ---------- */
+  .wire { background: repeating-linear-gradient(135deg, var(--surface-1), var(--surface-1) 10px, var(--surface-2) 10px, var(--surface-2) 11px); border:1px dashed var(--border-strong); }
+  .wire-box { border:1px dashed var(--border-strong); background: var(--surface-1); color: var(--text-3); font-size:11px; display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; }
+
+  /* ---------- centered card screens (forgot / reset / 2fa / select) ---------- */
+  .card-screen { min-height:100%; display:flex; align-items:center; justify-content:center; padding: var(--space-7); background: var(--surface-2); }
+  .auth-card { width:100%; max-width: 360px; background:var(--surface-1); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow: var(--shadow-2); padding: var(--space-7); }
+  .auth-card .icon-badge { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom: var(--space-4); }
+  .auth-card h1 { font-size:1.3rem; margin-bottom:6px; }
+  .auth-card .sub { color:var(--text-2); font-size:13.5px; margin-bottom: var(--space-6); }
+  .code-inputs { display:flex; gap:8px; margin-bottom: var(--space-3); }
+  .code-inputs .input { text-align:center; font-family:var(--font-mono); font-size:18px; width:40px; height:48px; padding:0; }
+  .resend { font-size:12.5px; color:var(--text-3); text-align:center; margin-top:var(--space-4); }
+  .strength { display:flex; gap:4px; margin: 6px 0 2px; }
+  .strength i { height:3px; flex:1; background: var(--border-strong); border-radius:2px; }
+  .strength.weak i:nth-child(1) { background: var(--paprika); }
+  .strength.strong i { background: var(--basil); }
+
+  .tenant-list { display:flex; flex-direction:column; gap: var(--space-3); }
+  .tenant-item { display:flex; align-items:center; gap: var(--space-3); border:1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); cursor:pointer; transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease); }
+  .tenant-item:hover { border-color: var(--accent); background: var(--ember-soft); }
+  .tenant-avatar { width:36px; height:36px; border-radius:var(--radius-sm); background: var(--surface-2); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color: var(--text-2); flex-shrink:0; }
+  .tenant-item strong { display:block; font-size:13.5px; } .tenant-item span { font-size:12px; color:var(--text-3); }
+
+  /* ---------- state row (compact variant previews) ---------- */
+  .state-row { display:flex; flex-wrap:wrap; gap: var(--space-5); }
+  .state-chip { width: 300px; background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-1); }
+  .state-chip .chip-label { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--text-3); margin-bottom: var(--space-4); display:flex; align-items:center; gap:6px; }
+  .dot-lg { width:7px; height:7px; border-radius:50%; }
+
+  @media (max-width: 720px) {
+    main { padding: var(--space-6) var(--space-4) var(--space-9); }
+    .topbar { padding: var(--space-3) var(--space-4); flex-wrap:wrap; gap: var(--space-2); }
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4.2 2.4"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 6.5l8 6 8-6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 21 20H3Z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="crumbs">Écrans <svg class="icon" viewBox="0 0 24 24"><use href="#i-chevron"/></svg> <b>Authentification</b></div>
+  <div class="topbar-tabs">
+    <a class="active" href="#login">Connexion</a>
+    <a href="#forgot">Mot de passe oublié</a>
+    <a href="#reset">Réinitialisation</a>
+    <a href="#twofa">Vérification 2FA</a>
+    <a href="#tenant">Choix du restaurant</a>
+  </div>
+</div>
+
+<main>
+
+  <!-- ============ INTRO ============ -->
+  <section>
+    <div class="eyebrow">Écrans · 01</div>
+    <h2>Authentification</h2>
+    <p class="lede">Cinq écrans construits sur la bibliothèque du Design System v1&nbsp;: connexion, mot de passe oublié, réinitialisation, vérification en deux étapes, et sélection du restaurant pour le personnel multi-établissements (doc 07 §7.3). Chaque maquette est assemblée une seule fois puis testée dans trois cadres réels (desktop/tablette/mobile) via <em>container queries</em> — la mise en page que vous voyez se réorganise réellement selon la largeur du cadre, pas une simple image redimensionnée.</p>
+  </section>
+
+  <!-- ============ WIREFRAME ============ -->
+  <section id="wireframe">
+    <h3 class="sub">Wireframe — Connexion <span class="tag" style="background:var(--surface-2);color:var(--text-3)">basse fidélité</span></h3>
+    <p class="lede" style="margin-bottom:var(--space-5)">Étape de structure avant habillage&nbsp;: valider la hiérarchie (panneau de marque + formulaire) avant d'investir dans le détail visuel. Les écrans suivants passent directement en haute fidélité, cette structure étant déjà validée.</p>
+    <div class="wire" style="display:flex;height:280px;border-radius:var(--radius-md);overflow:hidden">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;padding:var(--space-5)">
+        <div class="wire-box" style="width:110px;height:24px">Logo</div>
+        <div class="wire-box" style="width:80%;height:60px">Titre + accroche</div>
+        <div class="wire-box" style="width:100%;height:70px">Aperçu produit (ticket)</div>
+      </div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:var(--space-5)">
+        <div style="width:70%;display:flex;flex-direction:column;gap:10px">
+          <div class="wire-box" style="height:16px;width:50%;align-self:flex-end">FR · EN · IT · ES</div>
+          <div class="wire-box" style="height:28px">Titre écran</div>
+          <div class="wire-box" style="height:38px">Champ email</div>
+          <div class="wire-box" style="height:38px">Champ mot de passe</div>
+          <div class="wire-box" style="height:20px">Se souvenir · Mot de passe oublié</div>
+          <div class="wire-box" style="height:40px;background:var(--ember-soft);border-style:solid;border-color:var(--ember)">Bouton principal</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LOGIN — HI-FI, 3 FRAMES ============ -->
+  <section id="login">
+    <h3 class="sub">Connexion <span class="tag" style="background:var(--basil-soft);color:var(--basil-soft-ink)">haute fidélité</span></h3>
+    <p class="lede" style="margin-bottom:var(--space-5)">Le panneau de marque (gauche) porte la chaleur du produit&nbsp;; le formulaire (droite) reste strictement fonctionnel. Sous 860px de large, le panneau se réduit à un bandeau court — sous 480px, il s'efface encore pour laisser toute la place au formulaire.</p>
+    <div class="gallery">
+      <div class="frame-col">
+        <div class="frame-label"><b>Desktop</b><span>1440px cible · cadre 1040px</span></div>
+        <div class="frame desktop"><div class="frame-scroll">
+          <div class="login-screen">
+            <div class="login-brand">
+              <div>
+                <div class="brandmark"><svg class="icon" width="20" height="20"><use href="#i-mark"/></svg><b>QuickTable</b></div>
+                <h2>La cuisine avance à son rythme. QuickTable suit le vôtre.</h2>
+                <p>Commandes, cuisine, caisse et réservations dans un seul outil — pensé pour un service qui ne s'arrête jamais.</p>
+              </div>
+              <div class="brand-ticket">
+                <div class="row"><span>Table 12 · Terrasse</span><b>18 500 XOF</b></div>
+                <div class="row"><span>Table 04 · Salle B</span><b>Prêt</b></div>
+                <div class="row"><span>Service du soir</span><b tabular="">32 commandes</b></div>
+              </div>
+            </div>
+            <div class="login-form-wrap">
+              <div class="login-form">
+                <div class="locale"><span class="active">FR</span><span>EN</span><span>IT</span><span>ES</span></div>
+                <h1>Bon retour</h1>
+                <p class="sub">Connectez-vous pour reprendre le service.</p>
+                <div class="field"><label for="em1">Email professionnel</label><input id="em1" class="input" placeholder="awa@lejardindawa.bj"></div>
+                <div class="field"><label for="pw1">Mot de passe</label><input id="pw1" type="password" class="input" value="••••••••••"></div>
+                <div class="row-between"><span class="check-row"><input type="checkbox" checked> Rester connecté</span><a href="#forgot" style="font-size:13px">Mot de passe oublié&nbsp;?</a></div>
+                <button class="btn btn-primary">Se connecter</button>
+                <p class="foot-link">Nouveau sur QuickTable&nbsp;? <a href="#">Créer un restaurant</a></p>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+      <div class="frame-col">
+        <div class="frame-label"><b>Tablette</b><span>834px cible · cadre 700px</span></div>
+        <div class="frame tablet"><div class="frame-scroll">
+          <div class="login-screen">
+            <div class="login-brand">
+              <div class="brandmark"><svg class="icon" width="18" height="18"><use href="#i-mark"/></svg><b>QuickTable</b></div>
+              <h2>La cuisine avance à son rythme. QuickTable suit le vôtre.</h2>
+            </div>
+            <div class="login-form-wrap">
+              <div class="login-form">
+                <div class="locale"><span class="active">FR</span><span>EN</span><span>IT</span><span>ES</span></div>
+                <h1>Bon retour</h1>
+                <p class="sub">Connectez-vous pour reprendre le service.</p>
+                <div class="field"><label for="em2">Email professionnel</label><input id="em2" class="input" placeholder="awa@lejardindawa.bj"></div>
+                <div class="field"><label for="pw2">Mot de passe</label><input id="pw2" type="password" class="input" value="••••••••••"></div>
+                <div class="row-between"><span class="check-row"><input type="checkbox" checked> Rester connecté</span><a href="#forgot" style="font-size:13px">Oublié&nbsp;?</a></div>
+                <button class="btn btn-primary">Se connecter</button>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+      <div class="frame-col">
+        <div class="frame-label"><b>Mobile</b><span>390px cible · cadre 380px</span></div>
+        <div class="frame mobile"><div class="frame-scroll">
+          <div class="login-screen">
+            <div class="login-brand">
+              <div class="brandmark"><svg class="icon" width="18" height="18"><use href="#i-mark"/></svg><b>QuickTable</b></div>
+              <h2>Bon retour parmi vos équipes.</h2>
+            </div>
+            <div class="login-form-wrap">
+              <div class="login-form">
+                <div class="locale"><span class="active">FR</span><span>EN</span><span>IT</span><span>ES</span></div>
+                <h1>Connexion</h1>
+                <div class="field"><label for="em3">Email</label><input id="em3" class="input" placeholder="awa@lejardindawa.bj"></div>
+                <div class="field"><label for="pw3">Mot de passe</label><input id="pw3" type="password" class="input" value="••••••••••"></div>
+                <div class="row-between"><span class="check-row"><input type="checkbox" checked> Rester connecté</span></div>
+                <button class="btn btn-primary">Se connecter</button>
+                <p class="foot-link"><a href="#forgot">Mot de passe oublié&nbsp;?</a></p>
+              </div>
+            </div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+
+    <h3 class="sub">États</h3>
+    <div class="state-row">
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Erreur — identifiants invalides</div>
+        <div class="banner banner-error"><svg class="icon" width="15" height="15" style="flex-shrink:0;margin-top:1px"><use href="#i-warn"/></svg><div><strong>Connexion refusée.</strong> Email ou mot de passe incorrect. Il vous reste 4 tentatives.</div></div>
+        <div class="field"><label>Email professionnel</label><input class="input is-error" value="awa@lejardindawa.bj"></div>
+        <div class="field" style="margin-bottom:0"><label>Mot de passe</label><input class="input is-error" type="password" value="••••••"></div>
+      </div>
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--text-3)"></span>Chargement — vérification en cours</div>
+        <div class="field"><label>Email professionnel</label><input class="input" value="awa@lejardindawa.bj" disabled></div>
+        <div class="field"><label>Mot de passe</label><input class="input" type="password" value="••••••••••" disabled></div>
+        <button class="btn btn-primary btn-loading">Connexion…</button>
+      </div>
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--border-strong)"></span>Désactivé — champs incomplets</div>
+        <div class="field"><label>Email professionnel</label><input class="input" placeholder="awa@lejardindawa.bj"></div>
+        <div class="field"><label>Mot de passe</label><input class="input" type="password" placeholder="••••••••••"></div>
+        <button class="btn btn-primary" disabled>Se connecter</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FORGOT PASSWORD ============ -->
+  <section id="forgot">
+    <h3 class="sub">Mot de passe oublié</h3>
+    <p class="lede" style="margin-bottom:var(--space-5)">Réponse volontairement identique que l'email existe ou non (doc 07 §7.5) — aucune énumération de comptes possible.</p>
+    <div class="state-row">
+      <div class="state-chip">
+        <div class="chip-label">Par défaut</div>
+        <div class="icon-badge" style="background:var(--surface-2);color:var(--text-2)"><svg class="icon" width="18" height="18"><use href="#i-mail"/></svg></div>
+        <h1 style="font-size:1.15rem">Mot de passe oublié&nbsp;?</h1>
+        <p class="sub" style="margin-bottom:var(--space-4)">Indiquez votre email professionnel, nous vous envoyons un lien valable 30 minutes.</p>
+        <div class="field"><label>Email professionnel</label><input class="input" placeholder="awa@lejardindawa.bj"></div>
+        <button class="btn btn-primary">Envoyer le lien</button>
+      </div>
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--basil)"></span>Succès</div>
+        <div class="icon-badge" style="background:var(--basil-soft);color:var(--basil-soft-ink)"><svg class="icon" width="18" height="18"><use href="#i-check"/></svg></div>
+        <h1 style="font-size:1.15rem">Vérifiez votre boîte mail</h1>
+        <p class="sub" style="margin-bottom:var(--space-4)">Si un compte existe pour cette adresse, un lien de réinitialisation vient d'être envoyé. Il expire dans 30 minutes.</p>
+        <button class="btn btn-secondary" disabled aria-disabled="true" style="opacity:.5;cursor:not-allowed">Renvoyer dans 45s</button>
+      </div>
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Erreur — trop de tentatives</div>
+        <div class="banner banner-error"><svg class="icon" width="15" height="15" style="flex-shrink:0;margin-top:1px"><use href="#i-warn"/></svg><div><strong>Trop de demandes.</strong> Réessayez dans 1 heure ou contactez le support.</div></div>
+        <div class="field" style="margin-bottom:0"><label>Email professionnel</label><input class="input" value="awa@lejardindawa.bj" disabled></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RESET PASSWORD ============ -->
+  <section id="reset">
+    <h3 class="sub">Réinitialisation du mot de passe</h3>
+    <div class="state-row">
+      <div class="state-chip">
+        <div class="chip-label">Par défaut</div>
+        <div class="icon-badge" style="background:var(--surface-2);color:var(--text-2)"><svg class="icon" width="18" height="18"><use href="#i-lock"/></svg></div>
+        <h1 style="font-size:1.15rem">Créez un nouveau mot de passe</h1>
+        <p class="sub" style="margin-bottom:var(--space-4)">Au moins 10 caractères. Cette action déconnectera toutes vos autres sessions actives.</p>
+        <div class="field"><label>Nouveau mot de passe</label><input class="input" type="password" value="••••••••••••"><div class="strength strong"><i></i><i></i><i></i><i></i></div><span class="hint" style="color:var(--basil)">Robuste</span></div>
+        <div class="field"><label>Confirmer</label><input class="input" type="password" value="••••••••••••"></div>
+        <button class="btn btn-primary">Réinitialiser</button>
+      </div>
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Erreur — trop faible</div>
+        <div class="field"><label>Nouveau mot de passe</label><input class="input is-error" type="password" value="azerty123"><div class="strength weak"><i></i><i></i><i></i><i></i></div><span class="error-text">Trop simple — évitez les suites de clavier.</span></div>
+        <div class="field" style="margin-bottom:0"><label>Confirmer</label><input class="input" type="password" placeholder="••••••••••••"></div>
+      </div>
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--basil)"></span>Succès</div>
+        <div class="icon-badge" style="background:var(--basil-soft);color:var(--basil-soft-ink)"><svg class="icon" width="18" height="18"><use href="#i-check"/></svg></div>
+        <h1 style="font-size:1.15rem">Mot de passe mis à jour</h1>
+        <p class="sub" style="margin-bottom:var(--space-4)">Toutes vos autres sessions ont été déconnectées par sécurité.</p>
+        <button class="btn btn-primary">Retour à la connexion</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 2FA ============ -->
+  <section id="twofa">
+    <h3 class="sub">Vérification en deux étapes</h3>
+    <p class="lede" style="margin-bottom:var(--space-5)">Obligatoire pour les rôles Owner et Super Admin (doc 07 §7.6).</p>
+    <div class="state-row">
+      <div class="state-chip">
+        <div class="chip-label">Par défaut</div>
+        <div class="icon-badge" style="background:var(--ember-soft);color:var(--ember-soft-ink)"><svg class="icon" width="18" height="18"><use href="#i-shield"/></svg></div>
+        <h1 style="font-size:1.15rem">Code de vérification</h1>
+        <p class="sub" style="margin-bottom:var(--space-4)">Entrez le code à 6 chiffres généré par votre application d'authentification.</p>
+        <div class="code-inputs"><input class="input" maxlength="1" value="4"><input class="input" maxlength="1" value="8"><input class="input" maxlength="1" value="2"><input class="input" maxlength="1"><input class="input" maxlength="1"><input class="input" maxlength="1"></div>
+        <button class="btn btn-primary" style="margin-top:var(--space-3)">Vérifier</button>
+        <p class="resend">Utiliser un code de récupération</p>
+      </div>
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Erreur — code invalide</div>
+        <div class="icon-badge" style="background:var(--ember-soft);color:var(--ember-soft-ink)"><svg class="icon" width="18" height="18"><use href="#i-shield"/></svg></div>
+        <h1 style="font-size:1.15rem">Code de vérification</h1>
+        <div class="code-inputs"><input class="input is-error" maxlength="1" value="4"><input class="input is-error" maxlength="1" value="8"><input class="input is-error" maxlength="1" value="1"><input class="input is-error" maxlength="1" value="9"><input class="input is-error" maxlength="1" value="0"><input class="input is-error" maxlength="1" value="3"></div>
+        <p class="error-text" style="margin-top:6px">Code incorrect ou expiré — réessayez.</p>
+      </div>
+      <div class="state-chip">
+        <div class="chip-label"><span class="dot-lg" style="background:var(--text-3)"></span>Chargement</div>
+        <div class="icon-badge" style="background:var(--ember-soft);color:var(--ember-soft-ink)"><svg class="icon" width="18" height="18"><use href="#i-shield"/></svg></div>
+        <h1 style="font-size:1.15rem">Code de vérification</h1>
+        <div class="code-inputs"><input class="input" maxlength="1" value="4" disabled><input class="input" maxlength="1" value="8" disabled><input class="input" maxlength="1" value="2" disabled><input class="input" maxlength="1" value="9" disabled><input class="input" maxlength="1" value="1" disabled><input class="input" maxlength="1" value="7" disabled></div>
+        <button class="btn btn-primary btn-loading" style="margin-top:var(--space-3)">Vérification…</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SELECT TENANT ============ -->
+  <section id="tenant">
+    <h3 class="sub">Sélection du restaurant <span class="tag" style="background:var(--steel-soft);color:var(--steel-soft-ink)">multi-établissements</span></h3>
+    <p class="lede" style="margin-bottom:var(--space-5)">Affiché uniquement si le personnel possède plusieurs memberships (doc 05, doc 07 §7.3) — un gérant de plusieurs restaurants, par exemple.</p>
+    <div class="state-chip" style="width:380px">
+      <div class="chip-label">Par défaut</div>
+      <h1 style="font-size:1.15rem;margin-bottom:4px">Quel restaurant gérez-vous aujourd'hui&nbsp;?</h1>
+      <p class="sub" style="margin-bottom:var(--space-4)">Vous pourrez changer d'établissement à tout moment.</p>
+      <div class="tenant-list">
+        <div class="tenant-item"><div class="tenant-avatar">JA</div><div style="flex:1"><strong>Le Jardin d'Awa</strong><span>Cotonou, Bénin · Owner</span></div><svg class="icon" width="16" height="16" style="color:var(--text-3)"><use href="#i-chevron"/></svg></div>
+        <div class="tenant-item"><div class="tenant-avatar">CI</div><div style="flex:1"><strong>Chez Iréné</strong><span>Porto-Novo, Bénin · Manager</span></div><svg class="icon" width="16" height="16" style="color:var(--text-3)"><use href="#i-chevron"/></svg></div>
+      </div>
+    </div>
+  </section>
+
+</main>

@@ -1,0 +1,205 @@
+<title>QuickTable — Écran : Cuisine (KDS)</title>
+<style>
+  /* ====== TOKENS (identiques au Design System v1) — pilotent le chrome de la page, pas le tableau KDS lui-même ====== */
+  :root {
+    --ink-900:#1c1712; --ink-800:#241f1a; --ink-700:#362f27; --ink-600:#4f463a; --ink-500:#6e6252;
+    --ink-400:#948572; --ink-300:#b9ac98; --ink-200:#d6ccbe; --ink-100:#e8e1d7; --ink-50:#f3eee7; --ink-0:#fbf8f3;
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-full:999px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px; --space-9:48px;
+    --dur-fast:120ms; --dur-base:180ms; --ease:cubic-bezier(.2,.8,.2,1);
+    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+      --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+      --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+      --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+      --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+      --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+      --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+      --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f; color-scheme:dark; }
+  }
+  :root[data-theme="dark"] { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+    --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+    --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+    --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+    --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+    --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+    --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f; color-scheme:dark; }
+  :root[data-theme="light"] { --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c; color-scheme:light; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--surface-2); color:var(--text-1); font-family:var(--font-ui); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4,p { margin:0; } h1,h2,h3,h4 { text-wrap:balance; font-weight:700; letter-spacing:-.01em; }
+  :focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+  .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .icon { stroke:currentColor; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+
+  .topbar { position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--border); padding: var(--space-4) var(--space-7); display:flex; align-items:center; justify-content:space-between; }
+  .crumbs { font-size:13px; color:var(--text-3); display:flex; align-items:center; gap:6px; } .crumbs b { color:var(--text-1); font-weight:600; }
+  main.page { max-width: 1280px; margin:0 auto; padding: var(--space-8) var(--space-7) var(--space-9); }
+  .eyebrow { display:inline-flex; align-items:center; gap:var(--space-2); font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:var(--space-3); }
+  .eyebrow::before { content:""; width:14px; height:1.5px; background:var(--accent); display:block; }
+  h2.title { font-size:1.6rem; margin-bottom: var(--space-2); }
+  .lede { max-width: 70ch; color: var(--text-2); font-size:14.5px; margin-bottom: var(--space-6); }
+  .decision-note { display:flex; gap:10px; background:var(--surface-1); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:var(--radius-sm); padding: var(--space-4); font-size:13px; color:var(--text-2); max-width:76ch; margin-bottom: var(--space-7); }
+  .decision-note b { color:var(--text-1); }
+
+  .frame-label { font-size:12px; color:var(--text-3); margin-bottom:var(--space-3); } .frame-label b { color: var(--text-2); font-weight:600; }
+  .frame { border-radius: 14px; overflow:hidden; border:1px solid var(--border); box-shadow: var(--shadow-3); width: 100%; max-width: 1180px; }
+
+  /* ================= KDS BOARD — palette fixe (choix produit, doc ci-dessous) ================= */
+  .kds {
+    --k-bg:#14100c; --k-surface:#1e1812; --k-surface-2:#241d16; --k-border:#372c22; --k-border-strong:#4a3b2c;
+    --k-text-1:#f6f1ea; --k-text-2:#c7b8a4; --k-text-3:#8f8071;
+    --k-ember:#f0812c; --k-ember-ink:#1c1712; --k-basil:#5cb586; --k-basil-soft:#1c3327; --k-basil-ink:#bfe9d3;
+    --k-turmeric:#eab24a; --k-turmeric-soft:#3a2c14; --k-turmeric-ink:#f6d999;
+    --k-paprika:#f0685a; --k-paprika-soft:#3d1e18; --k-paprika-ink:#ffb3a8;
+    --k-steel:#7cb3d8; --k-steel-soft:#1b2b34;
+    background: var(--k-bg); color: var(--k-text-1); font-family: var(--font-ui);
+  }
+  .kds-topbar { display:flex; align-items:center; justify-content:space-between; padding: 16px 22px; border-bottom:1px solid var(--k-border); }
+  .kds-topbar .kt-left { display:flex; align-items:center; gap:14px; }
+  .kds-topbar h1 { font-size:1.2rem; color:#fff; }
+  .kds-clock { font-family:var(--font-mono); font-size:1.1rem; color: var(--k-text-2); }
+  .kds-live { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color: var(--k-basil); background:var(--k-basil-soft); padding:5px 12px 5px 9px; border-radius:999px; }
+  .kds-live .d { width:6px; height:6px; border-radius:50%; background:var(--k-basil); animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+  .kds-sort { display:flex; gap:6px; }
+  .kds-sort button { font-size:12px; font-weight:600; color:var(--k-text-2); background:var(--k-surface); border:1px solid var(--k-border); border-radius:8px; padding:7px 12px; }
+  .kds-sort button.active { color: var(--k-ember-ink); background: var(--k-ember); border-color:var(--k-ember); }
+
+  .kds-grid { display:grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 18px 22px 24px; }
+  .kticket { background: var(--k-surface); border-radius: 14px; overflow:hidden; border: 1px solid var(--k-border); display:flex; flex-direction:column; }
+  .kticket.urgent { border-color: var(--k-paprika); box-shadow: 0 0 0 1px var(--k-paprika); }
+  .kt-head { display:flex; align-items:center; justify-content:space-between; padding: 13px 16px; background: var(--k-surface-2); }
+  .kt-head .tno { font-family: var(--font-mono); font-size:1.5rem; font-weight:700; color:#fff; }
+  .kt-head .troom { display:block; font-size:11px; color: var(--k-text-3); }
+  .k-timer { font-family: var(--font-mono); font-size:13px; font-weight:700; padding: 5px 10px; border-radius:999px; display:flex; align-items:center; gap:5px; }
+  .k-timer.green { background: var(--k-basil-soft); color: var(--k-basil-ink); }
+  .k-timer.orange { background: var(--k-turmeric-soft); color: var(--k-turmeric-ink); }
+  .k-timer.red { background: var(--k-paprika-soft); color: var(--k-paprika-ink); }
+
+  .kt-body { padding: 8px 12px; display:flex; flex-direction:column; gap:8px; flex:1; }
+  .kdish { background: var(--k-surface-2); border-radius:10px; padding: 10px 12px; }
+  .kdish-row { display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .kdish .kname { font-size:15px; font-weight:600; }
+  .kdish .kqty { font-family:var(--font-mono); color: var(--k-text-3); font-size:13px; }
+  .kdish .knote { font-size:12.5px; color: var(--k-paprika); margin-top:2px; font-weight:600; }
+  .kstate-btn { width:100%; margin-top:8px; height:36px; border-radius:8px; border:none; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:6px; }
+  .kstate-btn.queued { background: transparent; border: 1.5px solid var(--k-border-strong); color: var(--k-text-2); }
+  .kstate-btn.preparing { background: var(--k-turmeric); color: #241a08; }
+  .kstate-btn.ready { background: var(--k-basil-soft); color: var(--k-basil-ink); }
+  .kcancel { font-size:11px; color: var(--k-paprika); font-weight:700; text-align:right; margin-top:6px; cursor:pointer; }
+
+  .kt-foot { display:flex; align-items:center; justify-content:space-between; padding: 10px 16px; border-top:1px solid var(--k-border); font-size:11.5px; color: var(--k-text-3); }
+  .kt-foot b { color: var(--k-text-2); }
+
+  @media (max-width: 900px) { .kds-grid { grid-template-columns: repeat(2,1fr); } }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-fire" viewBox="0 0 24 24"><path d="M12 3s5 4.5 5 9.5a5 5 0 1 1-10 0c0-1.6.8-2.8 1.6-3.8.2 1.5 1 2 1.5 1.5C9.6 8 12 6 12 3z"/></symbol>
+</svg>
+
+<div class="topbar"><div class="crumbs">Écrans <b>Cuisine — KDS</b></div></div>
+
+<main class="page">
+  <section>
+    <div class="eyebrow">Écrans · 04</div>
+    <h2 class="title">Cuisine — Kitchen Display System</h2>
+    <p class="lede">Tablette murale, paysage, toujours allumée, lue à 1–2 mètres (doc 36 §36.6) — aucune navigation, aucun menu&nbsp;: c'est un affichage d'état, pas une application qu'on parcourt (doc 36 §36.5). Chaque carte est une commande, chaque plat a un gros bouton tactile pour changer de statut, jamais de menu déroulant.</p>
+    <div class="decision-note"><svg class="icon" width="16" height="16" style="flex-shrink:0;margin-top:1px;color:var(--accent)"><use href="#i-fire"/></svg><div><b>Choix produit assumé&nbsp;:</b> ce tableau reste toujours en thème sombre, indépendamment du réglage clair/sombre du reste de l'application. Une cuisine est un environnement lumineux et chaud&nbsp;— le sombre réduit l'éblouissement et la fatigue oculaire sur un écran fixé au mur toute la journée. Ce n'est pas un oubli du mode clair, c'est un parti pris produit pour cet écran précis.</div></div>
+  </section>
+
+  <div class="frame-label"><b>Tablette · paysage</b> — 1180px, murale fixe, seule cible pour cet écran (doc 36 §36.6)</div>
+  <div class="frame">
+    <div class="kds">
+      <div class="kds-topbar">
+        <div class="kt-left"><h1>Cuisine</h1><span class="kds-live"><span class="d"></span>5 commandes actives</span></div>
+        <div class="kt-left">
+          <div class="kds-clock tabular">19:48</div>
+          <div class="kds-sort"><button class="active">Priorité</button><button>Heure</button><button>Table</button></div>
+        </div>
+      </div>
+
+      <div class="kds-grid">
+
+        <div class="kticket">
+          <div class="kt-head"><div><span class="tno">T-04</span><span class="troom">Terrasse · Awa K.</span></div><span class="k-timer green"><svg class="icon" width="12" height="12"><use href="#i-clock"/></svg>01:24</span></div>
+          <div class="kt-body">
+            <div class="kdish"><div class="kdish-row"><span class="kname">Beignets Sucrés</span><span class="kqty">×4</span></div><button class="kstate-btn queued">Commencer</button><div class="kcancel">Annuler</div></div>
+          </div>
+          <div class="kt-foot"><span>Envoyée à 19:47</span><b>Dessert</b></div>
+        </div>
+
+        <div class="kticket">
+          <div class="kt-head"><div><span class="tno">T-01</span><span class="troom">Terrasse · Awa K.</span></div><span class="k-timer green"><svg class="icon" width="12" height="12"><use href="#i-clock"/></svg>02:10</span></div>
+          <div class="kt-body">
+            <div class="kdish"><div class="kdish-row"><span class="kname">Poulet Yassa</span><span class="kqty">×2</span></div><div class="knote">Sans piment</div><button class="kstate-btn queued">Commencer</button><div class="kcancel">Annuler</div></div>
+            <div class="kdish"><div class="kdish-row"><span class="kname">Attiéké Poisson</span><span class="kqty">×1</span></div><button class="kstate-btn queued">Commencer</button><div class="kcancel">Annuler</div></div>
+          </div>
+          <div class="kt-foot"><span>Envoyée à 19:46</span><b>Plats</b></div>
+        </div>
+
+        <div class="kticket">
+          <div class="kt-head"><div><span class="tno">T-07</span><span class="troom">Salle B · Iréné D.</span></div><span class="k-timer orange"><svg class="icon" width="12" height="12"><use href="#i-clock"/></svg>07:32</span></div>
+          <div class="kt-body">
+            <div class="kdish"><div class="kdish-row"><span class="kname">Riz au Gras</span><span class="kqty">×1</span></div><button class="kstate-btn preparing">Marquer prêt</button></div>
+            <div class="kdish"><div class="kdish-row"><span class="kname">Jus de Bissap</span><span class="kqty">×3</span></div><button class="kstate-btn ready"><svg class="icon" width="14" height="14"><use href="#i-check"/></svg>Prêt</button></div>
+          </div>
+          <div class="kt-foot"><span>Envoyée à 19:41</span><b>Plats + boissons</b></div>
+        </div>
+
+        <div class="kticket">
+          <div class="kt-head"><div><span class="tno">T-09</span><span class="troom">Terrasse · Iréné D.</span></div><span class="k-timer orange"><svg class="icon" width="12" height="12"><use href="#i-clock"/></svg>09:05</span></div>
+          <div class="kt-body">
+            <div class="kdish"><div class="kdish-row"><span class="kname">Attiéké Poisson</span><span class="kqty">×2</span></div><button class="kstate-btn preparing">Marquer prêt</button></div>
+          </div>
+          <div class="kt-foot"><span>Envoyée à 19:39</span><b>Plats</b></div>
+        </div>
+
+        <div class="kticket urgent">
+          <div class="kt-head"><div><span class="tno">T-12</span><span class="troom">Salle B · Awa K.</span></div><span class="k-timer red"><svg class="icon" width="12" height="12"><use href="#i-clock"/></svg>13:47</span></div>
+          <div class="kt-body">
+            <div class="kdish"><div class="kdish-row"><span class="kname">Poisson Braisé</span><span class="kqty">×1</span></div><button class="kstate-btn preparing">Marquer prêt</button></div>
+          </div>
+          <div class="kt-foot"><span>Envoyée à 19:35</span><b style="color:var(--k-paprika)">En retard</b></div>
+        </div>
+
+        <div class="kticket" style="align-items:center;justify-content:center;display:flex">
+          <div style="text-align:center;padding:24px;color:var(--k-text-3)">
+            <svg class="icon" width="22" height="22" style="margin:0 auto 8px"><use href="#i-check"/></svg>
+            <p style="font-size:12.5px">Aucune autre commande en attente</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <p class="lede" style="margin-top:var(--space-6)">Seuils des minuteurs (vert &lt;5min, orange 5–10min, rouge &gt;10min) affichés à titre indicatif — à valider avec le restaurant pilote une fois le temps de préparation réel observé (doc 01 §1.7).</p>
+</main>

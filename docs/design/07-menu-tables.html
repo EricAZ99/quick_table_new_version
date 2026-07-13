@@ -1,0 +1,356 @@
+<title>QuickTable — Écrans : Menu &amp; Salles/Tables</title>
+<style>
+  :root {
+    --ink-900:#1c1712; --ink-800:#241f1a; --ink-700:#362f27; --ink-600:#4f463a; --ink-500:#6e6252;
+    --ink-400:#948572; --ink-300:#b9ac98; --ink-200:#d6ccbe; --ink-100:#e8e1d7; --ink-50:#f3eee7; --ink-0:#fbf8f3;
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16);
+    --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-full:999px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px; --space-9:48px;
+    --dur-fast:120ms; --dur-base:180ms; --ease:cubic-bezier(.2,.8,.2,1);
+    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+      --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+      --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+      --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+      --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+      --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+      --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+      --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+      --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+      --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  }
+  :root[data-theme="dark"] { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+    --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+    --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+    --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+    --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+    --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+    --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+    --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+    --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  :root[data-theme="light"] { --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16); color-scheme:light; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--surface-2); color:var(--text-1); font-family:var(--font-ui); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4,p { margin:0; } h1,h2,h3,h4 { text-wrap:balance; font-weight:700; letter-spacing:-.01em; }
+  :focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; border-radius:var(--radius-xs); }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+  .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .icon { stroke:currentColor; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  a { color: inherit; text-decoration:none; }
+
+  .topbar { position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--border); padding: var(--space-4) var(--space-7); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-3); }
+  .crumbs { font-size:13px; color:var(--text-3); display:flex; align-items:center; gap:6px; } .crumbs b { color:var(--text-1); font-weight:600; }
+  .topbar-tabs { display:flex; gap: var(--space-6); }
+  .topbar-tabs a { font-size:13px; font-weight:600; color:var(--text-3); padding: 4px 0; border-bottom:2px solid transparent; }
+  .topbar-tabs a.active, .topbar-tabs a:hover { color:var(--text-1); border-color:var(--accent); }
+
+  main.page { max-width: 1280px; margin:0 auto; padding: var(--space-8) var(--space-7) var(--space-9); }
+  .eyebrow { display:inline-flex; align-items:center; gap:var(--space-2); font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:var(--space-3); }
+  .eyebrow::before { content:""; width:14px; height:1.5px; background:var(--accent); display:block; }
+  h2.title { font-size:1.6rem; margin-bottom: var(--space-2); }
+  .lede { max-width: 70ch; color: var(--text-2); font-size:14.5px; margin-bottom: var(--space-6); }
+  h3.sub { font-size:1rem; font-weight:600; margin: var(--space-8) 0 var(--space-4); }
+
+  .frame-label { font-size:12px; color:var(--text-3); margin-bottom:var(--space-3); } .frame-label b { color: var(--text-2); font-weight:600; }
+  .frame { border-radius: 14px; overflow:hidden; border:1px solid var(--border); box-shadow: var(--shadow-3); background: var(--bg); height:660px; margin-bottom: var(--space-6); }
+  .frame-scroll { height:100%; overflow:auto; }
+
+  /* ================= APP SHELL (identique au Dashboard) ================= */
+  .app-shell { display:flex; min-height:100%; }
+  .sidebar { width: 220px; flex-shrink:0; background: var(--surface-1); border-right:1px solid var(--border); padding: var(--space-5) var(--space-4); display:flex; flex-direction:column; gap: var(--space-6); }
+  .sb-brand { display:flex; align-items:center; gap:8px; padding: 0 var(--space-1) var(--space-2); }
+  .sb-brand b { font-size:14px; }
+  .sb-group-title { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); margin: 0 0 4px var(--space-2); }
+  .nav-item { appearance:none; border:none; background:none; font-family:inherit; text-align:left; width:100%; display:flex; align-items:center; gap:10px; font-size:13.3px; padding: 8px var(--space-2); border-radius: var(--radius-sm); color: var(--text-2); cursor:pointer; white-space:nowrap; }
+  .nav-item:hover { background: var(--surface-2); color: var(--text-1); }
+  .nav-item.active { background: var(--ember-soft); color: var(--ember-soft-ink); font-weight:600; }
+  .sb-foot { margin-top:auto; display:flex; align-items:center; gap:10px; padding: var(--space-3); background:var(--surface-2); border-radius:var(--radius-md); }
+  .avatar { width:30px; height:30px; border-radius:50%; background:var(--ember-soft); color:var(--ember-soft-ink); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; flex-shrink:0; }
+  .sb-foot strong { display:block; font-size:12px; } .sb-foot span { font-size:10.5px; color:var(--text-3); }
+
+  .shell-main { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .shell-topbar { display:flex; align-items:center; justify-content:space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-bottom:1px solid var(--border); background: var(--bg); }
+  .icon-btn { position:relative; width:32px; height:32px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--text-2); cursor:pointer; }
+  .icon-btn:hover { background: var(--surface-2); }
+
+  .page-body { padding: var(--space-5) var(--space-6); flex:1; overflow-y:auto; }
+  .page-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom: var(--space-5); gap: var(--space-4); flex-wrap:wrap; }
+  .page-head h1 { font-size:1.4rem; margin-bottom:4px; }
+  .page-head .sub { font-size:12.5px; color:var(--text-2); }
+
+  .btn { appearance:none; border:1px solid transparent; cursor:pointer; font-family:var(--font-ui); font-weight:600; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:var(--radius-sm); padding:0 14px; height:36px; }
+  .btn-primary { background:var(--accent); color:var(--accent-ink); }
+  .btn-secondary { background:var(--surface-2); color:var(--text-1); border-color:var(--border-strong); }
+
+  .chip-tabs { display:flex; gap:8px; margin-bottom: var(--space-5); }
+  .chip-tab { font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:var(--radius-full); background:var(--surface-2); color:var(--text-2); cursor:pointer; }
+  .chip-tab.active { background:var(--ember-soft); color:var(--ember-soft-ink); }
+  .chip-tab .cnt { opacity:.7; margin-left:4px; }
+
+  .card { background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-1); }
+  table.data { width:100%; border-collapse:collapse; font-size:13.3px; }
+  table.data th { text-align:left; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--text-3); font-weight:600; padding: var(--space-3) var(--space-4); border-bottom:1px solid var(--border-strong); }
+  table.data td { padding: var(--space-3) var(--space-4); border-bottom:1px solid var(--border); vertical-align:middle; }
+  table.data tbody tr:hover { background: var(--surface-2); }
+  table.data td.num { font-family:var(--font-mono); }
+  .dish-thumb-sm { width:38px; height:38px; border-radius:var(--radius-sm); flex-shrink:0; }
+  .name-cell { display:flex; align-items:center; gap:10px; }
+  .name-cell strong { font-size:13px; display:block; }
+  .name-cell span { font-size:11px; color:var(--text-3); }
+  .row-actions { display:flex; gap:6px; opacity:0; transition:opacity var(--dur-fast) var(--ease); }
+  tr:hover .row-actions { opacity:1; }
+  .switch { position:relative; width:34px; height:20px; border-radius:999px; background:var(--border-strong); border:none; cursor:pointer; flex-shrink:0; }
+  .switch::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:var(--shadow-1); transition: transform var(--dur-base) var(--ease); }
+  .switch.on { background: var(--basil); } .switch.on::after { transform: translateX(14px); }
+  .switch.off-alert { background: var(--paprika); } .switch.off-alert::after { transform: translateX(0); }
+  .badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 9px 3px 7px; border-radius:999px; }
+  .badge .dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+  .badge-basil { background:var(--basil-soft); color:var(--basil-soft-ink); }
+  .badge-paprika { background:var(--paprika-soft); color:var(--paprika-soft-ink); }
+
+  /* drawer (new dish form) */
+  .drawer-overlay { position:absolute; inset:0; background: rgba(20,15,10,.4); display:flex; justify-content:flex-end; }
+  .drawer { width: 380px; max-width:90%; background: var(--surface-1); box-shadow: var(--shadow-4); padding: var(--space-6); overflow-y:auto; }
+  .drawer h3 { font-size:1.1rem; margin-bottom: var(--space-5); }
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom: var(--space-4); }
+  .field label { font-size:12.5px; font-weight:600; color:var(--text-2); }
+  .input { font-family:var(--font-ui); font-size:13.5px; color:var(--text-1); background:var(--bg); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:0 12px; height:38px; width:100%; }
+  .input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--ember-soft); }
+  .dropzone { border:1.5px dashed var(--border-strong); border-radius: var(--radius-md); padding: var(--space-6) var(--space-4); text-align:center; color:var(--text-3); font-size:12.5px; }
+  .row2 { display:flex; gap: var(--space-3); }
+  .chip-select { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip-select span { font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border-strong); color:var(--text-2); }
+  .chip-select span.active { background: var(--paprika-soft); color:var(--paprika-soft-ink); border-color:transparent; }
+  .drawer-actions { display:flex; gap: var(--space-3); margin-top: var(--space-6); }
+  .drawer-actions .btn { flex:1; height:40px; }
+
+  /* floor plan */
+  .floor-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap: var(--space-4); }
+  .ftable { border-radius: var(--radius-md); padding: var(--space-4); display:flex; flex-direction:column; gap:6px; cursor:pointer; border:1.5px solid transparent; transition: transform var(--dur-fast) var(--ease); }
+  .ftable:hover { transform: translateY(-2px); }
+  .ftable.selected { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  .row-selected { background: var(--ember-soft) !important; box-shadow: inset 3px 0 0 var(--accent); }
+  .ftable .fno { font-family:var(--font-mono); font-size:1.2rem; font-weight:700; }
+  .ftable .fcap { font-size:11px; opacity:.85; }
+  .f-free { background: var(--basil-soft); color: var(--basil-soft-ink); }
+  .f-occupied { background: var(--ember-soft); color: var(--ember-soft-ink); border-color: var(--ember); }
+  .f-reserved { background: var(--steel-soft); color: var(--steel-soft-ink); }
+  .f-cleaning { background: var(--turmeric-soft); color: var(--turmeric-soft-ink); }
+  .f-oos { background: var(--surface-2); color: var(--text-3); }
+
+  .qr-preview { width:140px; height:140px; margin: 0 auto var(--space-4); background: repeating-conic-gradient(var(--ink-900) 0% 25%, transparent 0% 50%) 0 0/16px 16px, var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-sm); }
+
+  .state-row { display:flex; flex-wrap:wrap; gap: var(--space-5); }
+  .state-chip { width: 300px; background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-1); }
+  .chip-label { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--text-3); margin-bottom: var(--space-4); display:flex; align-items:center; gap:6px; }
+  .dot-lg { width:7px; height:7px; border-radius:50%; }
+
+  @media (max-width: 720px) { main.page { padding: var(--space-6) var(--space-4) var(--space-8); } .topbar { padding: var(--space-3) var(--space-4); } }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M3 8 12 3l9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><path d="M12 13v9"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.7 14.7c2.3.4 4 2 4.8 4.8"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M11 20V4M18 20v-7"/><path d="M2 20h20"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18 6l-1.7 1.7M7.7 16.3 6 18M18 18l-1.7-1.7M7.7 7.7 6 6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14 6 10Z"/><path d="M10 19a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4.2 2.4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16Z"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.6-5.9"/><path d="M20 4v5h-5"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="crumbs">Écrans <b>Menu &amp; Salles/Tables</b></div>
+  <div class="topbar-tabs"><a class="active" href="#menu">Menu</a><a href="#tables">Salles &amp; tables</a></div>
+</div>
+
+<main class="page">
+  <section>
+    <div class="eyebrow">Écrans · 07</div>
+    <h2 class="title">Menu &amp; Salles/Tables</h2>
+    <p class="lede">Deux écrans de configuration cœur du MVP (doc 34 §34.4/§34.5), construits sur l'App Shell établi au Dashboard — seule la zone de contenu change.</p>
+  </section>
+
+  <!-- ============ MENU ============ -->
+  <h3 class="sub" id="menu">Menu — liste des plats</h3>
+  <div class="frame"><div class="frame-scroll">
+    <div class="app-shell" style="position:relative">
+      <aside class="sidebar">
+        <div class="sb-brand"><svg class="icon" width="20" height="20" style="color:var(--accent)"><use href="#i-mark"/></svg><b>QuickTable</b></div>
+        <div><div class="sb-group-title">Vue d'ensemble</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-grid"/></svg>Dashboard</button></div>
+        <div><div class="sb-group-title">Opérations</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-table"/></svg>Salles &amp; tables</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-receipt"/></svg>Commandes</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-calendar"/></svg>Réservations</button></div>
+        <div><div class="sb-group-title">Catalogue</div><button type="button" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16"><use href="#i-book"/></svg>Menu</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-box"/></svg>Stock</button></div>
+        <div><div class="sb-group-title">Équipe &amp; clients</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-users"/></svg>Employés</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-users"/></svg>Clients</button></div>
+        <div><div class="sb-group-title">Pilotage</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-chart"/></svg>Statistiques</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-card"/></svg>Abonnement</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-log"/></svg>Journal d'audit</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-gear"/></svg>Paramètres</button></div>
+        <div class="sb-foot"><div class="avatar">AK</div><div><strong>Awa Kouassi</strong><span>Owner</span></div></div>
+      </aside>
+
+      <div class="shell-main">
+        <div class="shell-topbar"><div class="crumbs"><b>Menu</b></div><div style="display:flex;gap:var(--space-4);align-items:center"><svg class="icon" width="17" height="17"><use href="#i-search"/></svg><div class="icon-btn"><svg class="icon" width="17" height="17"><use href="#i-bell"/></svg></div><div class="avatar">AK</div></div></div>
+
+        <div class="page-body">
+          <div class="page-head">
+            <div><h1>Menu</h1><div class="sub">14 plats · 3 catégories</div></div>
+            <button class="btn btn-primary"><svg class="icon" width="14" height="14"><use href="#i-plus"/></svg>Nouveau plat</button>
+          </div>
+          <div class="chip-tabs">
+            <div class="chip-tab active">Tous <span class="cnt">14</span></div>
+            <div class="chip-tab">Plats <span class="cnt">7</span></div>
+            <div class="chip-tab">Boissons <span class="cnt">5</span></div>
+            <div class="chip-tab">Desserts <span class="cnt">2</span></div>
+          </div>
+          <div class="card">
+            <table class="data">
+              <thead><tr><th>Plat</th><th>Catégorie</th><th>Prix</th><th>Disponibilité</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><div class="name-cell"><div class="dish-thumb-sm" style="background:linear-gradient(135deg,#c2410c,#a6720a)"></div><div><strong>Poulet Yassa</strong><span>Sans allergène signalé</span></div></div></td><td>Plats</td><td class="num">3 500 XOF</td><td><button class="switch on"></button></td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-trash"/></svg></div></div></td></tr>
+                <tr><td><div class="name-cell"><div class="dish-thumb-sm" style="background:linear-gradient(135deg,#3b6e8f,#2b6e4c)"></div><div><strong>Attiéké Poisson</strong><span>Poisson</span></div></div></td><td>Plats</td><td class="num">3 000 XOF</td><td><button class="switch on"></button></td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-trash"/></svg></div></div></td></tr>
+                <tr><td><div class="name-cell"><div class="dish-thumb-sm" style="background:linear-gradient(135deg,#a6720a,#b42318)"></div><div><strong>Riz au Gras</strong><span>Sans allergène signalé</span></div></div></td><td>Plats</td><td class="num">2 500 XOF</td><td><button class="switch on"></button></td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-trash"/></svg></div></div></td></tr>
+                <tr><td><div class="name-cell"><div class="dish-thumb-sm" style="background:linear-gradient(135deg,#2b6e4c,#3b6e8f)"></div><div><strong>Poisson Braisé</strong><span>Poisson</span></div></div></td><td>Plats</td><td class="num">4 000 XOF</td><td><button class="switch off-alert"></button></td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-trash"/></svg></div></div></td></tr>
+                <tr><td><div class="name-cell"><div class="dish-thumb-sm" style="background:linear-gradient(135deg,#a6720a,#3b6e8f)"></div><div><strong>Jus de Bissap</strong><span>Boissons</span></div></div></td><td>Boissons</td><td class="num">1 000 XOF</td><td><button class="switch on"></button></td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-trash"/></svg></div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="font-size:11.5px;color:var(--text-3);margin-top:var(--space-3)">Le bouton rouge de « Poisson Braisé » signale une désactivation liée à une rupture de stock (doc 20 §20.4 <code>StockLevelLow</code>) — pas une simple préférence manuelle.</p>
+        </div>
+      </div>
+
+      <!-- DRAWER: nouveau plat -->
+      <div class="drawer-overlay">
+        <div class="drawer">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-5)"><h3 style="margin:0">Nouveau plat</h3><div class="icon-btn"><svg class="icon" width="16" height="16"><use href="#i-close"/></svg></div></div>
+          <div class="field"><label>Nom du plat</label><input class="input" placeholder="Ex. Poisson Braisé"></div>
+          <div class="row2">
+            <div class="field" style="flex:1"><label>Catégorie</label><input class="input" value="Plats"></div>
+            <div class="field" style="flex:1"><label>Prix (XOF)</label><input class="input tabular" placeholder="4 000"></div>
+          </div>
+          <div class="field"><label>Description</label><input class="input" placeholder="Bar entier grillé, sauce pili-pili"></div>
+          <div class="field"><label>Photo</label><div class="dropzone">Glissez une image ou cliquez pour parcourir<br>JPG, PNG — 5 Mo max</div></div>
+          <div class="field"><label>Allergènes</label><div class="chip-select"><span class="active">Poisson</span><span>Arachide</span><span>Gluten</span><span>Lactose</span></div></div>
+          <div class="field" style="flex-direction:row;align-items:center;justify-content:space-between"><label style="margin:0">Disponible immédiatement</label><button class="switch on"></button></div>
+          <div class="drawer-actions"><button class="btn btn-secondary">Annuler</button><button class="btn btn-primary">Créer le plat</button></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ TABLES ============ -->
+  <h3 class="sub" id="tables">Salles &amp; tables — plan visuel</h3>
+  <div class="frame"><div class="frame-scroll">
+    <div class="app-shell" style="position:relative">
+      <aside class="sidebar">
+        <div class="sb-brand"><svg class="icon" width="20" height="20" style="color:var(--accent)"><use href="#i-mark"/></svg><b>QuickTable</b></div>
+        <div><div class="sb-group-title">Vue d'ensemble</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-grid"/></svg>Dashboard</button></div>
+        <div><div class="sb-group-title">Opérations</div><button type="button" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16"><use href="#i-table"/></svg>Salles &amp; tables</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-receipt"/></svg>Commandes</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-calendar"/></svg>Réservations</button></div>
+        <div><div class="sb-group-title">Catalogue</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-book"/></svg>Menu</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-box"/></svg>Stock</button></div>
+        <div><div class="sb-group-title">Équipe &amp; clients</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-users"/></svg>Employés</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-users"/></svg>Clients</button></div>
+        <div><div class="sb-group-title">Pilotage</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-chart"/></svg>Statistiques</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-card"/></svg>Abonnement</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-log"/></svg>Journal d'audit</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-gear"/></svg>Paramètres</button></div>
+        <div class="sb-foot"><div class="avatar">AK</div><div><strong>Awa Kouassi</strong><span>Owner</span></div></div>
+      </aside>
+
+      <div class="shell-main">
+        <div class="shell-topbar"><div class="crumbs"><b>Salles &amp; tables</b></div><div style="display:flex;gap:var(--space-4);align-items:center"><div class="icon-btn"><svg class="icon" width="17" height="17"><use href="#i-bell"/></svg></div><div class="avatar">AK</div></div></div>
+
+        <div class="page-body">
+          <div class="page-head">
+            <div><h1>Salles &amp; tables</h1><div class="sub">16 tables · 3 salles</div></div>
+            <div style="display:flex;gap:8px"><button class="btn btn-secondary"><svg class="icon" width="14" height="14"><use href="#i-plus"/></svg>Nouvelle salle</button><button class="btn btn-primary"><svg class="icon" width="14" height="14"><use href="#i-plus"/></svg>Nouvelle table</button></div>
+          </div>
+          <div class="chip-tabs"><div class="chip-tab active">Terrasse</div><div class="chip-tab">Salle B</div><div class="chip-tab">Bar</div></div>
+          <div class="floor-grid">
+            <div class="ftable f-occupied selected"><span class="fno">T-01</span><span class="fcap">4 pers.</span></div>
+            <div class="ftable f-free"><span class="fno">T-02</span><span class="fcap">2 pers.</span></div>
+            <div class="ftable f-reserved"><span class="fno">T-03</span><span class="fcap">6 pers.</span></div>
+            <div class="ftable f-free"><span class="fno">T-04</span><span class="fcap">4 pers.</span></div>
+            <div class="ftable f-cleaning"><span class="fno">T-05</span><span class="fcap">2 pers.</span></div>
+            <div class="ftable f-oos"><span class="fno">T-06</span><span class="fcap">4 pers.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DRAWER: détail table + QR -->
+      <div class="drawer-overlay">
+        <div class="drawer">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-5)"><h3 style="margin:0">Table T-01</h3><div class="icon-btn"><svg class="icon" width="16" height="16"><use href="#i-close"/></svg></div></div>
+          <div class="row2">
+            <div class="field" style="flex:1"><label>Numéro</label><input class="input" value="T-01"></div>
+            <div class="field" style="flex:1"><label>Capacité</label><input class="input" value="4"></div>
+          </div>
+          <div class="field"><label>Salle</label><input class="input" value="Terrasse"></div>
+          <div class="field"><label>Statut</label><div class="chip-select"><span class="active" style="background:var(--ember-soft);color:var(--ember-soft-ink)">Occupée</span><span>Libre</span><span>Réservée</span><span>Nettoyage</span><span>Hors service</span></div></div>
+          <div class="field"><label>QR Code de la table</label>
+            <div class="qr-preview"></div>
+            <div class="row2"><button class="btn btn-secondary" style="flex:1"><svg class="icon" width="14" height="14"><use href="#i-refresh"/></svg>Régénérer</button><button class="btn btn-secondary" style="flex:1">Télécharger</button></div>
+          </div>
+          <div class="drawer-actions"><button class="btn btn-secondary">Supprimer</button><button class="btn btn-primary">Enregistrer</button></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ STATES ============ -->
+  <h3 class="sub">États</h3>
+  <div class="state-row">
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--basil)"></span>Menu vide (nouveau restaurant)</div>
+      <div style="text-align:center;padding:var(--space-3) 0">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);color:var(--text-3);display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg class="icon" width="16" height="16"><use href="#i-book"/></svg></div>
+        <p style="font-size:12.5px;color:var(--text-2)">Aucun plat pour l'instant. Ajoutez votre premier plat pour ouvrir le service.</p>
+        <button class="btn btn-primary" style="margin-top:var(--space-3)">Ajouter un plat</button>
+      </div>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Limite du plan atteinte</div>
+      <div style="display:flex;gap:8px;align-items:flex-start;background:var(--paprika-soft);color:var(--paprika-soft-ink);padding:10px 12px;border-radius:var(--radius-sm);font-size:12.5px">
+        <div><strong>Limite de tables atteinte.</strong> Le plan Starter autorise 20 tables maximum. Passez au plan Business pour continuer.</div>
+      </div>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--text-3)"></span>Chargement</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        <div style="height:64px;border-radius:10px;background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite"></div>
+        <div style="height:64px;border-radius:10px;background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite"></div>
+        <div style="height:64px;border-radius:10px;background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite"></div>
+      </div>
+    </div>
+  </div>
+  <style>@keyframes shimmer { 0% { background-position:100% 0; } 100% { background-position:0 0; } }</style>
+</main>

@@ -1,0 +1,493 @@
+<title>QuickTable — Écran : Dashboard</title>
+<style>
+  /* ====== TOKENS (identiques au Design System v1) ====== */
+  :root {
+    --ink-900:#1c1712; --ink-800:#241f1a; --ink-700:#362f27; --ink-600:#4f463a; --ink-500:#6e6252;
+    --ink-400:#948572; --ink-300:#b9ac98; --ink-200:#d6ccbe; --ink-100:#e8e1d7; --ink-50:#f3eee7; --ink-0:#fbf8f3;
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16);
+    --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-full:999px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px; --space-9:48px;
+    --dur-fast:120ms; --dur-base:180ms; --ease:cubic-bezier(.2,.8,.2,1);
+    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+      --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+      --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+      --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+      --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+      --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+      --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+      --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+      --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+      --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  }
+  :root[data-theme="dark"] { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+    --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+    --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+    --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+    --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+    --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+    --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+    --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+    --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  :root[data-theme="light"] { --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16); color-scheme:light; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--surface-2); color:var(--text-1); font-family:var(--font-ui); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4,p { margin:0; } h1,h2,h3,h4 { text-wrap:balance; font-weight:700; letter-spacing:-.01em; }
+  :focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; border-radius:var(--radius-xs); }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+  .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .icon { stroke:currentColor; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  a { color: inherit; text-decoration:none; }
+
+  .topbar { position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--border); padding: var(--space-4) var(--space-7); display:flex; align-items:center; justify-content:space-between; }
+  .crumbs { font-size:13px; color:var(--text-3); display:flex; align-items:center; gap:6px; }
+  .crumbs b { color:var(--text-1); font-weight:600; }
+  main.page { max-width: 1280px; margin:0 auto; padding: var(--space-8) var(--space-7) var(--space-9); }
+  .eyebrow { display:inline-flex; align-items:center; gap:var(--space-2); font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:var(--space-3); }
+  .eyebrow::before { content:""; width:14px; height:1.5px; background:var(--accent); display:block; }
+  h2.title { font-size:1.6rem; margin-bottom: var(--space-2); }
+  .lede { max-width: 66ch; color: var(--text-2); font-size:14.5px; margin-bottom: var(--space-7); }
+  h3.sub { font-size:1rem; font-weight:600; margin: var(--space-8) 0 var(--space-4); }
+
+  /* ---------- gallery / frames ---------- */
+  .gallery { display:flex; gap: var(--space-6); overflow-x:auto; padding: var(--space-2) var(--space-1) var(--space-4); }
+  .frame-col { flex: 0 0 auto; display:flex; flex-direction:column; gap: var(--space-3); }
+  .frame-label { display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--text-3); }
+  .frame-label b { color: var(--text-2); font-weight:600; }
+  .frame { container-type: inline-size; container-name: app; border-radius: var(--radius-lg); overflow:hidden; border:1px solid var(--border); box-shadow: var(--shadow-3); background: var(--bg); height: 700px; }
+  .frame.desktop { width: 1180px; } .frame.tablet { width: 760px; }
+  .frame-scroll { height:100%; overflow:auto; }
+
+  /* ================= APP SHELL ================= */
+  .app-shell { display:flex; min-height:100%; }
+  .sidebar { width: 220px; flex-shrink:0; background: var(--surface-1); border-right:1px solid var(--border); padding: var(--space-5) var(--space-4); display:flex; flex-direction:column; gap: var(--space-6); }
+  .sb-brand { display:flex; align-items:center; gap:8px; padding: 0 var(--space-1) var(--space-2); }
+  .sb-brand b { font-size:14px; }
+  .sb-group-title { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--text-3); margin: 0 0 4px var(--space-2); }
+  .nav-item { appearance:none; border:none; background:none; font-family:inherit; text-align:left; width:100%; display:flex; align-items:center; gap:10px; font-size:13.3px; padding: 8px var(--space-2); border-radius: var(--radius-sm); color: var(--text-2); cursor:pointer; transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease); white-space:nowrap; overflow:hidden; }
+  .nav-item:hover { background: var(--surface-2); color: var(--text-1); }
+  .nav-item.active { background: var(--ember-soft); color: var(--ember-soft-ink); font-weight:600; }
+  .nav-item .label { overflow:hidden; text-overflow:ellipsis; }
+  .sb-foot { margin-top:auto; display:flex; align-items:center; gap:10px; padding: var(--space-3); background:var(--surface-2); border-radius:var(--radius-md); }
+  .avatar { width:32px; height:32px; border-radius:50%; background:var(--ember-soft); color:var(--ember-soft-ink); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+  .sb-foot strong { display:block; font-size:12.5px; } .sb-foot span { font-size:11px; color:var(--text-3); }
+
+  .shell-main { flex:1; min-width:0; }
+  .shell-topbar { display:flex; align-items:center; justify-content:space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-bottom:1px solid var(--border); background: var(--bg); }
+  .shell-topbar .crumbs { font-size:13px; }
+  .top-actions { display:flex; align-items:center; gap: var(--space-5); }
+  .live-pill { display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; color: var(--basil); background: var(--basil-soft); padding: 4px 10px 4px 8px; border-radius: var(--radius-full); }
+  .live-dot { width:6px; height:6px; border-radius:50%; background: var(--basil); animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+  .icon-btn { position:relative; width:32px; height:32px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--text-2); cursor:pointer; }
+  .icon-btn:hover { background: var(--surface-2); }
+  .icon-btn .badge-dot { position:absolute; top:5px; right:6px; width:7px; height:7px; border-radius:50%; background:var(--paprika); border:1.5px solid var(--bg); }
+  .locale-chip { font-size:12px; font-weight:600; color:var(--text-2); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:4px 8px; }
+
+  .page-body { padding: var(--space-6); }
+  .page-head { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom: var(--space-6); gap: var(--space-4); flex-wrap:wrap; }
+  .page-head h1 { font-size:1.5rem; margin-bottom:4px; }
+  .page-head .sub { font-size:13px; color:var(--text-2); }
+  .tabs { display:flex; gap: var(--space-5); border-bottom:1px solid var(--border); }
+  .tab { padding: 8px 2px; font-size:13px; font-weight:600; color:var(--text-3); border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; }
+  .tab.active { color:var(--text-1); border-color:var(--accent); }
+
+  /* ---------- KPI row ---------- */
+  .kpi-grid { display:grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+  .card { background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-1); }
+  .kpi { padding: var(--space-5); }
+  .kpi .kpi-label { font-size:12px; color:var(--text-3); display:flex; justify-content:space-between; align-items:center; }
+  .kpi .kpi-value { font-family: var(--font-mono); font-size:1.55rem; font-weight:700; margin-top:6px; }
+  .kpi .kpi-delta { font-size:11.5px; font-weight:600; margin-top:2px; }
+  .kpi .kpi-delta.up { color: var(--basil); } .kpi .kpi-delta.down { color: var(--paprika); }
+  .spark { display:flex; align-items:flex-end; gap:3px; height:26px; margin-top: var(--space-3); }
+  .spark i { display:block; width:6px; background: var(--accent); opacity:.28; border-radius:1px; }
+  .spark i:last-child { opacity:1; }
+
+  /* ---------- main grid ---------- */
+  .main-grid { display:grid; grid-template-columns: 1.55fr 1fr; gap: var(--space-5); align-items:start; }
+  .panel-title { display:flex; align-items:center; justify-content:space-between; padding: var(--space-5) var(--space-5) 0; margin-bottom: var(--space-3); }
+  .panel-title h3 { font-size:14.5px; } .panel-title a { font-size:12.5px; color:var(--accent); font-weight:600; }
+
+  /* chart */
+  .chart-wrap { padding: 0 var(--space-5) var(--space-5); }
+  .chart-value { font-family:var(--font-mono); font-size:1.7rem; font-weight:700; padding: 0 var(--space-5); }
+  .chart-value span { display:block; font-family:var(--font-ui); font-size:12px; font-weight:400; color:var(--text-3); margin-bottom:2px; }
+  svg.chart { width:100%; height:auto; overflow: visible; }
+  .chart-grid line { stroke: var(--border); stroke-width:1; }
+  .chart-area { fill: url(#areaFill); }
+  .chart-line { fill:none; stroke: var(--accent); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .chart-end { fill: var(--accent); stroke: var(--surface-1); stroke-width:2; }
+  .chart-end-label { font-family: var(--font-mono); font-size:11px; fill: var(--text-2); }
+
+  /* ranked lists */
+  .rank-list { display:flex; flex-direction:column; gap: var(--space-3); padding: 0 var(--space-5) var(--space-5); }
+  .rank-row { display:flex; align-items:center; gap: var(--space-3); font-size:13px; }
+  .rank-row .n { font-family:var(--font-mono); color:var(--text-3); width:16px; }
+  .rank-row .name { flex:1; }
+  .rank-row .bar-track { flex:1.4; height:6px; background: var(--surface-2); border-radius:3px; overflow:hidden; }
+  .rank-row .bar-fill { height:100%; background: var(--accent); border-radius:3px; }
+  .rank-row .val { font-family:var(--font-mono); font-size:12.5px; color:var(--text-2); width:64px; text-align:right; }
+
+  /* activity feed */
+  .feed { display:flex; flex-direction:column; }
+  .feed-item { display:flex; gap: var(--space-3); padding: var(--space-3) var(--space-5); border-top:1px solid var(--border); }
+  .feed-item:first-child { border-top:none; }
+  .feed-ic { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .feed-item p { font-size:13px; } .feed-item time { font-size:11.5px; color:var(--text-3); }
+
+  /* stock alerts */
+  .alert-row { display:flex; justify-content:space-between; align-items:center; padding: var(--space-3) var(--space-5); border-top:1px solid var(--border); font-size:13px; }
+  .alert-row:first-child { border-top:none; }
+  .alert-row .qty { font-family:var(--font-mono); font-size:12px; }
+
+  /* floor status */
+  .floor-row { display:flex; height:10px; border-radius:var(--radius-full); overflow:hidden; margin: var(--space-1) var(--space-5) var(--space-4); }
+  .floor-legend { display:flex; flex-wrap:wrap; gap: var(--space-3) var(--space-4); padding: 0 var(--space-5) var(--space-5); font-size:12px; }
+  .floor-legend span { display:flex; align-items:center; gap:6px; color: var(--text-2); }
+  .floor-legend .dot { width:7px; height:7px; border-radius:50%; }
+
+  /* ---------- collapse sidebar to icon rail under 900px container width ---------- */
+  @container app (max-width: 900px) {
+    .sidebar { width: 68px; align-items:center; }
+    .sidebar .sb-group-title, .sidebar .label, .sb-foot strong, .sb-foot span, .sb-brand b { display:none; }
+    .sb-brand { justify-content:center; }
+    .nav-item { justify-content:center; padding: 10px; }
+    .sb-foot { justify-content:center; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- state chips (loading / empty) ---------- */
+  .state-row { display:flex; flex-wrap:wrap; gap: var(--space-5); }
+  .state-chip { width: 320px; background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-1); }
+  .chip-label { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--text-3); margin-bottom: var(--space-4); display:flex; align-items:center; gap:6px; }
+  .dot-lg { width:7px; height:7px; border-radius:50%; }
+  .skel { background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%); background-size:400% 100%; animation: shimmer 1.4s ease infinite; border-radius: var(--radius-sm); }
+  @keyframes shimmer { 0% { background-position:100% 0; } 100% { background-position:0 0; } }
+  .state-block { text-align:center; padding: var(--space-7) var(--space-5); }
+  .state-block .ic-wrap { width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto var(--space-3); background:var(--surface-2); color:var(--text-3); }
+  .state-block h4 { font-size:14px; margin-bottom:4px; } .state-block p { font-size:12.5px; color:var(--text-2); }
+
+  @media (max-width: 720px) {
+    main.page { padding: var(--space-6) var(--space-4) var(--space-8); }
+    .topbar { padding: var(--space-3) var(--space-4); }
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M4 5.5v16"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="M3 8 12 3l9 5-9 5-9-5Z"/><path d="M3 8v9l9 5 9-5V8"/><path d="M12 13v9"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c1-3.5 3.5-5.5 6.5-5.5s5.5 2 6.5 5.5"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.7 14.7c2.3.4 4 2 4.8 4.8"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M11 20V4M18 20v-7"/><path d="M2 20h20"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3v2.4M12 18.6V21M21 12h-2.4M5.4 12H3M18 6l-1.7 1.7M7.7 16.3 6 18M18 18l-1.7-1.7M7.7 7.7 6 6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 10a6 6 0 1 1 12 0c0 4 1.5 5.5 1.5 5.5h-15S6 14 6 10Z"/><path d="M10 19a2 2 0 0 0 4 0"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M20 20l-4.8-4.8"/></symbol>
+  <symbol id="i-log" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4.2 2.4"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 21 20H3Z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3h5l1.5 4.5-2.5 2a13 13 0 0 0 6 6l2-2.5L22 15v5a2 2 0 0 1-2 2C10.5 22 2 13.5 2 4a2 2 0 0 1 2-2Z"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="crumbs">Écrans <svg class="icon" width="12" height="12"><use href="#i-search"/></svg> <b>Dashboard</b></div>
+</div>
+
+<main class="page">
+  <section>
+    <div class="eyebrow">Écrans · 02</div>
+    <h2 class="title">Dashboard</h2>
+    <p class="lede">Premier écran vu à chaque connexion&nbsp;: le résumé avant le détail. Quatre indicateurs du jour, la tendance du chiffre d'affaires, le classement plats/serveurs, et l'activité en direct du service — alimentée par les Domain Events (doc 20) via Socket.IO (doc 10). C'est ici que se construit l'App Shell (sidebar + barre supérieure) réutilisé par tous les écrans suivants du back-office.</p>
+  </section>
+
+  <div class="gallery">
+    <div class="frame-col">
+      <div class="frame-label"><b>Desktop</b><span>1440px cible · cadre 1180px</span></div>
+      <div class="frame desktop"><div class="frame-scroll">
+
+        <div class="app-shell">
+          <aside class="sidebar">
+            <div class="sb-brand"><svg class="icon" width="20" height="20" style="color:var(--accent)"><use href="#i-mark"/></svg><b>QuickTable</b></div>
+
+            <div>
+              <div class="sb-group-title">Vue d'ensemble</div>
+              <button type="button" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16"><use href="#i-grid"/></svg><span class="label">Dashboard</span></button>
+            </div>
+            <div>
+              <div class="sb-group-title">Opérations</div>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-table"/></svg><span class="label">Salles &amp; tables</span></button>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-receipt"/></svg><span class="label">Commandes</span></button>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-calendar"/></svg><span class="label">Réservations</span></button>
+            </div>
+            <div>
+              <div class="sb-group-title">Catalogue</div>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-book"/></svg><span class="label">Menu</span></button>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-box"/></svg><span class="label">Stock</span></button>
+            </div>
+            <div>
+              <div class="sb-group-title">Équipe &amp; clients</div>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-users"/></svg><span class="label">Employés</span></button>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-users"/></svg><span class="label">Clients</span></button>
+            </div>
+            <div>
+              <div class="sb-group-title">Pilotage</div>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-chart"/></svg><span class="label">Statistiques</span></button>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-card"/></svg><span class="label">Abonnement</span></button>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-log"/></svg><span class="label">Journal d'audit</span></button>
+              <button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-gear"/></svg><span class="label">Paramètres</span></button>
+            </div>
+
+            <div class="sb-foot">
+              <div class="avatar">AK</div>
+              <div><strong>Awa Kouassi</strong><span>Owner · Le Jardin d'Awa</span></div>
+            </div>
+          </aside>
+
+          <div class="shell-main">
+            <div class="shell-topbar">
+              <div class="crumbs"><b>Dashboard</b></div>
+              <div class="top-actions">
+                <div class="live-pill"><span class="live-dot"></span>Service en direct</div>
+                <span class="locale-chip">FR</span>
+                <div class="icon-btn"><svg class="icon" width="17" height="17"><use href="#i-search"/></svg></div>
+                <div class="icon-btn"><svg class="icon" width="17" height="17"><use href="#i-bell"/></svg><span class="badge-dot"></span></div>
+                <div class="avatar">AK</div>
+              </div>
+            </div>
+
+            <div class="page-body">
+              <div class="page-head">
+                <div><h1>Bonjour, Awa</h1><div class="sub">Samedi 13 juillet — service du soir en cours, 14 tables occupées</div></div>
+                <div class="tabs"><div class="tab active">Aujourd'hui</div><div class="tab">Cette semaine</div><div class="tab">Ce mois</div><div class="tab">Personnalisé</div></div>
+              </div>
+
+              <!-- KPI ROW -->
+              <div class="kpi-grid">
+                <div class="card kpi">
+                  <div class="kpi-label">Chiffre d'affaires</div>
+                  <div class="kpi-value tabular">412 300 XOF</div>
+                  <div class="kpi-delta up">↑ 12% vs hier</div>
+                  <div class="spark"><i style="height:35%"></i><i style="height:50%"></i><i style="height:30%"></i><i style="height:65%"></i><i style="height:45%"></i><i style="height:80%"></i><i style="height:100%"></i></div>
+                </div>
+                <div class="card kpi">
+                  <div class="kpi-label">Commandes servies</div>
+                  <div class="kpi-value tabular">47</div>
+                  <div class="kpi-delta up">↑ 6 vs hier</div>
+                  <div class="spark"><i style="height:40%"></i><i style="height:60%"></i><i style="height:50%"></i><i style="height:55%"></i><i style="height:70%"></i><i style="height:65%"></i><i style="height:100%"></i></div>
+                </div>
+                <div class="card kpi">
+                  <div class="kpi-label">Panier moyen</div>
+                  <div class="kpi-value tabular">8 772 XOF</div>
+                  <div class="kpi-delta up">↑ 4%</div>
+                  <div class="spark"><i style="height:60%"></i><i style="height:55%"></i><i style="height:65%"></i><i style="height:50%"></i><i style="height:70%"></i><i style="height:60%"></i><i style="height:80%"></i></div>
+                </div>
+                <div class="card kpi">
+                  <div class="kpi-label">Bénéfice estimé</div>
+                  <div class="kpi-value tabular">148 900 XOF</div>
+                  <div class="kpi-delta down">↓ 2% vs hier</div>
+                  <div class="spark"><i style="height:70%"></i><i style="height:60%"></i><i style="height:65%"></i><i style="height:50%"></i><i style="height:55%"></i><i style="height:45%"></i><i style="height:48%"></i></div>
+                </div>
+              </div>
+
+              <!-- MAIN GRID -->
+              <div class="main-grid">
+                <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+
+                  <div class="card">
+                    <div class="panel-title"><h3>Chiffre d'affaires — 14 derniers jours</h3><a href="#">Statistiques complètes →</a></div>
+                    <div class="chart-value"><span>Aujourd'hui</span>412 300&nbsp;XOF</div>
+                    <div class="chart-wrap">
+                      <svg class="chart" viewBox="0 0 600 180" preserveAspectRatio="none" role="img" aria-label="Évolution du chiffre d'affaires sur 14 jours">
+                        <defs>
+                          <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.22"/>
+                            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+                          </linearGradient>
+                        </defs>
+                        <g class="chart-grid"><line x1="10" y1="156" x2="590" y2="156"/><line x1="10" y1="96" x2="590" y2="96"/><line x1="10" y1="36" x2="590" y2="36"/></g>
+                        <path class="chart-area" d="M10,156 L55,140 L99,148 L144,113 L188,69 L233,31 L278,96 L322,142 L367,132 L411,140 L456,104 L501,55 L545,20 L590,30 L590,156 L10,156 Z"/>
+                        <polyline class="chart-line" points="10,156 55,140 99,148 144,113 188,69 233,31 278,96 322,142 367,132 411,140 456,104 501,55 545,20 590,30"/>
+                        <circle class="chart-end" cx="590" cy="30" r="4.5"/>
+                        <text class="chart-end-label" x="546" y="15" text-anchor="middle">412K</text>
+                      </svg>
+                    </div>
+                  </div>
+
+                  <div class="card">
+                    <div class="panel-title"><h3>Meilleurs plats — aujourd'hui</h3><a href="#">Voir le menu →</a></div>
+                    <div class="rank-list">
+                      <div class="rank-row"><span class="n">1</span><span class="name">Poulet Yassa</span><span class="bar-track"><span class="bar-fill" style="width:92%"></span></span><span class="val tabular">128 400</span></div>
+                      <div class="rank-row"><span class="n">2</span><span class="name">Attiéké Poisson</span><span class="bar-track"><span class="bar-fill" style="width:74%"></span></span><span class="val tabular">96 200</span></div>
+                      <div class="rank-row"><span class="n">3</span><span class="name">Riz au Gras</span><span class="bar-track"><span class="bar-fill" style="width:58%"></span></span><span class="val tabular">71 500</span></div>
+                      <div class="rank-row"><span class="n">4</span><span class="name">Jus de Bissap</span><span class="bar-track"><span class="bar-fill" style="width:35%"></span></span><span class="val tabular">42 000</span></div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:var(--space-5)">
+
+                  <div class="card">
+                    <div class="panel-title"><h3>État de la salle</h3><a href="#">Plan complet →</a></div>
+                    <div class="floor-row">
+                      <div style="width:38%;background:var(--basil)"></div>
+                      <div style="width:34%;background:var(--ember)"></div>
+                      <div style="width:14%;background:var(--steel)"></div>
+                      <div style="width:9%;background:var(--turmeric)"></div>
+                      <div style="width:5%;background:var(--paprika)"></div>
+                    </div>
+                    <div class="floor-legend">
+                      <span><i class="dot" style="background:var(--basil)"></i>8 libres</span>
+                      <span><i class="dot" style="background:var(--ember)"></i>7 occupées</span>
+                      <span><i class="dot" style="background:var(--steel)"></i>3 réservées</span>
+                      <span><i class="dot" style="background:var(--turmeric)"></i>2 nettoyage</span>
+                      <span><i class="dot" style="background:var(--paprika)"></i>1 hors service</span>
+                    </div>
+                  </div>
+
+                  <div class="card">
+                    <div class="panel-title"><h3>Alertes stock</h3><a href="#">Gérer le stock →</a></div>
+                    <div class="alert-row"><span>Citron vert</span><span class="qty tabular" style="color:var(--paprika)">2 unités</span></div>
+                    <div class="alert-row"><span>Filet de bar</span><span class="qty tabular" style="color:var(--turmeric)">6 unités</span></div>
+                    <div class="alert-row"><span>Gousses d'ail</span><span class="qty tabular" style="color:var(--turmeric)">9 unités</span></div>
+                  </div>
+
+                  <div class="card">
+                    <div class="panel-title"><h3>Activité en direct</h3></div>
+                    <div class="feed">
+                      <div class="feed-item"><div class="feed-ic" style="background:var(--basil-soft);color:var(--basil-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-card"/></svg></div><div><p>Paiement encaissé — Table 12, 18 500 XOF</p><time>il y a 2 min</time></div></div>
+                      <div class="feed-item"><div class="feed-ic" style="background:var(--ember-soft);color:var(--ember-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-receipt"/></svg></div><div><p>Nouvelle commande — Table 07</p><time>il y a 6 min</time></div></div>
+                      <div class="feed-item"><div class="feed-ic" style="background:var(--steel-soft);color:var(--steel-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-phone"/></svg></div><div><p>Appel serveur — Table 03</p><time>il y a 11 min</time></div></div>
+                      <div class="feed-item"><div class="feed-ic" style="background:var(--turmeric-soft);color:var(--turmeric-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-warn"/></svg></div><div><p>Stock bas — Citron vert (2 restants)</p><time>il y a 14 min</time></div></div>
+                      <div class="feed-item"><div class="feed-ic" style="background:var(--steel-soft);color:var(--steel-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-calendar"/></svg></div><div><p>Réservation confirmée — 6 pers., 20h30</p><time>il y a 22 min</time></div></div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div></div>
+    </div>
+
+    <div class="frame-col">
+      <div class="frame-label"><b>Tablette</b><span>834px cible · cadre 760px — sidebar réduite à une piste d'icônes</span></div>
+      <div class="frame tablet"><div class="frame-scroll">
+        <div class="app-shell">
+          <aside class="sidebar">
+            <div class="sb-brand"><svg class="icon" width="20" height="20" style="color:var(--accent)"><use href="#i-mark"/></svg></div>
+            <button type="button" class="nav-item active" aria-label="Dashboard" aria-current="page"><svg class="icon" width="17" height="17"><use href="#i-grid"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Salles &amp; tables"><svg class="icon" width="17" height="17"><use href="#i-table"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Commandes"><svg class="icon" width="17" height="17"><use href="#i-receipt"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Réservations"><svg class="icon" width="17" height="17"><use href="#i-calendar"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Menu"><svg class="icon" width="17" height="17"><use href="#i-book"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Stock"><svg class="icon" width="17" height="17"><use href="#i-box"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Employés"><svg class="icon" width="17" height="17"><use href="#i-users"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Clients"><svg class="icon" width="17" height="17"><use href="#i-users"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Statistiques"><svg class="icon" width="17" height="17"><use href="#i-chart"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Abonnement"><svg class="icon" width="17" height="17"><use href="#i-card"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Journal d'audit"><svg class="icon" width="17" height="17"><use href="#i-log"/></svg></button>
+            <button type="button" class="nav-item" aria-label="Paramètres"><svg class="icon" width="17" height="17"><use href="#i-gear"/></svg></button>
+            <div class="sb-foot"><div class="avatar">AK</div></div>
+          </aside>
+          <div class="shell-main">
+            <div class="shell-topbar">
+              <div class="crumbs"><b>Dashboard</b></div>
+              <div class="top-actions"><div class="live-pill"><span class="live-dot"></span>Direct</div><div class="icon-btn"><svg class="icon" width="17" height="17"><use href="#i-bell"/></svg><span class="badge-dot"></span></div></div>
+            </div>
+            <div class="page-body">
+              <div class="page-head"><div><h1>Bonjour, Awa</h1><div class="sub">14 tables occupées</div></div></div>
+              <div class="kpi-grid">
+                <div class="card kpi"><div class="kpi-label">Chiffre d'affaires</div><div class="kpi-value tabular">412 300 XOF</div><div class="kpi-delta up">↑ 12%</div></div>
+                <div class="card kpi"><div class="kpi-label">Commandes</div><div class="kpi-value tabular">47</div><div class="kpi-delta up">↑ 6</div></div>
+                <div class="card kpi"><div class="kpi-label">Panier moyen</div><div class="kpi-value tabular">8 772 XOF</div><div class="kpi-delta up">↑ 4%</div></div>
+                <div class="card kpi"><div class="kpi-label">Bénéfice</div><div class="kpi-value tabular">148 900 XOF</div><div class="kpi-delta down">↓ 2%</div></div>
+              </div>
+              <div class="main-grid">
+                <div class="card"><div class="panel-title"><h3>Chiffre d'affaires — 14 jours</h3></div>
+                  <div class="chart-wrap"><svg class="chart" viewBox="0 0 600 160" preserveAspectRatio="none">
+                    <g class="chart-grid"><line x1="10" y1="140" x2="590" y2="140"/><line x1="10" y1="80" x2="590" y2="80"/></g>
+                    <path class="chart-area" d="M10,140 L55,124 L99,132 L144,100 L188,60 L233,25 L278,84 L322,126 L367,116 L411,124 L456,92 L501,45 L545,15 L590,24 L590,140 L10,140 Z" fill="url(#areaFill)"/>
+                    <polyline class="chart-line" points="10,140 55,124 99,132 144,100 188,60 233,25 278,84 322,126 367,116 411,124 456,92 501,45 545,15 590,24"/>
+                  </svg></div>
+                </div>
+                <div class="card"><div class="panel-title"><h3>Activité</h3></div>
+                  <div class="feed">
+                    <div class="feed-item"><div class="feed-ic" style="background:var(--basil-soft);color:var(--basil-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-card"/></svg></div><div><p>Paiement — Table 12</p><time>2 min</time></div></div>
+                    <div class="feed-item"><div class="feed-ic" style="background:var(--ember-soft);color:var(--ember-soft-ink)"><svg class="icon" width="14" height="14"><use href="#i-receipt"/></svg></div><div><p>Commande — Table 07</p><time>6 min</time></div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <p class="lede" style="margin-top:var(--space-3)">Le back-office cible desktop et tablette (doc 36 §36.6) — il n'y a volontairement pas de version mobile de ce tableau de bord&nbsp;: un serveur ou un caissier en mobilité utilise les interfaces dédiées Serveur/Caisse (écrans à venir), pas le dashboard de pilotage.</p>
+
+  <!-- STATES -->
+  <h3 class="sub">États</h3>
+  <div class="state-row">
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--text-3)"></span>Chargement</div>
+      <div class="skel" style="height:14px;width:50%;margin-bottom:10px"></div>
+      <div class="skel" style="height:44px;margin-bottom:10px"></div>
+      <div class="skel" style="height:44px;margin-bottom:10px"></div>
+      <div class="skel" style="height:80px"></div>
+    </div>
+    <div class="state-chip">
+      <div class="state-block">
+        <div class="ic-wrap"><svg class="icon" width="18" height="18"><use href="#i-chart"/></svg></div>
+        <h4>Pas encore de données</h4>
+        <p>Ce restaurant vient d'être créé — les statistiques apparaîtront dès la première commande encaissée.</p>
+      </div>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Erreur de synchronisation</div>
+      <div class="state-block" style="padding-top:var(--space-3)">
+        <div class="ic-wrap" style="background:var(--paprika-soft);color:var(--paprika-soft-ink)"><svg class="icon" width="18" height="18"><use href="#i-warn"/></svg></div>
+        <h4>Connexion temps réel perdue</h4>
+        <p>Les chiffres affichés datent de 19h38. Nouvelle tentative automatique…</p>
+      </div>
+    </div>
+  </div>
+
+</main>

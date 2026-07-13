@@ -1,0 +1,359 @@
+<title>QuickTable — Écrans : Platform Admin</title>
+<style>
+  :root {
+    --ink-900:#1c1712; --ink-800:#241f1a; --ink-700:#362f27; --ink-600:#4f463a; --ink-500:#6e6252;
+    --ink-400:#948572; --ink-300:#b9ac98; --ink-200:#d6ccbe; --ink-100:#e8e1d7; --ink-50:#f3eee7; --ink-0:#fbf8f3;
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16);
+    --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-full:999px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px; --space-9:48px;
+    --dur-fast:120ms; --dur-base:180ms; --ease:cubic-bezier(.2,.8,.2,1);
+    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+      --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+      --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+      --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+      --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+      --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+      --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+      --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+      --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+      --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  }
+  :root[data-theme="dark"] { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+    --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+    --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+    --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+    --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+    --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+    --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+    --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+    --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  :root[data-theme="light"] { --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16); color-scheme:light; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--surface-2); color:var(--text-1); font-family:var(--font-ui); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4,p { margin:0; } h1,h2,h3,h4 { text-wrap:balance; font-weight:700; letter-spacing:-.01em; }
+  :focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; border-radius:var(--radius-xs); }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+  .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .icon { stroke:currentColor; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+  a { color: inherit; text-decoration:none; }
+
+  .topbar { position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--border); padding: var(--space-4) var(--space-7); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-3); }
+  .crumbs { font-size:13px; color:var(--text-3); display:flex; align-items:center; gap:6px; } .crumbs b { color:var(--text-1); font-weight:600; }
+  .topbar-tabs { display:flex; gap: var(--space-6); }
+  .topbar-tabs a { font-size:13px; font-weight:600; color:var(--text-3); padding: 4px 0; border-bottom:2px solid transparent; }
+  .topbar-tabs a.active, .topbar-tabs a:hover { color:var(--text-1); border-color:var(--accent); }
+
+  main.page { max-width: 1280px; margin:0 auto; padding: var(--space-8) var(--space-7) var(--space-9); }
+  .eyebrow { display:inline-flex; align-items:center; gap:var(--space-2); font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:var(--space-3); }
+  .eyebrow::before { content:""; width:14px; height:1.5px; background:var(--accent); display:block; }
+  h2.title { font-size:1.6rem; margin-bottom: var(--space-2); }
+  .lede { max-width: 70ch; color: var(--text-2); font-size:14.5px; margin-bottom: var(--space-6); }
+  h3.sub { font-size:1rem; font-weight:600; margin: var(--space-8) 0 var(--space-4); }
+  .decision-note { display:flex; gap:10px; background:var(--surface-1); border:1px solid var(--border); border-left:3px solid var(--steel); border-radius:var(--radius-sm); padding: var(--space-4); font-size:13px; color:var(--text-2); max-width:76ch; margin-bottom: var(--space-6); }
+  .decision-note b { color:var(--text-1); }
+
+  .frame-label { font-size:12px; color:var(--text-3); margin-bottom:var(--space-3); } .frame-label b { color: var(--text-2); font-weight:600; }
+  .frame { border-radius: 14px; overflow:hidden; border:1px solid var(--border); box-shadow: var(--shadow-3); background: var(--bg); height:700px; margin-bottom: var(--space-6); }
+  .frame-scroll { height:100%; overflow:auto; }
+
+  .app-shell { display:flex; min-height:100%; }
+  .sidebar { width: 220px; flex-shrink:0; background: var(--ink-900); border-right:1px solid var(--border); padding: var(--space-5) var(--space-4); display:flex; flex-direction:column; gap: var(--space-6); color: var(--ink-50); }
+  :root[data-theme="dark"] .sidebar, :root:not([data-theme="light"]) .sidebar { background:#0f0c09; }
+  .sb-brand { display:flex; align-items:center; gap:8px; padding: 0 var(--space-1) var(--space-2); } .sb-brand b { font-size:14px; color:#fff; }
+  .sb-brand .plat-tag { font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color: var(--steel); background: rgba(127,178,214,.15); padding:2px 7px; border-radius:999px; margin-left:4px; }
+  .sb-group-title { font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color: var(--ink-400); margin: 0 0 4px var(--space-2); }
+  .nav-item { appearance:none; border:none; background:none; font-family:inherit; text-align:left; width:100%; display:flex; align-items:center; gap:10px; font-size:13.3px; padding: 8px var(--space-2); border-radius: var(--radius-sm); color: var(--ink-200); cursor:pointer; white-space:nowrap; }
+  .nav-item:hover { background: rgba(255,255,255,.06); color:#fff; }
+  .nav-item.active { background: rgba(226,113,31,.18); color: #f3c39a; font-weight:600; }
+  .sb-foot { margin-top:auto; display:flex; align-items:center; gap:10px; padding: var(--space-3); background: rgba(255,255,255,.05); border-radius:var(--radius-md); }
+  .avatar { width:30px; height:30px; border-radius:50%; background:var(--ember-soft); color:var(--ember-soft-ink); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; flex-shrink:0; }
+  .sb-foot strong { display:block; font-size:12px; color:#fff; } .sb-foot span { font-size:10.5px; color: var(--ink-300); }
+  .shell-main { flex:1; min-width:0; display:flex; flex-direction:column; }
+  .shell-topbar { display:flex; align-items:center; justify-content:space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-bottom:1px solid var(--border); background: var(--bg); }
+  .icon-btn { position:relative; width:32px; height:32px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--text-2); cursor:pointer; }
+  .icon-btn:hover { background: var(--surface-2); }
+  .page-body { padding: var(--space-5) var(--space-6); flex:1; overflow-y:auto; }
+  .page-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom: var(--space-5); gap: var(--space-4); flex-wrap:wrap; }
+  .page-head h1 { font-size:1.4rem; margin-bottom:4px; } .page-head .sub { font-size:12.5px; color:var(--text-2); }
+
+  .btn { appearance:none; border:1px solid transparent; cursor:pointer; font-family:var(--font-ui); font-weight:600; font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:var(--radius-sm); padding:0 14px; height:36px; }
+  .btn-primary { background:var(--accent); color:var(--accent-ink); }
+  .btn-secondary { background:var(--surface-2); color:var(--text-1); border-color:var(--border-strong); }
+  .btn-danger { background:var(--paprika-soft); color:var(--paprika-soft-ink); }
+
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap: var(--space-4); margin-bottom: var(--space-6); }
+  .card { background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-1); }
+  .kpi { padding: var(--space-5); }
+  .kpi .kl { font-size:12px; color:var(--text-3); } .kpi .kv { font-family:var(--font-mono); font-size:1.5rem; font-weight:700; margin-top:6px; }
+  .kpi .kd { font-size:11.5px; font-weight:600; margin-top:2px; color:var(--basil); }
+
+  table.data { width:100%; border-collapse:collapse; font-size:13.3px; }
+  table.data th { text-align:left; font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--text-3); font-weight:600; padding: var(--space-3) var(--space-4); border-bottom:1px solid var(--border-strong); }
+  table.data td { padding: var(--space-3) var(--space-4); border-bottom:1px solid var(--border); vertical-align:middle; }
+  table.data tbody tr:hover { background: var(--surface-2); }
+  table.data td.num { font-family:var(--font-mono); }
+  .name-cell strong { font-size:13px; display:block; } .name-cell span { font-size:11px; color:var(--text-3); }
+  .row-actions { display:flex; gap:6px; opacity:0; transition:opacity var(--dur-fast) var(--ease); } tr:hover .row-actions { opacity:1; }
+  .badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 9px 3px 7px; border-radius:999px; }
+  .badge .dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+  .badge-basil { background:var(--basil-soft); color:var(--basil-soft-ink); }
+  .badge-turmeric { background:var(--turmeric-soft); color:var(--turmeric-soft-ink); }
+  .badge-paprika { background:var(--paprika-soft); color:var(--paprika-soft-ink); }
+  .badge-neutral { background:var(--surface-2); color:var(--text-2); }
+  .plan-pill { font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; background:var(--surface-2); color:var(--text-2); }
+  .country-tag { display:inline-flex; align-items:center; gap:7px; }
+  .country-tag .iso { font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.03em; background:var(--steel-soft); color:var(--steel-soft-ink); padding:2px 6px; border-radius:4px; }
+  .row-selected { background: var(--ember-soft) !important; box-shadow: inset 3px 0 0 var(--accent); }
+
+  .drawer-overlay { position:absolute; inset:0; background: rgba(20,15,10,.4); display:flex; justify-content:flex-end; }
+  .drawer { width: 400px; max-width:90%; background: var(--surface-1); box-shadow: var(--shadow-4); padding: var(--space-6); overflow-y:auto; }
+  .field { display:flex; flex-direction:column; gap:6px; margin-bottom: var(--space-4); }
+  .field label { font-size:12.5px; font-weight:600; color:var(--text-2); }
+  .input { font-family:var(--font-ui); font-size:13.5px; color:var(--text-1); background:var(--bg); border:1px solid var(--border-strong); border-radius:var(--radius-sm); padding:0 12px; height:38px; width:100%; }
+  .input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--ember-soft); }
+  .row2 { display:flex; gap: var(--space-3); }
+  .drawer-actions { display:flex; gap: var(--space-3); margin-top: var(--space-6); }
+  .drawer-actions .btn { flex:1; height:40px; }
+  .chip-select { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip-select span { font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:999px; background:var(--surface-2); border:1px solid var(--border-strong); color:var(--text-2); }
+  .chip-select span.active { background: var(--basil-soft); color:var(--basil-soft-ink); border-color:transparent; }
+  .section-divider { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--text-3); margin: var(--space-5) 0 var(--space-3); }
+
+  .state-row { display:flex; flex-wrap:wrap; gap: var(--space-5); }
+  .state-chip { width: 300px; background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-1); }
+  .chip-label { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--text-3); margin-bottom: var(--space-4); display:flex; align-items:center; gap:6px; }
+  .dot-lg { width:7px; height:7px; border-radius:50%; }
+
+  @media (max-width: 720px) { main.page { padding: var(--space-6) var(--space-4) var(--space-8); } .topbar { padding: var(--space-3) var(--space-4); } }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></symbol>
+  <symbol id="i-building" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.5 6 3.5 9s-1 6.5-3.5 9c-2.5-2.5-3.5-6-3.5-9s1-6.5 3.5-9Z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20V10M11 20V4M18 20v-7"/><path d="M2 20h20"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4.2 2.4"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 21 20H3Z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4l11-11-4-4L4 16Z"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="crumbs">Écrans <b>Platform Admin</b></div>
+  <div class="topbar-tabs"><a class="active" href="#restos">Restaurants</a><a href="#plans">Plans d'abonnement</a><a href="#pays">Pays de référence</a><a href="#global">Statistiques globales</a></div>
+</div>
+
+<main class="page">
+  <section>
+    <div class="eyebrow">Écrans · 12</div>
+    <h2 class="title">Platform Admin</h2>
+    <p class="lede">Back-office interne réservé au rôle <code>super_admin</code> (doc 08) — c'est ici que vous configurez tout ce que les restaurants voient ensuite dans leur propre écran Abonnement (doc 11).</p>
+    <div class="decision-note"><svg class="icon" width="16" height="16" style="flex-shrink:0;margin-top:1px;color:var(--steel)"><use href="#i-globe"/></svg><div><b>Choix visuel délibéré&nbsp;:</b> la sidebar reste sombre en permanence, quel que soit le thème choisi ailleurs — un signal constant que cet écran opère au niveau plateforme, jamais au niveau d'un restaurant, pour qu'un Super Admin ne confonde jamais son contexte (doc 06 §6.5).</div></div>
+  </section>
+
+  <!-- ============ RESTAURANTS ============ -->
+  <h3 class="sub" id="restos">Restaurants</h3>
+  <div class="frame"><div class="frame-scroll">
+    <div class="app-shell" style="position:relative">
+      <aside class="sidebar">
+        <div class="sb-brand"><svg class="icon" width="20" height="20" style="color:var(--ember)"><use href="#i-mark"/></svg><b>QuickTable</b><span class="plat-tag">Platform</span></div>
+        <div><div class="sb-group-title">Administration</div><button type="button" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16"><use href="#i-building"/></svg>Restaurants</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-card"/></svg>Plans d'abonnement</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-globe"/></svg>Pays de référence</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-chart"/></svg>Statistiques globales</button></div>
+        <div class="sb-foot"><div class="avatar">SA</div><div><strong>Support QuickTable</strong><span>Super Admin</span></div></div>
+      </aside>
+      <div class="shell-main">
+        <div class="shell-topbar"><div class="crumbs"><b>Restaurants</b></div></div>
+        <div class="page-body">
+          <div class="page-head"><div><h1>Restaurants</h1><div class="sub">4 tenants · 3 pays</div></div><button class="btn btn-primary"><svg class="icon" width="14" height="14"><use href="#i-plus"/></svg>Créer un restaurant</button></div>
+          <div class="card">
+            <table class="data">
+              <thead><tr><th>Restaurant</th><th>Pays</th><th>Plan</th><th>Statut</th><th>Créé le</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><div class="name-cell"><strong>Le Jardin d'Awa</strong><span>Cotonou</span></div></td><td><span class="country-tag"><span class="iso">BJ</span>Bénin</span></td><td><span class="plan-pill">Business</span></td><td><span class="badge badge-basil"><span class="dot"></span>Actif</span></td><td class="tabular">02/03/2026</td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div></div></td></tr>
+                <tr><td><div class="name-cell"><strong>Chez Iréné</strong><span>Porto-Novo</span></div></td><td><span class="country-tag"><span class="iso">BJ</span>Bénin</span></td><td><span class="plan-pill">Starter</span></td><td><span class="badge badge-steel" style="background:var(--steel-soft);color:var(--steel-soft-ink)"><span class="dot"></span>Essai</span></td><td class="tabular">28/06/2026</td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div></div></td></tr>
+                <tr><td><div class="name-cell"><strong>La Trattoria Milano</strong><span>Milan</span></div></td><td><span class="country-tag"><span class="iso">IT</span>Italie</span></td><td><span class="plan-pill">Premium</span></td><td><span class="badge badge-basil"><span class="dot"></span>Actif</span></td><td class="tabular">14/05/2026</td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div></div></td></tr>
+                <tr class="row-selected"><td><div class="name-cell"><strong>El Rincón</strong><span>Madrid</span></div></td><td><span class="country-tag"><span class="iso">ES</span>Espagne</span></td><td><span class="plan-pill">Starter</span></td><td><span class="badge badge-paprika"><span class="dot"></span>Suspendu</span></td><td class="tabular">09/04/2026</td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-overlay">
+        <div class="drawer">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-5)"><h3 style="margin:0">El Rincón</h3><div class="icon-btn"><svg class="icon" width="16" height="16"><use href="#i-close"/></svg></div></div>
+          <div style="display:flex;gap:8px;align-items:flex-start;background:var(--paprika-soft);color:var(--paprika-soft-ink);padding:10px 12px;border-radius:var(--radius-sm);font-size:12.5px;margin-bottom:var(--space-5)">
+            <svg class="icon" width="15" height="15" style="flex-shrink:0;margin-top:1px"><use href="#i-warn"/></svg>
+            <div><strong>Suspendu pour impayé.</strong> Prélèvement du 1er juillet échoué, délai de grâce expiré le 15 juillet.</div>
+          </div>
+          <div class="section-divider">Informations</div>
+          <div class="field"><label>Propriétaire</label><input class="input" value="Carlos Ruiz — carlos@elrincon.es" disabled></div>
+          <div class="row2"><div class="field" style="flex:1"><label>Pays</label><input class="input" value="Espagne" disabled></div><div class="field" style="flex:1"><label>Plan</label><input class="input" value="Starter" disabled></div></div>
+          <p style="font-size:11.5px;color:var(--text-3);margin-bottom:var(--space-5)">Accès en lecture seule aux données opérationnelles (doc 06 §6.5) — aucune modification directe des commandes, du menu ou des employés depuis cet écran.</p>
+          <div class="drawer-actions"><button class="btn btn-secondary">Réinitialiser le mot de passe owner</button></div>
+          <div class="drawer-actions"><button class="btn btn-primary">Réactiver le compte</button></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ PLANS ============ -->
+  <h3 class="sub" id="plans">Plans d'abonnement</h3>
+  <p class="lede" style="margin-bottom:var(--space-5)">Tout ce que le Product Owner a demandé de piloter depuis le dashboard (doc 35 §35.6) — prix de référence, période d'essai, limites, accès par fonctionnalité.</p>
+  <div class="frame"><div class="frame-scroll">
+    <div class="app-shell" style="position:relative">
+      <aside class="sidebar">
+        <div class="sb-brand"><svg class="icon" width="20" height="20" style="color:var(--ember)"><use href="#i-mark"/></svg><b>QuickTable</b><span class="plat-tag">Platform</span></div>
+        <div><div class="sb-group-title">Administration</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-building"/></svg>Restaurants</button><button type="button" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16"><use href="#i-card"/></svg>Plans d'abonnement</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-globe"/></svg>Pays de référence</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-chart"/></svg>Statistiques globales</button></div>
+        <div class="sb-foot"><div class="avatar">SA</div><div><strong>Support QuickTable</strong><span>Super Admin</span></div></div>
+      </aside>
+      <div class="shell-main">
+        <div class="shell-topbar"><div class="crumbs"><b>Plans d'abonnement</b></div></div>
+        <div class="page-body">
+          <div class="page-head"><div><h1>Plans d'abonnement</h1><div class="sub">Devise de référence : USD — conversion automatique par pays</div></div><button class="btn btn-primary"><svg class="icon" width="14" height="14"><use href="#i-plus"/></svg>Nouveau plan</button></div>
+          <div class="card">
+            <table class="data">
+              <thead><tr><th>Plan</th><th>Prix de base</th><th>Essai</th><th>Limites</th><th>Actif</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><strong>Starter</strong></td><td class="num">32 USD/mois</td><td class="num">14 jours</td><td>10 employés · 20 tables</td><td><span class="badge badge-basil"><span class="dot"></span>Oui</span></td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div></div></td></tr>
+                <tr><td><strong>Business</strong></td><td class="num">80 USD/mois</td><td class="num">14 jours</td><td>Illimité</td><td><span class="badge badge-basil"><span class="dot"></span>Oui</span></td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div></div></td></tr>
+                <tr><td><strong>Premium</strong></td><td class="num">150 USD/mois</td><td class="num">30 jours</td><td>Illimité + multi-sites</td><td><span class="badge badge-basil"><span class="dot"></span>Oui</span></td><td><div class="row-actions"><div class="icon-btn"><svg class="icon" width="15" height="15"><use href="#i-edit"/></svg></div></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="drawer-overlay">
+        <div class="drawer">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-5)"><h3 style="margin:0">Modifier — Business</h3><div class="icon-btn"><svg class="icon" width="16" height="16"><use href="#i-close"/></svg></div></div>
+          <div class="row2"><div class="field" style="flex:1"><label>Prix de base</label><input class="input tabular" value="80"></div><div class="field" style="flex:1"><label>Devise de référence</label><input class="input" value="USD"></div></div>
+          <div class="field"><label>Période d'essai (jours)</label><input class="input tabular" value="14"></div>
+          <div class="row2"><div class="field" style="flex:1"><label>Employés max.</label><input class="input" value="Illimité"></div><div class="field" style="flex:1"><label>Tables max.</label><input class="input" value="Illimité"></div></div>
+          <div class="field"><label>Fonctionnalités incluses</label>
+            <div class="chip-select"><span class="active">Statistiques avancées</span><span>Multi-sites</span><span>Accès API</span><span>Rôles personnalisés</span><span>Support prioritaire</span></div>
+          </div>
+          <p style="font-size:11.5px;color:var(--text-3);margin-bottom:var(--space-4)">Toute modification crée une nouvelle version du plan (doc 22 §22.5) — les abonnés actuels conservent les termes de leur souscription jusqu'à migration explicite.</p>
+          <div class="drawer-actions"><button class="btn btn-secondary">Annuler</button><button class="btn btn-primary">Publier la nouvelle version</button></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ PAYS ============ -->
+  <h3 class="sub" id="pays">Pays de référence</h3>
+  <div class="frame"><div class="frame-scroll">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sb-brand"><svg class="icon" width="20" height="20" style="color:var(--ember)"><use href="#i-mark"/></svg><b>QuickTable</b><span class="plat-tag">Platform</span></div>
+        <div><div class="sb-group-title">Administration</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-building"/></svg>Restaurants</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-card"/></svg>Plans d'abonnement</button><button type="button" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16"><use href="#i-globe"/></svg>Pays de référence</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-chart"/></svg>Statistiques globales</button></div>
+        <div class="sb-foot"><div class="avatar">SA</div><div><strong>Support QuickTable</strong><span>Super Admin</span></div></div>
+      </aside>
+      <div class="shell-main">
+        <div class="shell-topbar"><div class="crumbs"><b>Pays de référence</b></div></div>
+        <div class="page-body">
+          <div class="page-head"><div><h1>Pays de référence</h1><div class="sub">Dérivation automatique devise/langue/fuseau à l'inscription (doc 35 §35.3)</div></div><button class="btn btn-primary"><svg class="icon" width="14" height="14"><use href="#i-plus"/></svg>Ajouter un pays</button></div>
+          <div class="card">
+            <table class="data">
+              <thead><tr><th>Pays</th><th>Devise</th><th>Langue par défaut</th><th>Fuseau horaire</th></tr></thead>
+              <tbody>
+                <tr><td><span class="country-tag"><span class="iso">BJ</span>Bénin</span></td><td class="num">XOF</td><td>Français</td><td>Africa/Porto-Novo</td></tr>
+                <tr><td><span class="country-tag"><span class="iso">FR</span>France</span></td><td class="num">EUR</td><td>Français</td><td>Europe/Paris</td></tr>
+                <tr><td><span class="country-tag"><span class="iso">IT</span>Italie</span></td><td class="num">EUR</td><td>Italien</td><td>Europe/Rome</td></tr>
+                <tr><td><span class="country-tag"><span class="iso">ES</span>Espagne</span></td><td class="num">EUR</td><td>Espagnol</td><td>Europe/Madrid</td></tr>
+                <tr><td><span class="country-tag"><span class="iso">US</span>États-Unis</span></td><td class="num">USD</td><td>Anglais</td><td>America/New_York</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ STATS GLOBALES ============ -->
+  <h3 class="sub" id="global">Statistiques globales</h3>
+  <div class="frame"><div class="frame-scroll">
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="sb-brand"><svg class="icon" width="20" height="20" style="color:var(--ember)"><use href="#i-mark"/></svg><b>QuickTable</b><span class="plat-tag">Platform</span></div>
+        <div><div class="sb-group-title">Administration</div><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-building"/></svg>Restaurants</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-card"/></svg>Plans d'abonnement</button><button type="button" class="nav-item"><svg class="icon" width="16" height="16"><use href="#i-globe"/></svg>Pays de référence</button><button type="button" class="nav-item active" aria-current="page"><svg class="icon" width="16" height="16"><use href="#i-chart"/></svg>Statistiques globales</button></div>
+        <div class="sb-foot"><div class="avatar">SA</div><div><strong>Support QuickTable</strong><span>Super Admin</span></div></div>
+      </aside>
+      <div class="shell-main">
+        <div class="shell-topbar"><div class="crumbs"><b>Statistiques globales</b></div></div>
+        <div class="page-body">
+          <div class="page-head"><div><h1>Statistiques globales</h1><div class="sub">Cross-tenant — 4 restaurants actifs</div></div></div>
+          <div class="kpi-grid">
+            <div class="card kpi"><div class="kl">MRR</div><div class="kv tabular">262 USD</div><div class="kd">↑ 8% ce mois</div></div>
+            <div class="card kpi"><div class="kl">Restaurants actifs</div><div class="kv tabular">3</div><div class="kd">+1 ce mois</div></div>
+            <div class="card kpi"><div class="kl">En essai</div><div class="kv tabular">1</div><div class="kd" style="color:var(--text-3)">Chez Iréné</div></div>
+            <div class="card kpi"><div class="kl">Taux de churn</div><div class="kv tabular">0%</div><div class="kd" style="color:var(--text-3)">3 derniers mois</div></div>
+          </div>
+          <div class="card" style="padding:var(--space-5)">
+            <div style="font-size:14px;font-weight:600;margin-bottom:var(--space-4)">Répartition par pays</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span class="country-tag"><span class="iso">BJ</span>Bénin</span><span class="tabular">2 restaurants</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span class="country-tag"><span class="iso">IT</span>Italie</span><span class="tabular">1 restaurant</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:13px"><span class="country-tag"><span class="iso">ES</span>Espagne</span><span class="tabular">1 restaurant</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ STATES ============ -->
+  <h3 class="sub">États</h3>
+  <div class="state-row">
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--basil)"></span>Restaurant réactivé</div>
+      <div style="display:flex;gap:8px;align-items:center;background:var(--basil-soft);color:var(--basil-soft-ink);padding:10px 12px;border-radius:var(--radius-sm);font-size:12.5px">
+        <div><strong>El Rincón réactivé.</strong> L'accès est restauré immédiatement, un email de confirmation a été envoyé au propriétaire.</div>
+      </div>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Suppression de pays refusée</div>
+      <div style="display:flex;gap:8px;align-items:flex-start;background:var(--paprika-soft);color:var(--paprika-soft-ink);padding:10px 12px;border-radius:var(--radius-sm);font-size:12.5px">
+        <svg class="icon" width="15" height="15" style="flex-shrink:0;margin-top:1px"><use href="#i-warn"/></svg>
+        <div><strong>Impossible de supprimer « Bénin ».</strong> 2 restaurants actifs en dépendent.</div>
+      </div>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--text-3)"></span>Aucun résultat</div>
+      <div style="text-align:center;padding:var(--space-3) 0">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--surface-2);color:var(--text-3);display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg class="icon" width="16" height="16"><use href="#i-building"/></svg></div>
+        <p style="font-size:12.5px;color:var(--text-2)">Aucun restaurant ne correspond à « Kinshasa ».</p>
+      </div>
+    </div>
+  </div>
+</main>

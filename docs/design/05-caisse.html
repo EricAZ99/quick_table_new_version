@@ -1,0 +1,328 @@
+<title>QuickTable — Écran : Caisse</title>
+<style>
+  /* ====== TOKENS (identiques au Design System v1) ====== */
+  :root {
+    --ink-900:#1c1712; --ink-800:#241f1a; --ink-700:#362f27; --ink-600:#4f463a; --ink-500:#6e6252;
+    --ink-400:#948572; --ink-300:#b9ac98; --ink-200:#d6ccbe; --ink-100:#e8e1d7; --ink-50:#f3eee7; --ink-0:#fbf8f3;
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16);
+    --radius-xs:4px; --radius-sm:6px; --radius-md:10px; --radius-lg:16px; --radius-full:999px;
+    --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px; --space-6:24px; --space-7:32px; --space-8:40px; --space-9:48px;
+    --dur-fast:120ms; --dur-base:180ms; --ease:cubic-bezier(.2,.8,.2,1);
+    --font-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --font-mono:ui-monospace,"SF Mono","Cascadia Mono",Consolas,"Liberation Mono",monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+      --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+      --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+      --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+      --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+      --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+      --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+      --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+      --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+      --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  }
+  :root[data-theme="dark"] { --bg:#16120e; --surface-1:#201a15; --surface-2:#2a231c; --border:#3c3226; --border-strong:#4d4131;
+    --text-1:var(--ink-50); --text-2:var(--ink-200); --text-3:var(--ink-400);
+    --ember:#e2711f; --ember-ink:#1c1712; --ember-soft:#3a2213; --ember-soft-ink:#f3c39a;
+    --basil:#4f9c74; --basil-soft:#1c3327; --basil-soft-ink:#a9dcc0;
+    --turmeric:#d9a441; --turmeric-soft:#382c14; --turmeric-soft-ink:#f4d79a;
+    --paprika:#e5695c; --paprika-soft:#3a1c17; --paprika-soft-ink:#f3aba3;
+    --steel:#7fb2d6; --steel-soft:#1c2c35; --steel-soft-ink:#b7dcef;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#e2711f;
+    --shadow-1:0 1px 0 rgba(0,0,0,.5); --shadow-2:0 2px 0 rgba(0,0,0,.4),0 8px 20px rgba(0,0,0,.45);
+    --shadow-3:0 12px 28px rgba(0,0,0,.55); --shadow-4:0 24px 56px rgba(0,0,0,.65); color-scheme:dark; }
+  :root[data-theme="light"] { --bg:var(--ink-0); --surface-1:#ffffff; --surface-2:var(--ink-50); --border:var(--ink-200); --border-strong:var(--ink-300);
+    --text-1:var(--ink-900); --text-2:var(--ink-600); --text-3:var(--ink-400);
+    --ember:#c2410c; --ember-ink:#ffffff; --ember-soft:#f3e2d4; --ember-soft-ink:#8a3208;
+    --basil:#2b6e4c; --basil-soft:#dfeee4; --basil-soft-ink:#1e5138;
+    --turmeric:#a6720a; --turmeric-soft:#f3e6c8; --turmeric-soft-ink:#7a5406;
+    --paprika:#b42318; --paprika-soft:#f5dcda; --paprika-soft-ink:#8a1a11;
+    --steel:#3b6e8f; --steel-soft:#dde9ef; --steel-soft-ink:#2b5066;
+    --accent:var(--ember); --accent-ink:var(--ember-ink); --focus-ring:#c2410c;
+    --shadow-1:0 1px 1px rgba(28,23,18,.04),0 1px 2px rgba(28,23,18,.06);
+    --shadow-2:0 2px 4px rgba(28,23,18,.05),0 6px 12px rgba(28,23,18,.08);
+    --shadow-3:0 8px 16px rgba(28,23,18,.09),0 16px 32px rgba(28,23,18,.10);
+    --shadow-4:0 16px 32px rgba(28,23,18,.14),0 32px 64px rgba(28,23,18,.16); color-scheme:light; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--surface-2); color:var(--text-1); font-family:var(--font-ui); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3,h4,p { margin:0; } h1,h2,h3,h4 { text-wrap:balance; font-weight:700; letter-spacing:-.01em; }
+  :focus-visible { outline:2px solid var(--focus-ring); outline-offset:2px; border-radius:var(--radius-xs); }
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { animation-duration:.001ms !important; transition-duration:.001ms !important; } }
+  .tabular { font-variant-numeric: tabular-nums; font-family: var(--font-mono); }
+  .icon { stroke:currentColor; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+
+  .topbar { position:sticky; top:0; z-index:30; background:var(--bg); border-bottom:1px solid var(--border); padding: var(--space-4) var(--space-7); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:var(--space-3); }
+  .crumbs { font-size:13px; color:var(--text-3); display:flex; align-items:center; gap:6px; } .crumbs b { color:var(--text-1); font-weight:600; }
+  .topbar-tabs { display:flex; gap: var(--space-6); }
+  .topbar-tabs a { font-size:13px; font-weight:600; color:var(--text-3); text-decoration:none; padding: 4px 0; border-bottom:2px solid transparent; }
+  .topbar-tabs a.active, .topbar-tabs a:hover { color:var(--text-1); border-color:var(--accent); }
+
+  main.page { max-width: 1280px; margin:0 auto; padding: var(--space-8) var(--space-7) var(--space-9); }
+  .eyebrow { display:inline-flex; align-items:center; gap:var(--space-2); font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--accent); margin-bottom:var(--space-3); }
+  .eyebrow::before { content:""; width:14px; height:1.5px; background:var(--accent); display:block; }
+  h2.title { font-size:1.6rem; margin-bottom: var(--space-2); }
+  .lede { max-width: 70ch; color: var(--text-2); font-size:14.5px; margin-bottom: var(--space-6); }
+  h3.sub { font-size:1rem; font-weight:600; margin: var(--space-8) 0 var(--space-4); }
+
+  .gallery { display:flex; gap: var(--space-6); overflow-x:auto; padding: var(--space-2) var(--space-1) var(--space-4); align-items:flex-start; }
+  .frame-label { font-size:12px; color:var(--text-3); margin-bottom:var(--space-3); } .frame-label b { color: var(--text-2); font-weight:600; }
+  .frame { border-radius: 16px; overflow:hidden; border:1px solid var(--border); box-shadow: var(--shadow-3); background: var(--bg); flex-shrink:0; }
+  .frame.pos { width: 1060px; height: 680px; }
+  .frame-scroll { height:100%; overflow:auto; display:flex; flex-direction:column; }
+
+  /* ---------- caisse shell (nav minimale, pas de sidebar) ---------- */
+  .cs-topbar { display:flex; align-items:center; justify-content:space-between; padding: var(--space-4) var(--space-5); border-bottom:1px solid var(--border); background:var(--surface-1); }
+  .cs-tabs { display:flex; gap: var(--space-5); }
+  .cs-tab { font-size:13px; font-weight:600; color:var(--text-3); padding:5px 0; border-bottom:2px solid transparent; }
+  .cs-tab.active { color:var(--text-1); border-color:var(--accent); }
+  .cs-session { display:flex; align-items:center; gap: var(--space-4); }
+  .live-pill { display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:600; color: var(--basil); background: var(--basil-soft); padding: 4px 10px 4px 8px; border-radius: var(--radius-full); }
+  .live-dot { width:6px; height:6px; border-radius:50%; background: var(--basil); animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+  .avatar { width:30px; height:30px; border-radius:50%; background:var(--ember-soft); color:var(--ember-soft-ink); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; }
+
+  /* ---------- queue list ---------- */
+  .queue-list { padding: var(--space-5); display:flex; flex-direction:column; gap: var(--space-3); flex:1; }
+  .queue-row { display:flex; align-items:center; gap: var(--space-4); background:var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); cursor:pointer; transition: border-color var(--dur-fast) var(--ease); }
+  .queue-row:hover { border-color: var(--accent); }
+  .queue-row .qtable { width:52px; height:52px; border-radius: var(--radius-md); background: var(--surface-2); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:700; font-size:1.1rem; flex-shrink:0; }
+  .queue-row .qinfo { flex:1; } .queue-row .qinfo strong { display:block; font-size:14px; } .queue-row .qinfo span { font-size:12px; color:var(--text-3); }
+  .queue-row .qtotal { font-family:var(--font-mono); font-weight:700; font-size:1.05rem; }
+  .badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700; padding:3px 9px 3px 7px; border-radius:999px; white-space:nowrap; }
+  .badge .dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+  .badge-neutral { background:var(--surface-2); color:var(--text-2); }
+  .badge-turmeric { background:var(--turmeric-soft); color:var(--turmeric-soft-ink); }
+
+  /* ---------- encaissement layout ---------- */
+  .pay-screen { display:grid; grid-template-columns: 1.15fr .95fr; flex:1; min-height:0; }
+  .pay-left { padding: var(--space-5); overflow-y:auto; border-right:1px solid var(--border); }
+  .pay-right { padding: var(--space-5); display:flex; flex-direction:column; background:var(--surface-1); }
+  .pay-head { display:flex; align-items:center; gap: var(--space-3); margin-bottom: var(--space-5); }
+  .icon-btn { width:32px; height:32px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; color:var(--text-2); cursor:pointer; flex-shrink:0; }
+  .icon-btn:hover { background:var(--surface-2); }
+  .pay-head h1 { font-size:1.2rem; } .pay-head .sub { font-size:12px; color:var(--text-3); }
+
+  .order-item { display:flex; justify-content:space-between; padding: var(--space-2) 0; font-size:13.5px; border-bottom:1px solid var(--border); }
+  .order-item .oname { color: var(--text-1); } .order-item .oqty { color: var(--text-3); font-family:var(--font-mono); font-size:12.5px; margin-right:6px; }
+  .order-item .oprice { font-family: var(--font-mono); }
+  .order-sum-row { display:flex; justify-content:space-between; padding: var(--space-2) 0; font-size:13px; color:var(--text-2); }
+  .order-sum-row.total { font-size:1rem; font-weight:700; color:var(--text-1); padding-top:var(--space-3); border-top:1px solid var(--border-strong); margin-top:var(--space-2); }
+  .order-sum-row .v { font-family:var(--font-mono); }
+
+  .split-toggle { display:flex; background:var(--surface-2); border-radius:var(--radius-sm); padding:3px; margin: var(--space-5) 0; }
+  .split-toggle button { flex:1; border:none; background:transparent; font-size:12.5px; font-weight:600; color:var(--text-2); padding:8px; border-radius:calc(var(--radius-sm) - 2px); }
+  .split-toggle button.active { background:var(--surface-1); color:var(--text-1); box-shadow:var(--shadow-1); }
+
+  .split-panel { background:var(--surface-2); border-radius: var(--radius-md); padding: var(--space-4); }
+  .split-mode-row { display:flex; gap:8px; margin-bottom: var(--space-4); }
+  .chip { appearance:none; font-family:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:999px; background:var(--surface-1); border:1px solid var(--border-strong); color:var(--text-2); cursor:pointer; }
+  .chip.active { background: var(--ember-soft); color:var(--ember-soft-ink); border-color:transparent; }
+  .stepper-row { display:flex; align-items:center; justify-content:space-between; margin-bottom: var(--space-4); font-size:13px; }
+  .stepper { display:flex; align-items:center; gap:10px; }
+  .stepper button { width:26px; height:26px; border-radius:50%; border:1px solid var(--border-strong); background:var(--surface-1); font-weight:700; }
+  .stepper span { font-family:var(--font-mono); width:16px; text-align:center; }
+  .part-list { display:flex; flex-direction:column; gap:8px; }
+  .part-row { display:flex; align-items:center; justify-content:space-between; background:var(--surface-1); border-radius:var(--radius-sm); padding: var(--space-3); font-size:13px; }
+  .part-row .pval { font-family:var(--font-mono); font-weight:600; }
+
+  .total-block { text-align:center; padding: var(--space-6) 0; }
+  .total-block .tl { font-size:12.5px; color:var(--text-3); margin-bottom:6px; }
+  .total-block .tv { font-family:var(--font-mono); font-size:2.4rem; font-weight:700; }
+
+  .method-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom: var(--space-5); }
+  .method-btn { appearance:none; font-family:inherit; display:flex; flex-direction:column; align-items:center; gap:6px; padding: 14px 8px; border-radius: var(--radius-md); border:1.5px solid var(--border-strong); background:var(--bg); font-size:12.5px; font-weight:600; color:var(--text-2); cursor:pointer; }
+  .method-btn.active { border-color: var(--accent); background: var(--ember-soft); color:var(--ember-soft-ink); }
+
+  .tip-row { margin-bottom: var(--space-6); }
+  .tip-row .tl { font-size:12.5px; font-weight:600; color:var(--text-2); margin-bottom:8px; }
+  .tip-chips { display:flex; gap:8px; }
+  .tip-chip { appearance:none; font-family:inherit; background:var(--bg); flex:1; text-align:center; padding:9px 0; border-radius: var(--radius-sm); border:1.5px solid var(--border-strong); font-size:12.5px; font-weight:700; color:var(--text-2); cursor:pointer; }
+  .tip-chip.active { border-color:var(--accent); background:var(--ember-soft); color:var(--ember-soft-ink); }
+
+  .btn { appearance:none; border:1px solid transparent; cursor:pointer; font-family:var(--font-ui); font-weight:600; font-size:14px; display:inline-flex; align-items:center; justify-content:center; gap:6px; border-radius:var(--radius-sm); padding:0 16px; height:46px; width:100%; margin-top:auto; }
+  .btn-primary { background:var(--accent); color:var(--accent-ink); }
+  .btn-secondary { background:var(--surface-2); color:var(--text-1); border-color:var(--border-strong); height:38px; margin-top:0; }
+
+  /* ---------- confirmation / receipt ---------- */
+  .receipt-screen { display:flex; align-items:center; justify-content:center; flex:1; padding: var(--space-7); background:var(--surface-2); }
+  .receipt-card { width:100%; max-width:320px; background:var(--surface-1); border-radius:var(--radius-lg); box-shadow:var(--shadow-3); padding: var(--space-6); text-align:center; }
+  .receipt-card .ic-wrap { width:48px; height:48px; border-radius:50%; background:var(--basil-soft); color:var(--basil-soft-ink); display:flex; align-items:center; justify-content:center; margin:0 auto var(--space-4); }
+  .receipt-card h1 { font-size:1.2rem; margin-bottom:4px; }
+  .receipt-card .sub { font-size:13px; color:var(--text-2); margin-bottom: var(--space-5); }
+  .receipt-total { font-family:var(--font-mono); font-size:2rem; font-weight:700; margin-bottom:2px; }
+  .receipt-line { display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-2); padding: 6px 0; border-bottom:1px dashed var(--border-strong); text-align:left; }
+  .receipt-actions { display:flex; gap:8px; margin-top: var(--space-5); }
+
+  /* ---------- state chips ---------- */
+  .state-row { display:flex; flex-wrap:wrap; gap: var(--space-5); }
+  .state-chip { width: 300px; background: var(--surface-1); border:1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-5); box-shadow: var(--shadow-1); }
+  .chip-label { font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color: var(--text-3); margin-bottom: var(--space-4); display:flex; align-items:center; gap:6px; }
+  .dot-lg { width:7px; height:7px; border-radius:50%; }
+
+  @media (max-width: 720px) { main.page { padding: var(--space-6) var(--space-4) var(--space-8); } .topbar { padding: var(--space-3) var(--space-4); } }
+</style>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 5 8 12l7 7"/></symbol>
+  <symbol id="i-cash" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M7 15h4"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M6 3h5l1.5 4.5-2.5 2a13 13 0 0 0 6 6l2-2.5L22 15v5a2 2 0 0 1-2 2C10.5 22 2 13.5 2 4a2 2 0 0 1 2-2Z"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 21 8l-9 5-9-5Z"/><path d="M3 12l9 5 9-5M3 16l9 5 9-5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4 21 20H3Z"/><path d="M12 10v4"/><circle cx="12" cy="17" r=".4" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1.5"/><path d="M6 14h12v7H6z"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 4l16 8-16 8 3-8-3-8Z"/></symbol>
+</svg>
+
+<div class="topbar">
+  <div class="crumbs">Écrans <b>Caisse</b></div>
+  <div class="topbar-tabs">
+    <a class="active" href="#file">File d'attente</a>
+    <a href="#encaissement">Encaissement</a>
+    <a href="#split">Diviser l'addition</a>
+    <a href="#recu">Confirmation &amp; reçu</a>
+  </div>
+</div>
+
+<main class="page">
+  <section>
+    <div class="eyebrow">Écrans · 05</div>
+    <h2 class="title">Caisse</h2>
+    <p class="lede">Poste fixe, tablette ou desktop, paysage (doc 36 §36.6) — navigation minimale à deux entrées. Le montant total reste toujours isolé et dominant (doc 36 §36.4)&nbsp;: c'est la seule information qu'un caissier presse ne doit jamais chercher.</p>
+  </section>
+
+  <!-- ============ FILE D'ATTENTE ============ -->
+  <div id="file" class="frame-label"><b>File d'attente encaissement</b> — desktop/tablette · 1060px</div>
+  <div class="frame pos"><div class="frame-scroll">
+    <div class="cs-topbar">
+      <div class="cs-tabs"><div class="cs-tab active">File d'attente</div><div class="cs-tab">Historique du jour</div></div>
+      <div class="cs-session"><div class="live-pill"><span class="live-dot"></span>Service en direct</div><div class="avatar">ID</div></div>
+    </div>
+    <div class="queue-list">
+      <div class="queue-row"><div class="qtable">T-12</div><div class="qinfo"><strong>Salle B · Awa K.</strong><span>Servie il y a 4 min</span></div><span class="badge badge-neutral"><span class="dot"></span>Servi</span><div class="qtotal tabular">14 500 XOF</div></div>
+      <div class="queue-row"><div class="qtable">T-07</div><div class="qinfo"><strong>Salle B · Iréné D.</strong><span>Servie il y a 9 min</span></div><span class="badge badge-turmeric"><span class="dot"></span>Partiellement payée</span><div class="qtotal tabular">6 000&nbsp;/&nbsp;12 000</div></div>
+      <div class="queue-row"><div class="qtable">T-04</div><div class="qinfo"><strong>Terrasse · Awa K.</strong><span>Servie il y a 12 min</span></div><span class="badge badge-neutral"><span class="dot"></span>Servi</span><div class="qtotal tabular">4 000 XOF</div></div>
+    </div>
+  </div></div>
+
+  <!-- ============ ENCAISSEMENT — PAIEMENT UNIQUE ============ -->
+  <h3 class="sub" id="encaissement">Encaissement — paiement unique</h3>
+  <div class="frame pos"><div class="frame-scroll">
+    <div class="pay-screen">
+      <div class="pay-left">
+        <div class="pay-head"><div class="icon-btn"><svg class="icon" width="17" height="17"><use href="#i-back"/></svg></div><div><h1>Table 12</h1><div class="sub">Salle B · Servie il y a 4 min</div></div></div>
+        <div class="order-item"><span><span class="oqty">2×</span><span class="oname">Poulet Yassa</span></span><span class="oprice tabular">7 000</span></div>
+        <div class="order-item"><span><span class="oqty">1×</span><span class="oname">Attiéké Poisson</span></span><span class="oprice tabular">3 000</span></div>
+        <div class="order-item"><span><span class="oqty">3×</span><span class="oname">Jus de Bissap</span></span><span class="oprice tabular">3 000</span></div>
+        <div class="order-item" style="border-bottom:none"><span><span class="oqty">1×</span><span class="oname">Salade de Fruits</span></span><span class="oprice tabular">1 500</span></div>
+        <div class="order-sum-row"><span>Sous-total</span><span class="v tabular">14 500 XOF</span></div>
+        <div class="order-sum-row total"><span>Total à payer</span><span class="v tabular">14 500 XOF</span></div>
+
+        <div class="split-toggle"><button class="active">Paiement unique</button><button>Diviser l'addition</button></div>
+      </div>
+      <div class="pay-right">
+        <div class="total-block"><div class="tl">Montant encaissé</div><div class="tv tabular">14 500 XOF</div></div>
+        <div class="method-grid">
+          <button type="button" class="method-btn active" aria-pressed="true"><svg class="icon" width="20" height="20"><use href="#i-cash"/></svg>Espèces</button>
+          <button type="button" class="method-btn" aria-pressed="false"><svg class="icon" width="20" height="20"><use href="#i-card"/></svg>Carte</button>
+          <button type="button" class="method-btn" aria-pressed="false"><svg class="icon" width="20" height="20"><use href="#i-phone"/></svg>Mobile Money</button>
+          <button type="button" class="method-btn" aria-pressed="false"><svg class="icon" width="20" height="20"><use href="#i-layers"/></svg>Mixte</button>
+        </div>
+        <div class="tip-row"><div class="tl">Pourboire</div><div class="tip-chips" role="radiogroup" aria-label="Pourboire"><button type="button" class="tip-chip" role="radio" aria-checked="false">10%</button><button type="button" class="tip-chip active" role="radio" aria-checked="true">15%</button><button type="button" class="tip-chip" role="radio" aria-checked="false">20%</button><button type="button" class="tip-chip" role="radio" aria-checked="false">Autre</button></div></div>
+        <button class="btn btn-primary">Encaisser 16 675 XOF</button>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ ENCAISSEMENT — DIVISER L'ADDITION ============ -->
+  <h3 class="sub" id="split">Encaissement — diviser l'addition</h3>
+  <p class="lede" style="margin-bottom:var(--space-5)">Deux modes (doc 21 §21.2)&nbsp;: également entre convives, ou par article. La commande passe par l'état <em>partiellement payée</em> tant que toutes les parts ne sont pas réglées.</p>
+  <div class="frame pos"><div class="frame-scroll">
+    <div class="pay-screen">
+      <div class="pay-left">
+        <div class="pay-head"><div class="icon-btn"><svg class="icon" width="17" height="17"><use href="#i-back"/></svg></div><div><h1>Table 12</h1><div class="sub">Total 14 500 XOF</div></div></div>
+        <div class="order-sum-row total" style="border-top:none;padding-top:0"><span>Total à payer</span><span class="v tabular">14 500 XOF</span></div>
+        <div class="split-toggle"><button>Paiement unique</button><button class="active">Diviser l'addition</button></div>
+
+        <div class="split-panel">
+          <div class="split-mode-row" role="radiogroup" aria-label="Mode de répartition"><button type="button" class="chip active" role="radio" aria-checked="true">Également entre convives</button><button type="button" class="chip" role="radio" aria-checked="false">Par article</button></div>
+          <div class="stepper-row"><span>Nombre de convives</span><div class="stepper"><button>–</button><span>4</span><button>+</button></div></div>
+          <div class="part-list">
+            <div class="part-row"><span>Part 1</span><span class="badge badge-neutral" style="background:var(--basil-soft);color:var(--basil-soft-ink)">Payée</span><span class="pval tabular">3 625 XOF</span></div>
+            <div class="part-row"><span>Part 2</span><span class="badge badge-neutral" style="background:var(--basil-soft);color:var(--basil-soft-ink)">Payée</span><span class="pval tabular">3 625 XOF</span></div>
+            <div class="part-row"><span>Part 3</span><span class="badge badge-turmeric"><span class="dot"></span>En attente</span><span class="pval tabular">3 625 XOF</span></div>
+            <div class="part-row"><span>Part 4</span><span class="badge badge-turmeric"><span class="dot"></span>En attente</span><span class="pval tabular">3 625 XOF</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="pay-right">
+        <div class="total-block"><div class="tl">Part 3 — à encaisser</div><div class="tv tabular">3 625 XOF</div></div>
+        <div class="method-grid">
+          <button type="button" class="method-btn active" aria-pressed="true"><svg class="icon" width="20" height="20"><use href="#i-cash"/></svg>Espèces</button>
+          <button type="button" class="method-btn" aria-pressed="false"><svg class="icon" width="20" height="20"><use href="#i-card"/></svg>Carte</button>
+          <button type="button" class="method-btn" aria-pressed="false"><svg class="icon" width="20" height="20"><use href="#i-phone"/></svg>Mobile Money</button>
+          <button type="button" class="method-btn" aria-pressed="false"><svg class="icon" width="20" height="20"><use href="#i-layers"/></svg>Mixte</button>
+        </div>
+        <div class="tip-row"><div class="tl">Pourboire (sur cette part)</div><div class="tip-chips" role="radiogroup" aria-label="Pourboire sur cette part"><button type="button" class="tip-chip" role="radio" aria-checked="false">10%</button><button type="button" class="tip-chip" role="radio" aria-checked="false">15%</button><button type="button" class="tip-chip" role="radio" aria-checked="false">20%</button><button type="button" class="tip-chip active" role="radio" aria-checked="true">Aucun</button></div></div>
+        <button class="btn btn-primary">Encaisser la part 3 — 3 625 XOF</button>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ CONFIRMATION & REÇU ============ -->
+  <h3 class="sub" id="recu">Confirmation &amp; reçu</h3>
+  <div class="frame pos"><div class="frame-scroll">
+    <div class="receipt-screen">
+      <div class="receipt-card">
+        <div class="ic-wrap"><svg class="icon" width="22" height="22"><use href="#i-check"/></svg></div>
+        <h1>Paiement enregistré</h1>
+        <div class="sub">Table 12 — Salle B</div>
+        <div class="receipt-total tabular">16 675 XOF</div>
+        <div class="sub" style="margin-bottom:var(--space-4)">Espèces · pourboire inclus (15%)</div>
+        <div class="receipt-line"><span>Sous-total</span><span class="tabular">14 500 XOF</span></div>
+        <div class="receipt-line"><span>Pourboire</span><span class="tabular">2 175 XOF</span></div>
+        <div class="receipt-line" style="border-bottom:none;font-weight:700;color:var(--text-1)"><span>Total encaissé</span><span class="tabular">16 675 XOF</span></div>
+        <div class="receipt-actions"><button class="btn btn-secondary"><svg class="icon" width="15" height="15"><use href="#i-print"/></svg>Imprimer</button><button class="btn btn-secondary"><svg class="icon" width="15" height="15"><use href="#i-send"/></svg>Envoyer par SMS</button></div>
+      </div>
+    </div>
+  </div></div>
+
+  <!-- ============ STATES ============ -->
+  <h3 class="sub">États</h3>
+  <div class="state-row">
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--basil)"></span>File d'attente vide</div>
+      <div style="text-align:center;padding:var(--space-4) 0">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--basil-soft);color:var(--basil-soft-ink);display:flex;align-items:center;justify-content:center;margin:0 auto 10px"><svg class="icon" width="16" height="16"><use href="#i-check"/></svg></div>
+        <p style="font-size:12.5px;color:var(--text-2)">Toutes les tables sont réglées. Service à jour.</p>
+      </div>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--text-3)"></span>Encaissement en cours</div>
+      <div class="total-block" style="padding:var(--space-3) 0"><div class="tl">Montant</div><div class="tv tabular" style="font-size:1.6rem">14 500 XOF</div></div>
+      <button class="btn btn-primary" style="opacity:.6" disabled>Encaissement…</button>
+    </div>
+    <div class="state-chip">
+      <div class="chip-label"><span class="dot-lg" style="background:var(--paprika)"></span>Erreur — montant incorrect</div>
+      <div style="display:flex;gap:8px;align-items:flex-start;background:var(--paprika-soft);color:var(--paprika-soft-ink);padding:10px 12px;border-radius:var(--radius-sm);font-size:12.5px">
+        <svg class="icon" width="15" height="15" style="flex-shrink:0;margin-top:1px"><use href="#i-warn"/></svg>
+        <div><strong>Le montant saisi dépasse le solde dû.</strong> Il reste 3 625 XOF à encaisser sur cette table.</div>
+      </div>
+    </div>
+  </div>
+</main>
