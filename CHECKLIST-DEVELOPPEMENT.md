@@ -34,12 +34,12 @@
 
 🎯 **Livrable** : les briques d'infrastructure (base de données, cache, stockage fichiers) sont provisionnées et accessibles depuis le code applicatif.
 
-- [ ] Écrire `docker-compose.yml` (MongoDB replica set + Redis locaux, ADR 0012) — 0,5j — **écrit, non vérifié par exécution** (Docker Desktop non installable sur la machine de développement actuelle : Windows 10 build 19044, exige 22H2/19045+ depuis Docker Desktop 4.50 ; mise à jour Windows bloquée par une stratégie d'entreprise). À revérifier avant le ticket `config/database.ts` (connexion Mongoose réelle).
+- [ ] Écrire `docker-compose.yml` (MongoDB replica set + Redis locaux, ADR 0012) — 0,5j — **écrit, non vérifié par exécution** (Docker Desktop non installable sur la machine de développement actuelle : Windows 10 build 19044, exige 22H2/19045+ depuis Docker Desktop 4.50 ; mise à jour Windows bloquée par une stratégie d'entreprise). N'a finalement pas bloqué `config/database.ts` : `.env` local pointe directement sur MongoDB Atlas (déjà vérifié), pas sur le Mongo dockerisé — à revérifier quand même avant qu'un développeur bascule réellement sur `docker compose up`.
 - [x] Provisionner MongoDB Atlas (staging/prod) — 0,5j — un seul cluster M0 gratuit, deux bases distinctes (`quicktable` / `quicktable-staging`) plutôt que deux clusters, décision budget-serré cohérente avec Railway (un seul environnement) ; connexion vérifiée réellement sur les deux bases (ping OK, MongoDB 8.0.27)
 - [x] Provisionner Redis managé (staging/prod) — 0,25j — Upstash (ADR 0009), instance gratuite unique partagée staging/prod pour l'instant (même logique que Railway/Atlas) ; connexion vérifiée réellement (PING/PONG, SET/GET) via le protocole Redis standard TLS, pas seulement l'API REST
 - [ ] Configurer Firebase Storage + règles d'accès — 0,5j — **bloqué** : Google exige le plan Blaze (carte bancaire) pour activer Cloud Storage, même en usage gratuit ; pas de carte disponible actuellement. `storage.rules` écrit et prêt (deny-all, ADR 0005/doc 04 : accès exclusivement via le SDK Admin backend + URLs signées), non déployé. Pas d'alternative légitime (Firebase imposé par le cahier des charges, contrairement à Railway) — à débloquer dès qu'une carte est disponible, avant le module `uploads` (Epic 3).
 - [x] Implémenter `config/env.ts` avec validation Zod fail-fast — 0,5j
-- [ ] Implémenter `config/database.ts` (connexion Mongoose, pool) — 0,5j
+- [x] Implémenter `config/database.ts` (connexion Mongoose, pool) — 0,5j
 
 ### Feature 0.3 — Socle applicatif
 
