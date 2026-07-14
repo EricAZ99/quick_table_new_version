@@ -1,0 +1,6 @@
+{
+  "name": "@quicktable/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Configuration ESLint/Prettier/TypeScript partagée (docs/architecture/03-arborescence-projet.md §3.1) — contenu ajouté par le ticket suivant (Feature 0.1 : ESLint + Prettier + config partagée)."
+}

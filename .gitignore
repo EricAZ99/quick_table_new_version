@@ -1,3 +1,37 @@
 /.claude
 /Cahier_des_charges_QuickTable.docx
 /Cahier_des_charges_QuickTable.pdf
+
+# Dépendances
+node_modules/
+
+# Builds
+dist/
+build/
+.turbo/
+
+# Environnement local (doc 12 §12.9, doc 13 §13.8bis — jamais de secret commité)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Éditeurs / OS
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Tests / couverture
+coverage/
+
+# Vite
+.vite/
+*.local
+
+# TypeScript (build incrémental, doc 30 §30.3)
+*.tsbuildinfo
