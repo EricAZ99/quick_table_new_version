@@ -30,6 +30,8 @@ Détail complet et justification : [`docs/architecture/03-arborescence-projet.md
 Prérequis : Node.js ≥ 22.13 (voir `.nvmrc` — requis par `pnpm@11`, cf. `packageManager`), [pnpm](https://pnpm.io) ≥ 9, [Docker](https://www.docker.com/) (MongoDB + Redis locaux, [ADR 0012](./docs/architecture/adr/0012-docker-compose-developpement-local.md)).
 
 ```bash
+cp .env.example .env # variables de connexion locales (ADR 0012)
+docker compose up -d # MongoDB (replica set) + Redis locaux
 pnpm install        # installe les dépendances de tout le workspace
 pnpm dev             # démarre apps/web et apps/api en parallèle
 pnpm build           # build de production de tout le workspace
@@ -39,9 +41,9 @@ pnpm lint            # ESLint sur tout le workspace
 pnpm format          # Prettier (écrit) sur tout le dépôt
 ```
 
-Un hook `pre-commit` (lint-staged), `commit-msg` (Commitlint) et `pre-push` (tests) s'exécutent automatiquement via Husky (installés par `pnpm install`, voir `pnpm prepare`). La CI GitHub Actions (`.github/workflows/ci.yml`) revérifie lint/test/build sur chaque push/PR vers `main`. `apps/web` se déploie automatiquement sur Vercel (preview par branche, production sur `main`).
+Un hook `pre-commit` (lint-staged), `commit-msg` (Commitlint) et `pre-push` (tests) s'exécutent automatiquement via Husky (installés par `pnpm install`, voir `pnpm prepare`). La CI GitHub Actions (`.github/workflows/ci.yml`) revérifie lint/test/build sur chaque push/PR vers `main`. `apps/web` se déploie automatiquement sur Vercel (preview par branche, production sur `main`), `apps/api` sur Railway (production ; `staging` pas encore configuré).
 
-> `docker-compose.yml` (MongoDB + Redis locaux) arrive avec la Feature 0.2 (voir `CHECKLIST-DEVELOPPEMENT.md`) — non encore présent à ce stade du projet ; le déploiement Railway (`apps/api`) arrive avec le ticket suivant.
+> **`docker-compose.yml` écrit mais non vérifié par exécution réelle** sur cette machine de développement (Docker Desktop nécessite Windows 10 22H2/build 19045+, cette machine est en 19044 et sa mise à jour est gérée par une stratégie d'entreprise) — voir `CHECKLIST-DEVELOPPEMENT.md`, Feature 0.2, pour le détail. À vérifier avant d'implémenter `config/database.ts`.
 
 ## Conventions
 

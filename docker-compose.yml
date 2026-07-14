@@ -1,0 +1,54 @@
+name: quicktable
+
+# Environnement de développement local (ADR 0012). MongoDB Atlas et Redis
+# managé restent réservés à staging/production (doc 02 §2.7) — ces services
+# ne sont jamais utilisés en dehors du poste de chaque développeur.
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    command: ['--replSet', 'rs0', '--bind_ip_all']
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Initialise le replica set à un seul nœud une fois mongodb prêt (requis
+  # pour les transactions multi-documents, doc 05 §5.8) — idempotent (le
+  # try/catch évite une erreur si déjà initialisé lors d'un `docker compose up`
+  # ultérieur), se termine puis reste "exited" sans bloquer les autres services.
+  #
+  # Le membre du replica set est déclaré en `localhost:27017` (pas
+  # `mongodb:27017`, le nom réseau Docker utilisé pour la commande
+  # d'initialisation elle-même) car les seuls clients réels sont côté hôte
+  # (`apps/api` tourne nativement via `pnpm dev`, doc 03 — seuls
+  # MongoDB/Redis sont conteneurisés) : après l'initiation, le driver
+  # applicatif redécouvre la topologie du replica set via ce host déclaré,
+  # qui doit donc être résoluble depuis la machine du développeur.
+  mongodb-init:
+    image: mongo:7
+    restart: 'no'
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    entrypoint:
+      - mongosh
+      - --host
+      - mongodb:27017
+      - --quiet
+      - --eval
+      - "try { rs.status() } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'localhost:27017' }] }) }"
+
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+
+volumes:
+  mongodb_data:

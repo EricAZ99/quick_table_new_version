@@ -34,7 +34,7 @@
 
 🎯 **Livrable** : les briques d'infrastructure (base de données, cache, stockage fichiers) sont provisionnées et accessibles depuis le code applicatif.
 
-- [ ] Écrire `docker-compose.yml` (MongoDB replica set + Redis locaux, ADR 0012) — 0,5j
+- [ ] Écrire `docker-compose.yml` (MongoDB replica set + Redis locaux, ADR 0012) — 0,5j — **écrit, non vérifié par exécution** (Docker Desktop non installable sur la machine de développement actuelle : Windows 10 build 19044, exige 22H2/19045+ depuis Docker Desktop 4.50 ; mise à jour Windows bloquée par une stratégie d'entreprise). À revérifier avant le ticket `config/database.ts` (connexion Mongoose réelle).
 - [ ] Provisionner MongoDB Atlas (staging/prod) — 0,5j
 - [ ] Provisionner Redis managé (staging/prod) — 0,25j
 - [ ] Configurer Firebase Storage + règles d'accès — 0,5j
