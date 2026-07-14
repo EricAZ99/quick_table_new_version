@@ -3,6 +3,7 @@
 Plateforme SaaS multi-tenant de gestion de restaurants (salles, tables, menus, commandes, cuisine, paiement, stock, clients, réservations, statistiques, QR Code).
 
 **Avant toute contribution, lire [`docs/architecture/00-INDEX.md`](./docs/architecture/00-INDEX.md)** — c'est la référence d'architecture du projet, à jour, source de vérité vivante. En particulier :
+
 - [`docs/architecture/37-audit-pre-developpement-cto.md`](./docs/architecture/37-audit-pre-developpement-cto.md) — état du projet au démarrage du développement.
 - [`CHECKLIST-DEVELOPPEMENT.md`](./CHECKLIST-DEVELOPPEMENT.md) — backlog séquentiel, ticket par ticket.
 - [`docs/design/`](./docs/design/) — Design System et maquettes haute-fidélité.
@@ -34,9 +35,13 @@ pnpm dev             # démarre apps/web et apps/api en parallèle
 pnpm build           # build de production de tout le workspace
 pnpm test            # tests unitaires de tout le workspace
 pnpm typecheck       # vérification TypeScript de tout le workspace
+pnpm lint            # ESLint sur tout le workspace
+pnpm format          # Prettier (écrit) sur tout le dépôt
 ```
 
-> `docker-compose.yml` (MongoDB + Redis locaux) et l'intégration ESLint/Prettier/Husky arrivent avec les tickets suivants de la Feature 0.1/0.2 (voir `CHECKLIST-DEVELOPPEMENT.md`) — non encore présents à ce stade du projet.
+Un hook `pre-commit` (lint-staged), `commit-msg` (Commitlint) et `pre-push` (tests) s'exécutent automatiquement via Husky (installés par `pnpm install`, voir `pnpm prepare`). La CI GitHub Actions (`.github/workflows/ci.yml`) revérifie lint/test/build sur chaque push/PR vers `main`. `apps/web` se déploie automatiquement sur Vercel (preview par branche, production sur `main`).
+
+> `docker-compose.yml` (MongoDB + Redis locaux) arrive avec la Feature 0.2 (voir `CHECKLIST-DEVELOPPEMENT.md`) — non encore présent à ce stade du projet ; le déploiement Railway (`apps/api`) arrive avec le ticket suivant.
 
 ## Conventions
 

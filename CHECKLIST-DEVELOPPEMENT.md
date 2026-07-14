@@ -27,7 +27,7 @@
 - [x] Configurer Husky (pre-commit, commit-msg, pre-push) + lint-staged — 0,5j
 - [x] Configurer Commitlint (Conventional Commits) — 0,25j
 - [x] Écrire le pipeline CI GitHub Actions (lint + test + build) — 1j
-- [ ] Configurer déploiement auto Vercel (`apps/web`, preview + prod) — 0,5j
+- [x] Configurer déploiement auto Vercel (`apps/web`, preview + prod) — 0,5j
 - [ ] Configurer déploiement auto Railway (`apps/api`, staging + prod) — 0,5j
 
 ### Feature 0.2 — Infrastructure de données
