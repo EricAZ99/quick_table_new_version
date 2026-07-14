@@ -15,7 +15,8 @@ Guide de travail quotidien pour tout développeur rejoignant QuickTable. Ce docu
 ```
 <type>(<scope>): <description impérative>
 ```
-`scope` = nom du module (doc 04) ou du document (`docs`) concerné. Le CHANGELOG (doc 17 §17.2) est généré automatiquement à partir de cet historique — un commit mal typé casse la génération, vérifié par Commitlint en `pre-commit` (doc 14 §14.1).
+
+`scope` = nom du module (doc 04) ou du document (`docs`) concerné. Le CHANGELOG (doc 17 §17.2) est généré automatiquement à partir de cet historique — un commit mal typé casse la génération, vérifié par Commitlint en `commit-msg` (doc 14 §14.1).
 
 ## 30.3 Conventions TypeScript
 
@@ -60,6 +61,7 @@ Voir doc 03 (structure complète et justifiée) et doc 28 §28.6 (règle DDD : u
 ## 30.9 Definition of Ready (DoR)
 
 Une User Story (doc 34) est prête à être prise en développement si :
+
 - [ ] Le besoin métier est formulé du point de vue utilisateur (format `En tant que… je veux… afin de…`).
 - [ ] Les critères d'acceptation sont explicites et testables.
 - [ ] Les dépendances (autres stories, doc 34) sont identifiées et résolues ou planifiées avant.
@@ -69,6 +71,7 @@ Une User Story (doc 34) est prête à être prise en développement si :
 ## 30.10 Definition of Done (DoD)
 
 Une tâche/story est terminée si :
+
 - [ ] Code mergé sur `main` via PR passée en revue (doc 30.11).
 - [ ] Tests unitaires + intégration ajoutés et verts (doc 31).
 - [ ] Tests d'isolation multi-tenant et RBAC non régressés si la story touche une route/collection (doc 06/08).
@@ -80,6 +83,7 @@ Une tâche/story est terminée si :
 ## 30.11 Checklist de Pull Request
 
 À l'ouverture d'une PR, l'auteur remplit :
+
 - [ ] **Quoi** : résumé en une phrase.
 - [ ] **Pourquoi** : lien vers la User Story/le bug (doc 34).
 - [ ] **Comment tester** : étapes manuelles si pertinent (doc 14 §14.8).
