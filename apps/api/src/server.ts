@@ -1,4 +1,4 @@
-import { createApp } from "./app.js";
+import { createApp } from './app.js';
 
 /**
  * Point d'entrée process de l'API.

@@ -12,6 +12,14 @@
     "build": "pnpm -r --if-present build",
     "dev": "pnpm -r --parallel --if-present dev",
     "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "pnpm -r --if-present lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "prettier": "@quicktable/config/prettier",
+  "devDependencies": {
+    "@quicktable/config": "workspace:*",
+    "prettier": "^3.3.3"
   }
 }

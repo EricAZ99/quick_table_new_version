@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express } from 'express';
 
 /**
  * Construit l'instance Express de l'API QuickTable.
