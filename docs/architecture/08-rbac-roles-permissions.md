@@ -125,3 +125,17 @@ Le middleware RBAC combine `role → permission` **puis** `tenant.subscription.f
 
 - **Backend** : middleware `rbac.middleware.ts` prend en paramètre de route la permission requise (`requirePermission('orders:cancel')`), déclaré directement dans `orders.routes.ts` — la permission requise est donc visible et grep-able depuis les routes, jamais cachée dans un controller.
 - **Frontend** : composable `usePermissions()` expose `can('orders:cancel')`, alimenté par les permissions résolues et envoyées par le backend au login (pas recalculées côté client à partir du rôle seul, pour rester synchronisé avec le feature gating serveur). Utilisé par la directive `v-permission` (doc 03/11) pour masquer les actions non autorisées dans l'UI — **rappel : ce masquage est un confort UX, jamais une mesure de sécurité** ; la vérification serveur (doc 06/08) est la seule qui compte.
+
+## 8.8 Permissions à portée restreinte ("ownership") — mécanisme (ajouté suite à l'audit CTO, doc 37 §3.2)
+
+**Gap identifié** : la matrice §8.4 accorde `orders:read`/`orders:update` au rôle `waiter` avec la mention "✅ (les siennes)" — un filtrage au niveau ligne (un serveur ne voit que les commandes qu'il a prises), distinct du filtrage `tenantId` (doc 06). Ce mécanisme n'était décrit nulle part avant cet amendement, alors que le laisser à l'appréciation de chaque développeur créerait un risque réel de fuite de données intra-tenant (un serveur voit les commandes d'un collègue) ou d'implémentations divergentes selon le module.
+
+**Modèle retenu** : chaque permission accordée par `roleDefinitions` (doc 22 §22.4) porte, en plus de son identifiant `resource:action`, une **portée** (`scope`) parmi :
+- `all` (défaut implicite si non précisé) : toutes les ressources du tenant, sans filtre supplémentaire.
+- `own` : restreint aux ressources dont un champ d'identité de la ressource correspond à `context.userId` — le champ exact est déclaré par ressource (`orders.waiterId` pour `orders:read`/`orders:update` du rôle `waiter`).
+
+Le middleware `rbac.middleware.ts` (doc 08 §8.7) résout non seulement "la permission est-elle accordée" mais aussi sa portée, et l'injecte dans `req.context.permissionScopes: Record<string, 'all' | 'own'>`. Le repository du module concerné (`orders.repository.ts`, héritant de `BaseRepository`, doc 06 §6.4) applique un filtre supplémentaire `{ waiterId: context.userId }` **en plus** du filtre `tenantId` obligatoire lorsque `context.permissionScopes['orders:read'] === 'own'` — jamais une logique ad hoc dans le controller ou le service, pour rester cohérent avec la règle "le repository est le seul endroit qui fusionne les filtres d'isolation" (doc 06 §6.4 point 1).
+
+**Portée `own` appliquée dès le MVP** : `orders:read`, `orders:update` pour le rôle `waiter` (doc 08 §8.4). Un `manager`/`owner` disposant de la même permission conserve la portée `all` par défaut — c'est la **portée qui varie par couple (rôle, permission)**, pas la permission elle-même, cohérent avec le principe "les permissions sont des données" (doc 14 §14.4).
+
+**Point non tranché par cet amendement** (renvoyé au Product Owner, doc 37 constat F4) : si la portée `own` doit également s'appliquer à `orders:cancel` pour le `waiter` sur ses propres commandes tant qu'un article reste `queued` (doc 21 §21.1) — actuellement `orders:cancel` reste `🔒` (override uniquement) pour ce rôle dans la matrice §8.4, indépendamment de ce nouveau mécanisme de portée.

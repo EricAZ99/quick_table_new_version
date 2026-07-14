@@ -14,12 +14,16 @@ quicktable/
 │   └── architecture/        # Ce dossier
 ├── .github/
 │   └── workflows/           # CI/CD (lint, test, build, deploy)
+├── docker-compose.yml         # MongoDB + Redis locaux pour le développement individuel (ADR 0012)
+├── .env.example                # Variables d'environnement, pointe par défaut vers les services Docker Compose locaux
 ├── package.json              # Workspaces (npm/pnpm)
 ├── pnpm-workspace.yaml
 └── README.md
 ```
 
 Un monorepo (pnpm workspaces ou Turborepo) permet de partager les types entre front et back (contrat d'API garanti à la compilation) et de garder une seule pipeline CI cohérente, sans coupler les déploiements (Vercel ne build que `apps/web`, Railway ne build que `apps/api`).
+
+**Environnement de développement local** (ADR 0012) : `docker-compose.yml` fournit MongoDB (replica set à un seul nœud, pour valider localement les transactions multi-documents, doc 05 §5.8) et Redis, utilisés par chaque développeur individuellement — MongoDB Atlas et Redis managé (doc 02 §2.7) restent réservés à `staging`/`production`, jamais utilisés comme environnement "dev" partagé entre développeurs.
 
 ---
 

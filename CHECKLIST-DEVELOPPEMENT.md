@@ -20,8 +20,8 @@
 
 ### Feature 0.1 — Monorepo & CI/CD
 🎯 **Livrable** : chaque push est linté, testé, buildé, puis déployé automatiquement en preview (web) et staging (API).
-- [ ] Initialiser le monorepo (workspaces `apps/`, `packages/`) — 0,5j
-- [ ] Configurer ESLint + Prettier + config partagée `packages/config` — 0,5j
+- [x] Initialiser le monorepo (workspaces `apps/`, `packages/`) — 0,5j
+- [x] Configurer ESLint + Prettier + config partagée `packages/config` — 0,5j
 - [ ] Configurer Husky (pre-commit, commit-msg, pre-push) + lint-staged — 0,5j
 - [ ] Configurer Commitlint (Conventional Commits) — 0,25j
 - [ ] Écrire le pipeline CI GitHub Actions (lint + test + build) — 1j
@@ -30,8 +30,9 @@
 
 ### Feature 0.2 — Infrastructure de données
 🎯 **Livrable** : les briques d'infrastructure (base de données, cache, stockage fichiers) sont provisionnées et accessibles depuis le code applicatif.
-- [ ] Provisionner MongoDB Atlas (dev/staging/prod) — 0,5j
-- [ ] Provisionner Redis (dev/staging/prod) — 0,25j
+- [ ] Écrire `docker-compose.yml` (MongoDB replica set + Redis locaux, ADR 0012) — 0,5j
+- [ ] Provisionner MongoDB Atlas (staging/prod) — 0,5j
+- [ ] Provisionner Redis managé (staging/prod) — 0,25j
 - [ ] Configurer Firebase Storage + règles d'accès — 0,5j
 - [ ] Implémenter `config/env.ts` avec validation Zod fail-fast — 0,5j
 - [ ] Implémenter `config/database.ts` (connexion Mongoose, pool) — 0,5j

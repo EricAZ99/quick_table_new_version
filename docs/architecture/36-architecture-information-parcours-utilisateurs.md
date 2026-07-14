@@ -176,11 +176,13 @@ flowchart TD
 | Caisse | Tablette ou desktop | Paysage | Poste fixe |
 | Client QR Code | Mobile (quasi exclusivement) | Portrait | Réseau potentiellement faible (doc 29 §29.3) |
 
-## 36.7 Ce qui reste ouvert — décisions de design visuel
+## 36.7 Design visuel — état réel (mis à jour, doc 37 constat F9)
 
-Ce document ne tranche pas :
-1. **Identité de marque** : logo, palette de couleurs précise, typographie — nécessaire avant toute maquette réelle.
-2. **Maquettes haute fidélité** (Figma ou équivalent) — à produire par un designer UI/UX en s'appuyant sur ce document + le design system technique (doc 11 §11.7).
-3. **Seuils exacts des indicateurs visuels** (ex. couleurs du minuteur KDS §36.4) — à valider avec le restaurant pilote (doc 32 §32.2) plutôt que fixés arbitrairement maintenant.
+Ce document a initialement été rédigé comme un brief pour un travail de design encore à venir. **Ce travail a depuis été réalisé en intégralité** — voir la section "Design & Maquettes" du doc 00-INDEX :
+1. **Identité de marque** : palette Encre/Porcelaine/Ambre, confirmée comme identité de marque officielle (doc 00-INDEX, changelog v2.4).
+2. **Maquettes haute fidélité** : 12 écrans produits (`docs/design/01-authentification.html` à `12-platform-admin.html`), plus le Design System complet (`docs/design/00-design-system.html`) — couvrant les six interfaces de l'inventaire §36.2.
+3. **Audit UX auto-critique** déjà mené sur l'ensemble des maquettes (`docs/design/AUDIT-UX.md`) — parcours, accessibilité, cohérence visuelle revus et corrigés.
 
-**Recommandation** : ce document + le doc 11 §11.7 constituent un brief suffisant pour qu'un designer UI/UX externe ou interne démarre les maquettes en parallèle du développement de l'Epic 0/1 — aucune raison d'attendre la fin du backend pour lancer ce travail.
+**Reste réellement ouvert** : les seuils exacts des indicateurs visuels dynamiques (ex. couleurs du minuteur KDS §36.4) — volontairement laissés provisoires dans les maquettes, à valider avec le restaurant pilote (doc 32 §32.2) plutôt que figés arbitrairement avant tout retour terrain.
+
+**Pour tout développeur qui implémente un écran** : consulter la maquette correspondante dans `docs/design/` avant d'écrire le moindre composant — ce document (l'architecture de l'information) et les maquettes (le rendu visuel réel) sont complémentaires, ni l'un ni l'autre ne se suffit seul.

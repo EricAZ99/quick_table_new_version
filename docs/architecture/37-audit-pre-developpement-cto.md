@@ -5,6 +5,8 @@
 **Statut du projet à la date de l'audit** : conception terminée (docs 00-36, `adr/0001-0011`, `docs/design/00-12` + `AUDIT-UX.md`, `RESUME-SESSION.md`, `CHECKLIST-DEVELOPPEMENT.md`), **aucune ligne de code applicatif écrite**.
 **Portée de cet audit** : lecture intégrale de l'ensemble des documents listés ci-dessus. Aucun code n'est produit dans ce document.
 
+**Mise à jour du 2026-07-13** : les 4 constats bloquants (F1/F11, F3, F8/F9, F10) ont été corrigés le jour même de l'audit — voir la note dans chaque section concernée et le récapitulatif en fin de §6. Ce document est conservé tel qu'écrit au moment de l'audit (y compris les constats déjà résolus) pour garder une trace fidèle du raisonnement ; il ne doit pas être réécrit a posteriori (même principe que les ADR, doc 17 §17.7 : statut "résolu" plutôt que suppression).
+
 ---
 
 ## 0. Résumé exécutif
@@ -46,7 +48,7 @@ Aucune hypothèse n'a été retenue sans vérification texte-à-texte dans le do
 
 ### 3.1 Cohérence documentaire — Renommage `auditLogs` → `businessAuditLogs` non propagé
 
-**F1 — Gravité : Élevée**
+**F1 — Gravité : Élevée — ✅ Corrigé le 2026-07-13** (doc 00-INDEX changelog v2.5)
 
 Le doc 24 (Audit Technique vs Métier) renomme formellement `auditLogs` en `businessAuditLogs`, redéfinit son schéma (ajout `actorRole`, `reason`, `expiresAt`) et sa politique de rétention (différenciée 3 ans / 10 ans / permanente, décidée avec le Product Owner). **Cinq autres documents n'ont jamais été mis à jour en conséquence** :
 
@@ -68,7 +70,7 @@ Le doc 24 (Audit Technique vs Métier) renomme formellement `auditLogs` en `busi
 
 ### 3.2 RBAC — mécanisme de filtrage "propriétaire" non spécifié
 
-**F3 — Gravité : Élevée**
+**F3 — Gravité : Élevée — ✅ Corrigé le 2026-07-13** (nouveau doc 08 §8.8, renvoi ajouté doc 06 §6.4)
 
 La matrice de permissions (doc 08 §8.4) accorde `orders:read` et `orders:update` au rôle `waiter` avec la mention **"✅ (les siennes)"** — c'est-à-dire un filtrage au niveau ligne (ownership), pas seulement au niveau ressource. Or le modèle RBAC documenté dans son intégralité (doc 06, doc 08, doc 12) est un modèle **`resource:action` au niveau collection**, sans aucune dimension de portée par propriétaire décrite nulle part : ni dans `BaseRepository` (doc 06 §6.4, doc 12 §12.2), ni dans le middleware RBAC (doc 08 §8.7), ni dans un Domain Service dédié (doc 28 §28.5).
 
@@ -122,13 +124,13 @@ Le doc 15 (Plan de développement) décrit encore la Phase 5 comme une intégrat
 
 ### 3.6 Fragmentation documentaire — le Design System et les maquettes sont invisibles depuis le point d'entrée
 
-**F8 — Gravité : Élevée**
+**F8 — Gravité : Élevée — ✅ Corrigé le 2026-07-13** (section "Design & Maquettes" ajoutée à doc 00-INDEX)
 
 `docs/architecture/00-INDEX.md` est explicitement désigné comme le document à lire **avant toute ligne de code**, avec une section "Comment lire ce dossier selon votre rôle". Il **ne mentionne jamais** l'existence de `docs/design/` (Design System + 13 écrans haute-fidélité + `AUDIT-UX.md`), ni de `RESUME-SESSION.md`, ni de `CHECKLIST-DEVELOPPEMENT.md` — vérifié par recherche exhaustive, zéro occurrence.
 
 **Impact** : un nouveau développeur, un designer externe ou un investisseur technique qui suit strictement le protocole de lecture recommandé par le projet lui-même ne découvrira **jamais** qu'un travail de design complet, cohérent et déjà audité existe. Risque concret de redemander ou de refaire ce travail, ou de développer un frontend sans jamais consulter les maquettes qui existent pourtant.
 
-**F9 — Gravité : Moyenne (conséquence directe de F8).** Le doc 36 §36.7 ("Ce qui reste ouvert — décisions de design visuel") liste encore comme non résolus : *"Identité de marque : logo, palette de couleurs précise, typographie — nécessaire avant toute maquette réelle"* et *"Maquettes haute fidélité — à produire par un designer UI/UX"*. Ces deux points sont **résolus** (identité de marque confirmée, 13 maquettes produites et auditées) mais doc 36 n'a jamais été mis à jour pour le refléter.
+**F9 — Gravité : Moyenne (conséquence directe de F8) — ✅ Corrigé le 2026-07-13** (doc 36 §36.7 réécrit). Le doc 36 §36.7 ("Ce qui reste ouvert — décisions de design visuel") liste encore comme non résolus : *"Identité de marque : logo, palette de couleurs précise, typographie — nécessaire avant toute maquette réelle"* et *"Maquettes haute fidélité — à produire par un designer UI/UX"*. Ces deux points sont **résolus** (identité de marque confirmée, 13 maquettes produites et auditées) mais doc 36 n'a jamais été mis à jour pour le refléter.
 
 **Solution** : ajouter une section "Design & Maquettes" à `00-INDEX.md` pointant vers `docs/design/00-design-system.html` à `12-platform-admin.html` et `AUDIT-UX.md` ; corriger doc 36 §36.7 ; ajouter un renvoi vers `RESUME-SESSION.md`/`CHECKLIST-DEVELOPPEMENT.md`.
 
@@ -138,7 +140,7 @@ Le doc 15 (Plan de développement) décrit encore la Phase 5 comme une intégrat
 
 ### 3.7 Absence de stratégie d'environnement de développement local
 
-**F10 — Gravité : Moyenne**
+**F10 — Gravité : Moyenne — ✅ Corrigé le 2026-07-13** (nouvel ADR 0012, propagé aux docs 03, 15, 16, `CHECKLIST-DEVELOPPEMENT.md`)
 
 Aucune occurrence de "Docker", "docker-compose" ou "Dockerfile" dans l'intégralité de `docs/architecture/`. Le doc 15 (Phase 0) mentionne uniquement "MongoDB Atlas provisionné (dev/staging/prod)" et "Redis provisionné" — ce qui, en l'absence de toute mention alternative, laisse entendre que même le développement individuel dépendrait d'un cluster cloud partagé (Atlas "dev" + Redis "dev").
 
@@ -188,13 +190,13 @@ Doc 18 §18.2 (Bonnes pratiques & scalabilité) utilise la grille **500 / 5 000 
 | UI | ✅ Solide | 13 écrans haute-fidélité couvrant les 6 interfaces (doc 36 §36.2) |
 | Roadmap | ⚠️ Réserves | Complète et priorisée (doc 32/34), mais gap de planning calendaire sur Feature 5.2 (F2) |
 | API REST | ⚠️ Réserves | Très complète (9.1-9.20), deux gaps ponctuels (F5, F6) |
-| MongoDB | ⚠️ Réserves | Modélisation rigoureuse (transactions, TTL, sharding readiness) mais schéma `auditLogs`/`businessAuditLogs` divergent (F1) |
+| MongoDB | ✅ Solide | Modélisation rigoureuse (transactions, TTL, sharding readiness) ; divergence de schéma `businessAuditLogs` corrigée (F1) |
 | Socket.IO | ✅ Solide | Rooms, auth au handshake, resynchronisation, tests multi-instance spécifiés |
 | Firebase | ✅ Solide | Couplage isolé au seul module `uploads` (ADR 0005), risque d'egress identifié et mitigé |
 | Redis | ⚠️ Réserves | Convention de clés centralisée et rigoureuse (doc 26), mais comportement de panne non testé (F14) |
-| Docker | 🔴 Gap | Absent de toute la documentation — stratégie de dev local non tranchée (F10) |
+| Docker | ✅ Solide | Stratégie de dev local tranchée et documentée (F10, ADR 0012) — Docker Compose local, Atlas/Redis cloud réservés à staging/prod |
 | CI/CD | ✅ Solide | Pipeline, environnements, migrations hors boot, tout spécifié (doc 02 §2.7, doc 12 §12.7) |
-| RBAC | ⚠️ Réserves | Matrice complète et feature-gating bien pensé, mais mécanisme d'ownership non spécifié (F3) et permission d'annulation d'article à clarifier (F4) |
+| RBAC | ⚠️ Réserves | Matrice complète et feature-gating bien pensé ; mécanisme d'ownership désormais spécifié (F3, doc 08 §8.8) ; permission d'annulation d'article encore à clarifier avec le Product Owner (F4) |
 | Billing (SaaS) | ✅ Solide | Versioning des plans, prix figé à la souscription, conversion de devise avec cache (doc 22, doc 35) |
 | Abonnements | ✅ Solide | State machine complète, cron de suspension automatique |
 | QR Code | ✅ Solide | Namespace public isolé, rate limiting dédié, token opaque régénérable |
@@ -228,11 +230,11 @@ Doc 18 §18.2 (Bonnes pratiques & scalabilité) utilise la grille **500 / 5 000 
 - Permission d'annulation d'article (F4) — décision à confirmer avec le Product Owner
 - Stratégie d'environnement de développement local (F10) — 1 décision à trancher
 
-### 🔴 Bloquant (à régler avant/pendant Epic 0-1, pas après)
-1. **F10** — stratégie de dev local (bloque le tout premier livrable, Epic 0)
-2. **F8/F9** — cross-référencement `00-INDEX.md` ↔ `docs/design/` (risque de perte du travail de design déjà produit)
-3. **F1/F11** — cohérence du renommage `auditLogs` → `businessAuditLogs` (dette documentaire connue, coût de correction minime, à ne pas reporter)
-4. **F3** — mécanisme RBAC d'ownership, à spécifier avant que l'Epic 4 (module `orders`) ne soit codé
+### 🔴 Bloquant (à régler avant/pendant Epic 0-1, pas après) — ✅ les 4 points ont été corrigés le 2026-07-13
+1. **F10** — stratégie de dev local (bloque le tout premier livrable, Epic 0) — ✅ Corrigé (ADR 0012)
+2. **F8/F9** — cross-référencement `00-INDEX.md` ↔ `docs/design/` (risque de perte du travail de design déjà produit) — ✅ Corrigé
+3. **F1/F11** — cohérence du renommage `auditLogs` → `businessAuditLogs` (dette documentaire connue, coût de correction minime, à ne pas reporter) — ✅ Corrigé
+4. **F3** — mécanisme RBAC d'ownership, à spécifier avant que l'Epic 4 (module `orders`) ne soit codé — ✅ Corrigé (doc 08 §8.8)
 
 ### Peut attendre (sans bloquer le démarrage)
 F2 (avant planification V1), F4 (décision produit, avant Epic 4), F5/F6 (avant Epic 4/7), F7 (avant Epic 10), F12/F14 (avant Epic 10), F13/F15 (au fil de l'eau)
@@ -243,15 +245,15 @@ F2 (avant planification V1), F4 (décision produit, avant Epic 4), F5/F6 (avant 
 
 **Le développement est autorisé à démarrer.**
 
-Cette conception ne présente aucun défaut d'architecture fondamental qui justifierait un refus : les choix structurants ont été pris, réexaminés une fois par une revue critique dédiée, et tiennent la route à la lecture intégrale. Les 15 constats de cet audit sont, à une exception près (F3, un gap de spécification RBAC réel), des problèmes de **cohérence documentaire** ou de **planning**, pas des problèmes de **conception**. C'est le profil d'un projet prêt à coder, pas d'un projet à renvoyer en conception.
+Cette conception ne présente aucun défaut d'architecture fondamental qui justifierait un refus : les choix structurants ont été pris, réexaminés une fois par une revue critique dédiée, et tiennent la route à la lecture intégrale. Les 15 constats de cet audit sont, à une exception près (F3, un gap de spécification RBAC réel — désormais comblé), des problèmes de **cohérence documentaire** ou de **planning**, pas des problèmes de **conception**. C'est le profil d'un projet prêt à coder, pas d'un projet à renvoyer en conception.
 
-**Conditions avant le premier commit de code applicatif** (les quatre points bloquants du §5, estimés à moins d'une demi-journée cumulée) :
+**Mise à jour du 2026-07-13 — conditions levées** : les 4 conditions ci-dessous ont été traitées le jour même de l'audit, avant tout premier commit de code applicatif :
 
-1. Trancher et documenter la stratégie d'environnement de développement local (F10) — Docker Compose local recommandé pour MongoDB/Redis, Atlas/Redis cloud réservés à staging/production.
-2. Ajouter à `00-INDEX.md` une section référençant `docs/design/` et les fichiers racine (`RESUME-SESSION.md`, `CHECKLIST-DEVELOPPEMENT.md`) ; corriger `36-...md` §36.7 en conséquence (F8/F9).
-3. Corriger les 5 fichiers portant encore `auditLogs` au lieu de `businessAuditLogs`, en particulier `13-securite.md` §13.7 dont la politique de rétention contredit doc 24 (F1/F11).
-4. Rédiger la section manquante décrivant le mécanisme technique de filtrage "ownership" pour le RBAC (F3), avant que l'Epic 4 ne soit entamé — peut être fait en parallèle de l'Epic 0-1, mais doit être fait avant le premier `orders.repository.ts`.
+1. ✅ Stratégie d'environnement de développement local tranchée et documentée (F10) — ADR 0012 : Docker Compose local pour MongoDB/Redis, Atlas/Redis cloud réservés à staging/production. Propagé aux docs 03, 15, 16 et à `CHECKLIST-DEVELOPPEMENT.md`.
+2. ✅ Section "Design & Maquettes" ajoutée à `00-INDEX.md`, référençant `docs/design/` et les fichiers racine (`RESUME-SESSION.md`, `CHECKLIST-DEVELOPPEMENT.md`) ; doc 36 §36.7 corrigé (F8/F9).
+3. ✅ Renommage `auditLogs` → `businessAuditLogs` propagé dans les 5 fichiers concernés (05, 13, 16, 17, 22, 23) ; `13-securite.md` §13.7 ne contredit plus doc 24 sur la politique de rétention (F1/F11).
+4. ✅ Nouveau doc 08 §8.8 spécifiant le mécanisme RBAC de filtrage "ownership" (portée `own`/`all` résolue par le middleware, appliquée au niveau repository) ; renvoi ajouté doc 06 §6.4 (F3).
 
-Les autres constats (F2, F4, F5, F6, F7, F12, F13, F14, F15) n'empêchent pas de commencer l'Epic 0 aujourd'hui — ils sont replanifiés à leur Epic respectif dans le §5 ci-dessus, avec la même exigence : ne pas laisser une incohérence connue devenir une décision arbitraire prise en silence dans le code (doc 30 §30.12, principe déjà posé par ce dossier lui-même).
+**Plus aucun point bloquant.** Les autres constats (F2, F4, F5, F6, F7, F12, F13, F14, F15) n'empêchent pas de commencer l'Epic 0 aujourd'hui — ils restent replanifiés à leur Epic respectif dans le §5 ci-dessus, avec la même exigence : ne pas laisser une incohérence connue devenir une décision arbitraire prise en silence dans le code (doc 30 §30.12, principe déjà posé par ce dossier lui-même). En particulier, F4 (permission par défaut d'annulation d'un article `queued` pour le rôle `waiter`) reste une décision produit à trancher avec le Product Owner avant l'Epic 4, distincte du mécanisme technique F3 qui, lui, est désormais prêt à l'accueillir quel que soit l'arbitrage.
 
-**Prochaine étape recommandée** : traiter les 4 conditions ci-dessus (correction documentaire pure, aucun code), puis démarrer l'Epic 0 — Feature 0.1 (Monorepo & CI/CD) de `CHECKLIST-DEVELOPPEMENT.md`.
+**Prochaine étape** : démarrer l'Epic 0 — Feature 0.1 (Monorepo & CI/CD) de `CHECKLIST-DEVELOPPEMENT.md`.

@@ -8,8 +8,9 @@ Checklist organisée par phase (doc 15). Utilisable comme suivi de projet (coche
 - [ ] CI GitHub Actions : lint + test + build sur chaque PR
 - [ ] Déploiement auto `apps/web` → Vercel (preview + prod)
 - [ ] Déploiement auto `apps/api` → Railway (staging + prod)
-- [ ] MongoDB Atlas provisionné (dev/staging/prod), réplicas configurés
-- [ ] Redis provisionné (dev/staging/prod)
+- [ ] `docker-compose.yml` opérationnel (MongoDB replica set + Redis locaux, ADR 0012)
+- [ ] MongoDB Atlas provisionné (staging/prod), réplicas configurés
+- [ ] Redis managé provisionné (staging/prod)
 - [ ] Firebase Storage configuré + règles d'accès
 - [ ] `config/env.ts` avec validation Zod fail-fast
 - [ ] ESLint + Prettier + Husky + Commitlint opérationnels
@@ -131,7 +132,7 @@ Checklist organisée par phase (doc 15). Utilisable comme suivi de projet (coche
 - [ ] Rate limiting appliqué si la route est sensible ou publique
 - [ ] Aucune donnée sensible (mot de passe, secret 2FA, données de carte) exposée dans une réponse API
 - [ ] Erreurs typées utilisées, pas de fuite de stacktrace au client
-- [ ] Actions sensibles tracées dans `auditLogs`
+- [ ] Actions sensibles tracées dans `businessAuditLogs` (doc 24)
 
 ## Checklist transverse — Qualité (à chaque PR, doc 14)
 

@@ -2,7 +2,7 @@
 
 ## 23.1 Constat de la revue (doc 19 §19.11-3)
 
-Le plugin Mongoose `softDelete` (doc 12 §12.7) posait `deletedAt` mais restait incomplet : pas de traçabilité de *qui* a supprimé/restauré, pas de politique homogène de purge définitive, pas de distinction entre collections qui doivent être récupérables et celles qui ne le doivent jamais être (ex. `refreshTokens`, `auditLogs`).
+Le plugin Mongoose `softDelete` (doc 12 §12.7) posait `deletedAt` mais restait incomplet : pas de traçabilité de *qui* a supprimé/restauré, pas de politique homogène de purge définitive, pas de distinction entre collections qui doivent être récupérables et celles qui ne le doivent jamais être (ex. `refreshTokens`, `businessAuditLogs`).
 
 ## 23.2 Champs standard (plugin `softDelete` v2)
 
@@ -21,7 +21,7 @@ Toute requête standard (`find`, `findOne` via `BaseRepository`, doc 12 §12.2) 
 | Classe | Comportement | Collections concernées |
 |---|---|---|
 | **Récupérable** (soft delete + restauration possible) | `deletedAt`/`deletedBy`/`restoredAt`/`restoredBy`, purge différée | `restaurants`, `employees` (memberships), `rooms`, `tables`, `categories`, `menuItems`, `customers`, `reservations` |
-| **Append-only, jamais supprimable** | Aucune suppression possible, ni logique ni physique, hors purge légale programmée | `auditLogs`, `stockMovements`, `orders` (une commande n'est jamais supprimée, seulement `cancelled`, doc 21), `payments` |
+| **Append-only, jamais supprimable** | Aucune suppression possible, ni logique ni physique, hors purge légale programmée | `businessAuditLogs` (doc 24), `stockMovements`, `orders` (une commande n'est jamais supprimée, seulement `cancelled`, doc 21), `payments` |
 | **Expiration technique (TTL natif Mongo)** | Purge automatique par MongoDB, pas de notion de restauration | `refreshTokens` (doc 05), `notifications` (TTL 90j) |
 | **Suppression physique immédiate autorisée** | Pas de valeur légale/historique | `eventOutbox` une fois publié + traité (doc 20), fichiers temporaires d'upload orphelins |
 
@@ -36,19 +36,19 @@ flowchart LR
     E --> F{"Restauré\ndans la fenêtre ?"}
     F -- oui --> G["restoredAt/restoredBy\nDocument réactivé"]
     F -- non --> H["Job de purge (cron mensuel)\nHard delete définitif"]
-    H --> I["Entrée auditLogs\n(action: hard_delete, doc 24)"]
+    H --> I["Entrée businessAuditLogs\n(action: hard_delete, doc 24)"]
 ```
 
 - **Fenêtre de rétention par défaut : 90 jours**, ajustable par catégorie légale (voir §23.6 RGPD). Pendant cette fenêtre, un document soft-deleted reste visible via `withDeleted()` pour les rôles habilités (`audit-logs:read` a minima).
 - **Hard delete = suppression physique irréversible**, exécutée uniquement par un job planifié (`workers/hard-delete-purge.cron.ts`, doc 12 §12.6), jamais en synchrone sur une requête API — évite qu'une suppression accidentelle en cascade se produise dans le chemin critique.
-- Toute opération de hard delete génère une entrée dans `auditLogs` (technique, doc 24) **avant** l'exécution effective (log-then-delete, pour ne jamais perdre la trace même si le process crashe pendant la purge).
+- Toute opération de hard delete génère une entrée dans `businessAuditLogs` (doc 24) **avant** l'exécution effective (log-then-delete, pour ne jamais perdre la trace même si le process crashe pendant la purge).
 
 ## 23.5 Cas particulier : suppression d'un tenant (`restaurants`)
 
 Le cycle de vie complet (`active → archived`, doc 06 §6.7, doc 21 §21.6) est plus long qu'un soft delete standard :
 1. `archived` (soft delete du tenant, `deletedAt` posé) : toutes les données du tenant restent en base mais l'accès applicatif est bloqué (`403 TENANT_ARCHIVED` sur toute route hors export de données).
 2. **Fenêtre de récupération étendue : 30 jours** (contractuelle, à confirmer avec le Product Owner, voir rapport final) — un tenant archivé par erreur ou qui change d'avis peut être restauré par un `super_admin`.
-3. À l'issue de la fenêtre, un job de purge **en cascade contrôlée** supprime définitivement toutes les collections tenant-scoped de ce `tenantId` (ordre inverse du graphe de dépendances, doc 04 §4.5, pour respecter les contraintes de référence), **à l'exception** des `auditLogs` et `invoices` (billing), conservés pour obligations légales/comptables (rétention distincte, voir doc 24 §24.4).
+3. À l'issue de la fenêtre, un job de purge **en cascade contrôlée** supprime définitivement toutes les collections tenant-scoped de ce `tenantId` (ordre inverse du graphe de dépendances, doc 04 §4.5, pour respecter les contraintes de référence), **à l'exception** des `businessAuditLogs` et `invoices` (billing), conservés pour obligations légales/comptables (rétention distincte, voir doc 24 §24.4).
 
 ## 23.6 RGPD et droits de la personne concernée (gap comblé, doc 19 §19.11-16)
 

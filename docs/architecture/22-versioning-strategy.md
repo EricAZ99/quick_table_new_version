@@ -41,7 +41,7 @@ Un plan ne doit **jamais être modifié en place** une fois qu'un tenant y est a
 
 ## 22.6 Configuration (`restaurants.settings`, `subscriptionPlans.features`)
 
-- Toute configuration à fort impact (feature flags globaux, doc 18 §18.8) est versionnée par un simple horodatage `updatedAt` + entrée dans `auditLogs` (doc 24) — pas besoin d'un historique complet, la fréquence de changement est faible et le risque limité.
+- Toute configuration à fort impact (feature flags globaux, doc 18 §18.8) est versionnée par un simple horodatage `updatedAt` + entrée dans `businessAuditLogs` (doc 24) — pas besoin d'un historique complet, la fréquence de changement est faible et le risque limité.
 - Les feature flags de rollout progressif (doc 18 §18.8, distincts du feature gating commercial) sont gérés par un outil dédié (LaunchDarkly ou équivalent open-source type Unleash) dès que leur nombre dépasse la douzaine — leur propre système de versioning/audit est alors délégué à l'outil, pas réinventé.
 
 ## 22.7 API (`/api/v1`, `/api/v2`...)

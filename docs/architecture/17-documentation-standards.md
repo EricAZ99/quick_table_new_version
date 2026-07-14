@@ -56,7 +56,7 @@ Nécessaire dès la Phase 7 (doc 15) car QuickTable vise une commercialisation c
 
 Document vivant couvrant :
 - **Déploiement** : étapes de mise en production, ordre (migrations avant déploiement API, doc 12 §12.7), procédure de rollback.
-- **Incident multi-tenant** : que faire en cas de suspicion de fuite de données entre tenants (doc 06/13) — qui prévenir, comment isoler, comment auditer via `auditLogs`.
+- **Incident multi-tenant** : que faire en cas de suspicion de fuite de données entre tenants (doc 06/13) — qui prévenir, comment isoler, comment auditer via `businessAuditLogs` (doc 24).
 - **Révocation de sécurité** : comment révoquer massivement des sessions (ex. compromission d'une clé JWT), comment forcer une rotation de secrets.
 - **Restauration** : procédure de restauration MongoDB Atlas testée en staging au moins une fois par trimestre (doc 18).
 - **Astreinte** : contacts, escalade, SLA cible par sévérité d'incident.

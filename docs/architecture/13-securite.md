@@ -55,8 +55,8 @@ Le modèle d'authentification (Access Token en mémoire côté client, jamais en
 
 ## 13.7 Audit et journalisation
 
-- Collection `auditLogs` (doc 05) append-only, alimentée automatiquement par le plugin `auditable` (doc 12 §12.7) pour toute mutation sur les ressources sensibles (`employees`, `payments`, `subscriptions`, `settings`, `restaurants`).
-- Rétention minimale de 12 mois (ajustable par obligation légale locale), export possible par tenant (doc 06 §6.5).
+- Collection `businessAuditLogs` (doc 05, doc 24) append-only, alimentée automatiquement par le plugin `auditable` (doc 12 §12.7) pour toute mutation sur les ressources sensibles listées au doc 24 §24.3 (`employees`, `payments`, `subscriptions`, `settings`, `restaurants`, entre autres).
+- **Rétention différenciée par catégorie d'action** (doc 24 §24.4, décidée avec le Product Owner le 2026-07-13) — 10 ans pour les actions comptables/fiscales (base légale OHADA), 3 ans pour le reste, permanente pour les actions RGPD. Ce paragraphe renvoie à doc 24 comme référence unique de la politique de rétention, pour ne jamais diverger d'elle. Export possible par tenant (doc 06 §6.5).
 - Alerting temps réel (via le worker de notification) sur des patterns suspects : multiples échecs de login, remboursements anormalement fréquents par un même caissier, changement de rôle vers `restaurant_owner`.
 
 ## 13.8 Sécurité de l'espace public (QR Code)

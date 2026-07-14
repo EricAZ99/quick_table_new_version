@@ -9,9 +9,10 @@ Ce dossier constitue la référence d'architecture du projet. Il doit être lu *
 
 ## Comment lire ce dossier selon votre rôle
 
-- **Développeur qui rejoint l'équipe** : 19 (revue critique, pour comprendre le "pourquoi" derrière chaque choix) → 01 → 02 → 06 → 08 → 28 (DDD) → 30 (Engineering Handbook).
-- **Développeur qui commence une feature** : 34 (backlog, trouver sa User Story) → 04 (module concerné) → 05 (collections) → 21 (state machine si applicable) → 20 (Domain Events) → 09 (endpoints) → 10 (si temps réel) → 16 (checklist).
-- **Tech Lead / Architecte** : 19 en premier (toutes les décisions et leurs alternatives), puis les documents thématiques (20-31) qui en découlent.
+- **Développeur qui rejoint l'équipe** : 37 (audit CTO, l'état réel du projet au démarrage) → 19 (revue critique, pour comprendre le "pourquoi" derrière chaque choix) → 01 → 02 → 06 → 08 → 28 (DDD) → 30 (Engineering Handbook).
+- **Développeur qui commence une feature** : 34 (backlog, trouver sa User Story) → 04 (module concerné) → 05 (collections) → 21 (state machine si applicable) → 20 (Domain Events) → 09 (endpoints) → 10 (si temps réel) → 16 (checklist) → maquette correspondante dans `docs/design/`.
+- **Développeur/designer qui travaille sur l'UI** : section "Design & Maquettes" ci-dessous **avant** toute nouvelle maquette — ne jamais repartir de zéro.
+- **Tech Lead / Architecte** : 37 (audit CTO) puis 19 (toutes les décisions et leurs alternatives), puis les documents thématiques (20-31) qui en découlent.
 - **Product Owner** : 01 (analyse du cahier des charges), 32 (MVP/V1/V2/V3), 33 (comparaison marché), 15/34 (roadmap et backlog), et la section "Points à valider avec le Product Owner" du rapport de revue (99).
 
 ## Sommaire
@@ -61,7 +62,25 @@ Ce dossier constitue la référence d'architecture du projet. Il doit être lu *
 | 34 | [Backlog Epics/Features/Stories](./34-backlog-epics-features.md) | Découpage en tâches ≤1 jour pour le MVP, Feature/Story pour V1-V3 |
 | 35 | [Internationalisation & multi-devise](./35-internationalisation-multidevise.md) | Géolocalisation, i18n FR/EN/IT/ES, devise par pays, conversion des plans SaaS |
 | 36 | [Architecture de l'information & Parcours utilisateurs](./36-architecture-information-parcours-utilisateurs.md) | Inventaire d'écrans par rôle, parcours critiques, hiérarchie d'information, navigation, cibles d'appareils |
+| 37 | [**Audit CTO — Pré-Développement**](./37-audit-pre-developpement-cto.md) | **À lire avant le premier commit.** Revue critique de l'ensemble du dossier par un CTO entrant, constats, checklist GO/NO-GO, autorisation de démarrage |
 | 99 | [Rapport de revue d'architecture](./99-rapport-revue-architecture.md) | Synthèse : documents créés/modifiés, décisions, risques, points à valider avec le PO |
+
+### Design & Maquettes (`docs/design/`)
+
+**Existent déjà et sont finalisés** — à consulter systématiquement avant de développer un écran, ne jamais redemander ou refaire ce travail (gap identifié et corrigé au doc 37, constat F8/F9) :
+
+| Document | Contenu |
+|---|---|
+| [`docs/design/00-design-system.html`](../design/00-design-system.html) | Design System complet : tokens (couleur, typographie, espacement), composants de base, thèmes clair/sombre. Palette Encre/Porcelaine/Ambre confirmée comme identité de marque officielle. |
+| `docs/design/01-authentification.html` à `12-platform-admin.html` | 12 écrans haute-fidélité couvrant les 6 interfaces (doc 36 §36.2) : Auth, Dashboard, Serveur, Cuisine (KDS), Caisse, Client QR Code, Menu & Tables, Employés & Réservations, Stock & Clients, Statistiques & Paramètres, Abonnement & Audit, Platform Admin. |
+| [`docs/design/AUDIT-UX.md`](../design/AUDIT-UX.md) | Audit UX auto-critique déjà mené sur l'ensemble des maquettes (parcours, accessibilité, cohérence visuelle) — corrections déjà appliquées. |
+
+### Autres documents racine du projet
+
+| Document | Contenu |
+|---|---|
+| [`RESUME-SESSION.md`](../../RESUME-SESSION.md) | Résumé exhaustif de toute la conception et du design réalisés — point d'entrée narratif complémentaire à ce dossier. |
+| [`CHECKLIST-DEVELOPPEMENT.md`](../../CHECKLIST-DEVELOPPEMENT.md) | Checklist de développement complète, séquentielle, du Epic 0 à l'Epic 12, organisée en lots livrables — à utiliser au quotidien pendant le développement. |
 
 ### Architecture Decision Records
 
@@ -78,6 +97,7 @@ Ce dossier constitue la référence d'architecture du projet. Il doit être lu *
 | [0009](./adr/0009-redis-cache-et-pubsub.md) | Redis comme cache, pub/sub et broker de queue |
 | [0010](./adr/0010-jwt-authentification-stateless.md) | JWT stateless + Refresh Token rotatif |
 | [0011](./adr/0011-fedapay-agregateur-mobile-money.md) | FedaPay comme agrégateur Mobile Money pour le marché béninois |
+| [0012](./adr/0012-docker-compose-developpement-local.md) | Docker Compose (MongoDB + Redis locaux) pour l'environnement de développement individuel |
 
 ## Décisions d'architecture structurantes (résumé, détail complet doc 19 + `adr/`)
 
@@ -102,6 +122,7 @@ Ce dossier constitue la référence d'architecture du projet. Il doit être lu *
 | 2026-07-13 | v2.2 — Architecture de l'information | Nouveau doc 36 (inventaire d'écrans, parcours utilisateurs, hiérarchie d'information, navigation par rôle, cibles d'appareils) — comble le manque d'UX/IA identifié après la v2.1, sert de brief pour le design visuel à venir |
 | 2026-07-13 | v2.3 — Backlog intégral à granularité tâche | Doc 34 étendu : les Epics 6 à 12 (V1/V1.5/V2/V3), auparavant à niveau Feature seulement, sont désormais découpés en tâches ≤1 jour, organisées par module (doc 04) ; Epic 11 corrigé (split bill/pourboires retirés, déjà remontés au MVP) |
 | 2026-07-13 | v2.4 — Derniers points ouverts tranchés avec le Product Owner | FedaPay retenu comme agrégateur Mobile Money béninois (doc adr/0011, doc 34 §34.7, doc 32 §32.3) ; rétention des `businessAuditLogs` différenciée par catégorie — 10 ans pour les actions comptables/fiscales (art. 23 AUDCIF/OHADA), 3 ans pour le reste, permanente pour le RGPD (doc 24 §24.4) ; identité de marque Encre/Porcelaine/Ambre confirmée comme identité officielle (doc 00 design system) ; outillage V1.5 retenu à budget serré — Infisical pour les secrets (doc 13 §13.8bis), Grafana Cloud + Sentry pour l'observabilité (doc 25 §25.1bis). Plus aucun point bloquant avant le démarrage du développement de l'Epic 0 |
+| 2026-07-13 | v2.5 — Audit CTO pré-développement et corrections | Nouveau doc 37 (audit critique complet avant démarrage du code, checklist GO/NO-GO, autorisation officielle) ; nouvel ADR 0012 (Docker Compose pour le développement local, MongoDB/Redis locaux distincts d'Atlas/Redis cloud réservés à staging/prod) ; section "Design & Maquettes" ajoutée pour référencer `docs/design/` (Design System, 12 maquettes, audit UX) et les fichiers racine (`RESUME-SESSION.md`, `CHECKLIST-DEVELOPPEMENT.md`), auparavant invisibles depuis ce point d'entrée ; renommage `auditLogs` → `businessAuditLogs` propagé dans 05, 13, 16, 22, 23 (la politique de rétention contradictoire du doc 13 §13.7 est corrigée pour renvoyer à doc 24) ; nouveau §8.8 (doc 08) spécifiant le mécanisme RBAC de filtrage par propriétaire ("les siennes") ; doc 36 §36.7 corrigé (identité de marque et maquettes ne sont plus des points ouverts) |
 
 Toute révision future de ce dossier doit ajouter une ligne à ce journal, indiquant la date et la portée — ce dossier est **la source de vérité vivante** de l'architecture (doc 00 §"Comment lire ce dossier" ci-dessus), pas un artefact figé au lancement du projet.
 
