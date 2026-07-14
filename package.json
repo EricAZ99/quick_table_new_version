@@ -4,6 +4,7 @@
   "private": true,
   "description": "QuickTable — plateforme SaaS multi-tenant de gestion de restaurants (docs/architecture/00-INDEX.md).",
   "license": "UNLICENSED",
+  "type": "module",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -13,13 +14,25 @@
     "dev": "pnpm -r --parallel --if-present dev",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
-    "lint": "pnpm -r --if-present lint",
+    "lint": "eslint .",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "prepare": "husky"
   },
   "prettier": "@quicktable/config/prettier",
+  "lint-staged": {
+    "**/*.{ts,tsx,vue,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "**/*.{json,md,yml,yaml,html}": "prettier --write --ignore-unknown"
+  },
   "devDependencies": {
     "@quicktable/config": "workspace:*",
-    "prettier": "^3.3.3"
+    "eslint": "^9.15.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "prettier": "^3.3.3",
+    "typescript-eslint": "^8.15.0"
   }
 }

@@ -12,6 +12,11 @@ import { baseConfig } from './base.js';
  * point 4) : `src/services/` est le seul point d'entrée autorisé vers
  * Axios et `localStorage`, pour empêcher les composants d'y accéder
  * directement et de désynchroniser l'état du store Pinia.
+ *
+ * Les motifs `**\/src/**` (plutôt que `src/**`) sont volontaires : ce
+ * paquet est composé depuis l'`eslint.config.js` unique à la racine du
+ * monorepo (doc 14 §14.1), où les chemins sont relatifs à la racine
+ * (`apps/web/src/...`), pas au dossier `apps/web/`.
  */
 export const vueConfig = tseslint.config(
   ...baseConfig,
@@ -25,14 +30,14 @@ export const vueConfig = tseslint.config(
     },
   },
   {
-    files: ['src/**/*.{ts,vue}'],
+    files: ['**/src/**/*.{ts,vue}'],
     languageOptions: {
       globals: { ...globals.browser },
     },
   },
   {
-    files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/services/**'],
+    files: ['**/src/**/*.{ts,vue}'],
+    ignores: ['**/src/services/**'],
     rules: {
       'no-restricted-imports': [
         'error',
