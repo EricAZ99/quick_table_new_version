@@ -2,6 +2,7 @@
 
 Statut : Accepté (contrainte du cahier des charges, réévaluation programmée)
 Date : 2026-07-11
+Note du 2026-07-14 : un remplacement par Render.com a été brièvement envisagé (palier gratuit Railway supprimé) puis rejeté le même jour au profit du crédit d'essai gratuit Railway — voir [ADR 0013](./0013-rendercom-remplace-railway.md) pour le détail.
 
 ## Contexte
 
