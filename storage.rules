@@ -1,0 +1,27 @@
+rules_version = '2';
+
+// Firebase Storage Security Rules (ADR 0005, doc 04 module `uploads`).
+//
+// Deny-all volontaire : QuickTable n'utilise pas Firebase Authentication
+// (l'authentification est un JWT stateless propre, ADR 0010) — il n'existe
+// donc aucun `request.auth` Firebase exploitable ici pour vérifier
+// tenant/rôle/permission. Tout accès réel passe exclusivement par le
+// backend (module `uploads`, seul consommateur du SDK Admin, ADR 0005) :
+//   - Écriture : Admin SDK, authentifié en amont par notre JWT/RBAC
+//     (doc 07/08), avec validation MIME/taille (doc 09 §9.19) avant
+//     l'appel à Firebase — l'Admin SDK contourne ces règles par nature.
+//   - Lecture : URLs signées à expiration générées par le backend
+//     (doc 04 « génération d'URLs signées »), un mécanisme indépendant
+//     des Security Rules.
+//
+// Ces règles ne sont donc pas la couche d'autorisation métier — elles ne
+// sont qu'un filet de sécurité qui empêche tout accès direct au bucket
+// depuis un client (navigateur, script tiers) qui contournerait le
+// backend.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

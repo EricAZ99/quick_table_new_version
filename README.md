@@ -45,6 +45,8 @@ Un hook `pre-commit` (lint-staged), `commit-msg` (Commitlint) et `pre-push` (tes
 
 > **`docker-compose.yml` écrit mais non vérifié par exécution réelle** sur cette machine de développement (Docker Desktop nécessite Windows 10 22H2/build 19045+, cette machine est en 19044 et sa mise à jour est gérée par une stratégie d'entreprise) — voir `CHECKLIST-DEVELOPPEMENT.md`, Feature 0.2, pour le détail. À vérifier avant d'implémenter `config/database.ts`.
 
+> **Firebase Storage non provisionné** : `storage.rules` est écrit (deny-all, ADR 0005 — accès exclusivement via le SDK Admin backend + URLs signées, doc 04) mais aucun projet Firebase réel n'existe, Google exigeant une carte bancaire (plan Blaze) pour activer Cloud Storage même en usage gratuit. À débloquer dès qu'une carte est disponible, avant le module `uploads` (Epic 3).
+
 ## Conventions
 
 Commits [Conventional Commits](https://www.conventionalcommits.org/), TypeScript strict, un ticket = une fonctionnalité = une Pull Request — voir [`docs/architecture/30-engineering-handbook.md`](./docs/architecture/30-engineering-handbook.md).
