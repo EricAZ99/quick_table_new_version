@@ -36,7 +36,7 @@
 
 - [ ] Écrire `docker-compose.yml` (MongoDB replica set + Redis locaux, ADR 0012) — 0,5j — **écrit, non vérifié par exécution** (Docker Desktop non installable sur la machine de développement actuelle : Windows 10 build 19044, exige 22H2/19045+ depuis Docker Desktop 4.50 ; mise à jour Windows bloquée par une stratégie d'entreprise). À revérifier avant le ticket `config/database.ts` (connexion Mongoose réelle).
 - [x] Provisionner MongoDB Atlas (staging/prod) — 0,5j — un seul cluster M0 gratuit, deux bases distinctes (`quicktable` / `quicktable-staging`) plutôt que deux clusters, décision budget-serré cohérente avec Railway (un seul environnement) ; connexion vérifiée réellement sur les deux bases (ping OK, MongoDB 8.0.27)
-- [ ] Provisionner Redis managé (staging/prod) — 0,25j
+- [x] Provisionner Redis managé (staging/prod) — 0,25j — Upstash (ADR 0009), instance gratuite unique partagée staging/prod pour l'instant (même logique que Railway/Atlas) ; connexion vérifiée réellement (PING/PONG, SET/GET) via le protocole Redis standard TLS, pas seulement l'API REST
 - [ ] Configurer Firebase Storage + règles d'accès — 0,5j
 - [ ] Implémenter `config/env.ts` avec validation Zod fail-fast — 0,5j
 - [ ] Implémenter `config/database.ts` (connexion Mongoose, pool) — 0,5j
