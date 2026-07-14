@@ -27,7 +27,7 @@ Détail complet et justification : [`docs/architecture/03-arborescence-projet.md
 
 ## Démarrage
 
-Prérequis : Node.js ≥ 20 (voir `.nvmrc`), [pnpm](https://pnpm.io) ≥ 9, [Docker](https://www.docker.com/) (MongoDB + Redis locaux, [ADR 0012](./docs/architecture/adr/0012-docker-compose-developpement-local.md)).
+Prérequis : Node.js ≥ 22.13 (voir `.nvmrc` — requis par `pnpm@11`, cf. `packageManager`), [pnpm](https://pnpm.io) ≥ 9, [Docker](https://www.docker.com/) (MongoDB + Redis locaux, [ADR 0012](./docs/architecture/adr/0012-docker-compose-developpement-local.md)).
 
 ```bash
 pnpm install        # installe les dépendances de tout le workspace
