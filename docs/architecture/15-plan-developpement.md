@@ -11,7 +11,7 @@ Hypothèse de dimensionnement : équipe de 2 à 4 développeurs fullstack + 1 de
 - **Livrables** :
   - Monorepo (doc 03), workspaces configurés.
   - CI GitHub Actions (lint, test, build) sur chaque PR.
-  - Déploiement automatique `apps/web` → Vercel (preview + prod), `apps/api` → Railway (staging + prod).
+  - Déploiement automatique `apps/web` → Vercel (preview + prod), `apps/api` → Render.com (staging + prod, ADR 0013).
   - Environnement de développement local via Docker Compose (MongoDB + Redis, ADR 0012) ; MongoDB Atlas et Redis managé provisionnés pour `staging`/`production` uniquement.
   - `config/env.ts` avec validation Zod, gestion des secrets.
   - ESLint/Prettier/Husky/Commitlint opérationnels (doc 14).

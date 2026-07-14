@@ -17,8 +17,8 @@ flowchart TB
         VercelCDN["Vercel Edge Network"]
     end
 
-    subgraph Backend["Backend — Railway"]
-        LB["Load Balancer (Railway)"]
+    subgraph Backend["Backend — Render.com (ADR 0013)"]
+        LB["Load Balancer (Render.com)"]
         API1["API Instance 1\nExpress + Socket.IO"]
         API2["API Instance 2\nExpress + Socket.IO"]
         Workers["Workers\n(jobs asynchrones, cron)"]
@@ -54,7 +54,7 @@ flowchart TB
 ### Lecture du schéma
 
 - **Deux fronts distincts déployés séparément mais issus du même monorepo** : le back-office (Admin/Manager/Serveur/Cuisine/Caisse) et l'interface client déclenchée par scan QR Code. Elles ont des besoins de sécurité, de performance et d'UX très différents (authentifié vs anonyme, riche vs minimaliste) — les séparer évite qu'une faille de sécurité sur l'espace public expose l'espace back-office, et permet des temps de chargement optimisés pour un client sur mobile avec un réseau restaurant faible.
-- **Plusieurs instances API stateless** derrière un load balancer Railway, aucune session en mémoire locale — obligatoire pour scaler horizontalement et pour que Socket.IO fonctionne correctement en multi-instance (via l'adaptateur Redis, voir doc 10).
+- **Plusieurs instances API stateless** derrière un load balancer Render.com (ADR 0013), aucune session en mémoire locale — obligatoire pour scaler horizontalement et pour que Socket.IO fonctionne correctement en multi-instance (via l'adaptateur Redis, voir doc 10).
 - **Redis** apparaît dès la Phase 1 comme brique centrale, pas comme optimisation tardive : il sert à la fois d'adaptateur Socket.IO, de cache (sessions, rate limiting, statistiques), et de broker de queue (BullMQ) pour les jobs asynchrones (emails, génération de reçus PDF, agrégations de stats, alertes de stock).
 - **Workers séparés du processus API** : les tâches longues (envoi d'email, génération de rapport, recalcul de statistiques) ne doivent jamais bloquer le event-loop Node qui sert les requêtes API/Socket.IO en rush de service.
 
@@ -209,14 +209,14 @@ flowchart LR
     Dev["Dépôt Git (monorepo)"] -->|CI/CD| GH["GitHub Actions"]
     GH -->|build & test| GH
     GH -->|deploy frontend| Vercel["Vercel\n(Preview + Production)"]
-    GH -->|deploy backend| Railway["Railway\n(Staging + Production)"]
+    GH -->|deploy backend| Render["Render.com\n(Staging + Production, ADR 0013)"]
     GH -->|migrations| Atlas["MongoDB Atlas"]
-    Vercel -->|env: VITE_API_URL| Railway
-    Railway --> Atlas
-    Railway --> RedisCloud["Redis (Railway/Upstash)"]
-    Railway --> FirebaseStorage["Firebase Storage"]
+    Vercel -->|env: VITE_API_URL| Render
+    Render --> Atlas
+    Render --> RedisCloud["Redis (Upstash)"]
+    Render --> FirebaseStorage["Firebase Storage"]
 ```
 
 - **Monorepo** recommandé (voir doc 03) avec deux packages déployés indépendamment (`apps/web`, `apps/api`), plus un package partagé de types TypeScript (`packages/shared-types`) généré/maintenu pour garantir la cohérence des contrats API entre front et back.
-- **Environnements** : `local` → `preview` (par PR, automatique sur Vercel/Railway) → `staging` → `production`. Aucune modification manuelle en production ; tout passe par la CI.
+- **Environnements** : `local` → `preview` (par PR, automatique sur Vercel/Render.com) → `staging` → `production`. Aucune modification manuelle en production ; tout passe par la CI.
 - **Migrations de base de données** versionnées et exécutées en étape de déploiement dédiée (voir doc 12, `scripts/migrations`), jamais au boot de l'application.

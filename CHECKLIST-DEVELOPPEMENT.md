@@ -28,7 +28,7 @@
 - [x] Configurer Commitlint (Conventional Commits) — 0,25j
 - [x] Écrire le pipeline CI GitHub Actions (lint + test + build) — 1j
 - [x] Configurer déploiement auto Vercel (`apps/web`, preview + prod) — 0,5j
-- [ ] Configurer déploiement auto Railway (`apps/api`, staging + prod) — 0,5j
+- [ ] Configurer déploiement auto Render.com (`apps/api`, staging + prod, ADR 0013) — 0,5j
 
 ### Feature 0.2 — Infrastructure de données
 

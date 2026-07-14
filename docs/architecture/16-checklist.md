@@ -7,7 +7,7 @@ Checklist organisée par phase (doc 15). Utilisable comme suivi de projet (coche
 - [ ] Monorepo initialisé (workspaces `apps/`, `packages/`)
 - [ ] CI GitHub Actions : lint + test + build sur chaque PR
 - [ ] Déploiement auto `apps/web` → Vercel (preview + prod)
-- [ ] Déploiement auto `apps/api` → Railway (staging + prod)
+- [ ] Déploiement auto `apps/api` → Render.com (staging + prod, ADR 0013)
 - [ ] `docker-compose.yml` opérationnel (MongoDB replica set + Redis locaux, ADR 0012)
 - [ ] MongoDB Atlas provisionné (staging/prod), réplicas configurés
 - [ ] Redis managé provisionné (staging/prod)
