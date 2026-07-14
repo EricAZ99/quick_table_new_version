@@ -1,6 +1,6 @@
 # ADR 0006 — Railway pour l'hébergement backend
 
-Statut : **Superseded par [ADR 0013](./0013-rendercom-remplace-railway.md)** (2026-07-14) — Railway a supprimé son palier gratuit, remplacé par Render.com. Conservé tel quel ci-dessous pour l'historique de la décision (doc 17 §17.7).
+Statut : Accepté (contrainte du cahier des charges, réévaluation programmée)
 Date : 2026-07-11
 
 ## Contexte
