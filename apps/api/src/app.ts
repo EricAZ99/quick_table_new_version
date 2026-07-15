@@ -4,6 +4,7 @@ import { healthRouter } from './health/health.routes.js';
 import { helloWorldRouter } from './modules/hello-world/index.js';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
 import { errorHandlerMiddleware } from './middlewares/error-handler.middleware.js';
+import { i18nMiddleware } from './middlewares/i18n.middleware.js';
 
 /**
  * Construit l'instance Express de l'API QuickTable.
@@ -17,6 +18,13 @@ import { errorHandlerMiddleware } from './middlewares/error-handler.middleware.j
  * (qui suivent) arrivent avec des tickets séparés. `errorHandler` doit
  * rester enregistré en dernier, après toutes les routes (doc 12 §12.3).
  *
+ * `i18nMiddleware` (doc 35 §35.4) n'a pas de position documentée dans la
+ * chaîne doc 12 §12.4 (antérieure au périmètre i18n) — placé juste après
+ * `correlationId` et avant les routes : `errorHandlerMiddleware` et tout
+ * futur handler ont ainsi `req.locale` disponible dès le premier
+ * middleware métier. Choix explicite à valider si la chaîne documentée
+ * est mise à jour.
+ *
  * `/health/*` est monté sans auth/tenant/rbac : les probes de load
  * balancer et le monitoring d'uptime (doc 25 §25.5) n'ont pas de JWT.
  * `/api/v1/hello-world` est le module de référence (doc 15 §Phase 0) — un
@@ -28,6 +36,7 @@ export function createApp(): Express {
   const app = express();
   app.use(express.json());
   app.use(correlationIdMiddleware);
+  app.use(i18nMiddleware);
 
   app.use('/health', healthRouter);
   app.use('/api/v1/hello-world', helloWorldRouter);

@@ -1,12 +1,12 @@
 import type { Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ConflictError } from '../../shared/errors/index.js';
+import { ConflictError, ValidationError } from '../../shared/errors/index.js';
 import { errorHandlerMiddleware } from '../error-handler.middleware.js';
 
-function createMockReqRes() {
+function createMockReqRes(locale?: 'fr' | 'en' | 'it' | 'es') {
   const log = { error: vi.fn() };
-  const req = { log } as unknown as Request;
+  const req = { log, locale } as unknown as Request;
   const json = vi.fn();
   const status = vi.fn().mockReturnValue({ json });
   const res = { status } as unknown as Response;
@@ -38,7 +38,7 @@ describe('errorHandlerMiddleware', () => {
     expect(log.error).toHaveBeenCalledWith({ err: error }, expect.any(String));
   });
 
-  it('sanitise une erreur non typée en 500 générique (aucun détail technique exposé)', () => {
+  it("sanitise une erreur non typée en 500 générique, traduite dans la locale par défaut 'en' quand req.locale est absent (aucun détail technique exposé)", () => {
     const { req, res, status, json, log } = createMockReqRes();
     const error = new Error('détail interne sensible : requête SQL, stacktrace...');
 
@@ -49,7 +49,7 @@ describe('errorHandlerMiddleware', () => {
       success: false,
       error: {
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'Une erreur inattendue est survenue.',
+        message: 'An unexpected error occurred.',
         details: [],
       },
     });
@@ -57,5 +57,36 @@ describe('errorHandlerMiddleware', () => {
     expect(log.error).toHaveBeenCalledWith({ err: error }, expect.any(String));
     // ...mais jamais renvoye au client
     expect(JSON.stringify(json.mock.calls[0])).not.toContain('sensible');
+  });
+
+  it('traduit le message générique 500 dans la locale résolue par i18nMiddleware (doc 35 §35.4)', () => {
+    const { req, res, json } = createMockReqRes('fr');
+
+    errorHandlerMiddleware(new Error('boom'), req, res, vi.fn());
+
+    expect(json).toHaveBeenCalledWith({
+      success: false,
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Une erreur inattendue est survenue.',
+        details: [],
+      },
+    });
+  });
+
+  it("traduit le message d'une AppError typée dont le code est présent au catalogue", () => {
+    const { req, res, json } = createMockReqRes('it');
+    const error = new ValidationError('HELLO_WORLD_INVALID_PAYLOAD', 'fallback jamais utilisé');
+
+    errorHandlerMiddleware(error, req, res, vi.fn());
+
+    expect(json).toHaveBeenCalledWith({
+      success: false,
+      error: {
+        code: 'HELLO_WORLD_INVALID_PAYLOAD',
+        message: 'Payload non valido.',
+        details: [],
+      },
+    });
   });
 });

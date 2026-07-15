@@ -1,6 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
 
+import { translateErrorMessage } from '../locales/index.js';
 import { AppError } from '../shared/errors/index.js';
+import { DEFAULT_LOCALE } from '../middlewares/i18n.middleware.js';
 
 interface ErrorResponseBody {
   success: false;
@@ -33,10 +35,19 @@ export function errorHandlerMiddleware(
 ): void {
   req.log.error({ err }, 'Erreur lors du traitement de la requête');
 
+  // `req.locale` peut être absent si l'erreur survient avant
+  // `i18nMiddleware` dans la chaîne (ex. `express.json()` sur un payload
+  // malformé) — repli explicite sur la locale par défaut.
+  const locale = req.locale ?? DEFAULT_LOCALE;
+
   if (err instanceof AppError) {
     const body: ErrorResponseBody = {
       success: false,
-      error: { code: err.code, message: err.message, details: err.details },
+      error: {
+        code: err.code,
+        message: translateErrorMessage(err.code, locale, err.message),
+        details: err.details,
+      },
     };
     res.status(err.httpStatus).json(body);
     return;
@@ -46,7 +57,11 @@ export function errorHandlerMiddleware(
     success: false,
     error: {
       code: 'INTERNAL_SERVER_ERROR',
-      message: 'Une erreur inattendue est survenue.',
+      message: translateErrorMessage(
+        'INTERNAL_SERVER_ERROR',
+        locale,
+        'Une erreur inattendue est survenue.',
+      ),
       details: [],
     },
   };

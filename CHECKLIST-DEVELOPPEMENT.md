@@ -57,7 +57,7 @@
 🎯 **Livrable** : le sélecteur de langue FR/EN/IT/ES fonctionne sur un écran de test ; la locale/devise/fuseau d'un pays est résolue automatiquement.
 
 - [x] Configurer Vue I18n + scaffolding des fichiers `fr.json`/`en.json`/`it.json`/`es.json` — 0,5j
-- [ ] Implémenter `i18n.middleware.ts` backend (résolution de locale, catalogue de messages d'erreur) — 1j
+- [x] Implémenter `i18n.middleware.ts` backend (résolution de locale, catalogue de messages d'erreur) — 1j — résolution depuis `Accept-Language` (quality-values), `req.locale` typé, catalogue `error.code → message` pour FR/EN/IT/ES (doc 35 §35.4) ; placement dans la chaîne (`app.ts`, après `correlationId`, avant les routes) non documenté par doc 12 §12.4 — choix explicite fait, à valider si la chaîne documentée est mise à jour
 - [ ] Modéliser et seeder la collection `countryDefaults` (Bénin, France, Italie, Espagne, USA) — 0,5j
 - [ ] Implémenter le service de géolocalisation IP (`GET /restaurants/detect-location`) — 1j
 
