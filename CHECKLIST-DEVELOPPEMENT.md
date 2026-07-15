@@ -58,7 +58,7 @@
 
 - [x] Configurer Vue I18n + scaffolding des fichiers `fr.json`/`en.json`/`it.json`/`es.json` — 0,5j
 - [x] Implémenter `i18n.middleware.ts` backend (résolution de locale, catalogue de messages d'erreur) — 1j — résolution depuis `Accept-Language` (quality-values), `req.locale` typé, catalogue `error.code → message` pour FR/EN/IT/ES (doc 35 §35.4) ; placement dans la chaîne (`app.ts`, après `correlationId`, avant les routes) non documenté par doc 12 §12.4 — choix explicite fait, à valider si la chaîne documentée est mise à jour
-- [ ] Modéliser et seeder la collection `countryDefaults` (Bénin, France, Italie, Espagne, USA) — 0,5j
+- [x] Modéliser et seeder la collection `countryDefaults` (Bénin, France, Italie, Espagne, USA) — 0,5j — modèle Mongoose non tenant-scoped (`database/models/countryDefault.model.ts`) + seed idempotent par upsert (`database/seeders/countryDefaults.seed.ts`, `pnpm --filter @quicktable/api seed:country-defaults`) ; `{ timestamps: true }` ajouté bien qu'absent du tableau de champs doc 05 (jugé oubli plutôt que choix délibéré, documenté dans le code — pas une contradiction entre deux sections de doc) ; fuseau US simplifié à `America/New_York` (choix documenté, un restaurant peut surcharger `restaurants.timezone` après provisioning)
 - [ ] Implémenter le service de géolocalisation IP (`GET /restaurants/detect-location`) — 1j
 
 > **Critère de sortie Epic 0** : module "Hello World" déployé en staging, health checks verts, CI bloquante fonctionnelle, sélecteur de langue FR/EN/IT/ES opérationnel.
