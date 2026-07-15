@@ -45,7 +45,7 @@
 
 🎯 **Livrable** : un module de référence traverse toutes les couches (repository, erreurs typées, logs, health checks) — le patron à répliquer pour tous les modules métier suivants.
 
-- [ ] Implémenter le logger structuré (pino) + middleware `correlationId` — 0,5j
+- [x] Implémenter le logger structuré (pino) + middleware `correlationId` — 0,5j
 - [ ] Implémenter `error-handler.middleware.ts` + classes d'erreurs typées — 1j
 - [ ] Implémenter `BaseRepository` générique avec `tenantId` obligatoire — 1j
 - [ ] Implémenter les plugins Mongoose transverses (`tenantScope`, `timestamps`) — 1j
