@@ -8,6 +8,10 @@ import type { PipelineStage, Schema } from 'mongoose';
  * l'exécution plutôt que de retourner silencieusement des données d'un
  * autre tenant.
  *
+ * Double rôle (doc 03, explication des dossiers clés) : déclare le champ
+ * `tenantId` + son index sur le schéma (un schéma de module ne le
+ * redéclare jamais, ne peut donc pas l'oublier), **et** garde les requêtes.
+ *
  * `timestamps` (doc 12 §12.7) n'a volontairement pas de plugin dédié ici :
  * c'est une option native Mongoose (`{ timestamps: true }`), pas du code à
  * écrire — chaque schéma de module l'active directement dans ses
@@ -39,6 +43,12 @@ export function assertTenantIdInPipeline(pipeline: readonly PipelineStage[]): vo
 }
 
 export function tenantScope(schema: Schema): void {
+  // doc 03 (explication des dossiers clés) : le plugin déclare lui-même le
+  // champ `tenantId` + son index — un schéma de module n'a pas besoin de le
+  // redéclarer, et ne peut donc pas non plus l'oublier par erreur humaine.
+  schema.add({ tenantId: { type: String, required: true } });
+  schema.index({ tenantId: 1 });
+
   // Mongoose 9 : les hooks `pre` n'ont plus de callback `next` — throw
   // (ou rejeter une Promise) annule l'opération, un retour normal la
   // laisse continuer (types `PreMiddlewareFunction`, mongoose/types/middlewares.d.ts).

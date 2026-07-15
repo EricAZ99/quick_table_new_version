@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import type { Schema } from 'mongoose';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   assertTenantIdInFilter,
   assertTenantIdInPipeline,
   MISSING_TENANT_ID_MESSAGE,
+  tenantScope,
 } from '../tenantScope.js';
 
 describe('assertTenantIdInFilter (find/findOne/updateMany)', () => {
@@ -42,5 +44,28 @@ describe('assertTenantIdInPipeline (aggregate)', () => {
 
   it('lève une exception pour un pipeline vide', () => {
     expect(() => assertTenantIdInPipeline([])).toThrow(MISSING_TENANT_ID_MESSAGE);
+  });
+});
+
+describe('tenantScope(schema) (doc 03 — déclare le champ + garde les requêtes)', () => {
+  it('déclare le champ tenantId requis et son index sur le schéma', () => {
+    const schema = { add: vi.fn(), index: vi.fn(), pre: vi.fn() } as unknown as Schema;
+
+    tenantScope(schema);
+
+    expect(schema.add).toHaveBeenCalledWith({ tenantId: { type: String, required: true } });
+    expect(schema.index).toHaveBeenCalledWith({ tenantId: 1 });
+  });
+
+  it('enregistre les hooks pre() sur les 5 méthodes de BaseRepository + updateMany', () => {
+    const schema = { add: vi.fn(), index: vi.fn(), pre: vi.fn() } as unknown as Schema;
+
+    tenantScope(schema);
+
+    expect(schema.pre).toHaveBeenCalledWith(
+      ['find', 'findOne', 'updateOne', 'updateMany', 'deleteOne'],
+      expect.any(Function),
+    );
+    expect(schema.pre).toHaveBeenCalledWith('aggregate', expect.any(Function));
   });
 });
