@@ -28,4 +28,7 @@ export const logger: Logger = pino({
   level: resolveLogLevel(nodeEnv),
   base: { environment: nodeEnv },
   timestamp: pino.stdTimeFunctions.isoTime,
+  // Sérialise correctement une Error passée sous la clé `err` (stack,
+  // message, cause) — utilisé par error-handler.middleware.ts (doc 12 §12.3).
+  serializers: { err: pino.stdSerializers.err },
 });

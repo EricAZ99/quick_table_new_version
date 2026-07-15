@@ -27,6 +27,11 @@ export const baseConfig = tseslint.config(
     },
     rules: {
       'no-console': ['error', { allow: ['warn', 'error'] }],
+      // Un paramètre préfixé `_` est délibérément inutilisé (ex. le 4e
+      // paramètre `next` obligatoire pour qu'Express reconnaisse un
+      // error-handler middleware, doc 12 §12.3) — convention plutôt qu'un
+      // eslint-disable par occurrence.
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
   prettierConfig,
