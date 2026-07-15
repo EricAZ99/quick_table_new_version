@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 
 import { healthRouter } from './health/health.routes.js';
 import { helloWorldRouter } from './modules/hello-world/index.js';
+import { restaurantsRouter } from './modules/restaurants/index.js';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
 import { errorHandlerMiddleware } from './middlewares/error-handler.middleware.js';
 import { i18nMiddleware } from './middlewares/i18n.middleware.js';
@@ -31,15 +32,23 @@ import { i18nMiddleware } from './middlewares/i18n.middleware.js';
  * tenant de démonstration fixé côté serveur en tient lieu tant que
  * `tenant.middleware.ts` n'existe pas (Epic 1), voir
  * `hello-world.controller.ts`.
+ *
+ * `trust proxy` activé : en production (Railway, derrière un reverse
+ * proxy), `req.ip` renverrait sinon l'IP interne du proxy plutôt que celle
+ * du client — première route à en dépendre réellement,
+ * `GET /api/v1/restaurants/detect-location` (doc 09 §9.4, doc 35 §35.2),
+ * explicitement **Public** (pas d'Auth/Tenant/RBAC, doc 09 §9.1).
  */
 export function createApp(): Express {
   const app = express();
+  app.set('trust proxy', 1);
   app.use(express.json());
   app.use(correlationIdMiddleware);
   app.use(i18nMiddleware);
 
   app.use('/health', healthRouter);
   app.use('/api/v1/hello-world', helloWorldRouter);
+  app.use('/api/v1/restaurants', restaurantsRouter);
 
   app.use(errorHandlerMiddleware);
 
