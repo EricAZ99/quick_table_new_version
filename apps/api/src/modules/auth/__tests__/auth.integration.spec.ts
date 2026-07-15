@@ -9,6 +9,7 @@ import { createApp } from '../../../app.js';
 import { connectDatabase, disconnectDatabase } from '../../../config/database.js';
 import { connectRedis, disconnectRedis } from '../../../config/redis.js';
 import { MembershipModel } from '../../../database/models/membership.model.js';
+import { RefreshTokenModel } from '../../../database/models/refreshToken.model.js';
 import { UserModel } from '../../../database/models/user.model.js';
 
 // Même convention que hello-world.integration.spec.ts (doc 14 §14.6).
@@ -30,9 +31,21 @@ interface SuccessBody {
     tenants: { tenantId: string; role: string; membershipId: string }[];
   };
 }
+interface RefreshBody {
+  success: true;
+  data: { accessToken: string };
+}
 interface ErrorBody {
   success: false;
   error: { code: string; message: string };
+}
+
+function extractRefreshTokenCookie(setCookieHeader: string[]): string {
+  const cookie = setCookieHeader.find((c) => c.startsWith('refreshToken='));
+  if (!cookie) {
+    throw new Error('Aucun cookie refreshToken trouvé dans la réponse — bug dans le test lui-même');
+  }
+  return cookie.split(';')[0] ?? '';
 }
 
 /**
@@ -50,6 +63,8 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
   });
 
   afterAll(async () => {
+    const testUsers = await UserModel.find({ email: /^auth-integration-/ });
+    await RefreshTokenModel.deleteMany({ userId: { $in: testUsers.map((u) => u._id) } });
     await UserModel.collection.deleteMany({ email: /^auth-integration-/ });
     await MembershipModel.collection.deleteMany({ tenantId: 'auth-integration-tenant' });
     await disconnectDatabase();
@@ -139,4 +154,104 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
     expect(sixthAttempt.status).toBe(429);
     expect(body.error.code).toBe('AUTH_LOGIN_RATE_LIMITED');
   }, 20000);
+
+  describe('POST /api/v1/auth/refresh', () => {
+    it('effectue la rotation : émet un nouveau couple access/refresh token, reprend le même contexte tenant', async () => {
+      const refreshEmail = `auth-integration-refresh-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      const user = await UserModel.create({
+        email: refreshEmail,
+        passwordHash,
+        fullName: 'Intégration Refresh',
+      });
+      await MembershipModel.create({
+        tenantId: 'auth-integration-tenant',
+        userId: user._id,
+        role: 'manager',
+      });
+
+      const app = createApp();
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: refreshEmail, password });
+      const loginBody = loginResponse.body as SuccessBody;
+      const oldRefreshTokenCookie = extractRefreshTokenCookie(
+        loginResponse.headers['set-cookie'] as unknown as string[],
+      );
+
+      const refreshResponse = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', oldRefreshTokenCookie)
+        .set('Authorization', `Bearer ${loginBody.data.accessToken}`)
+        .send();
+      const refreshBody = refreshResponse.body as RefreshBody;
+
+      expect(refreshResponse.status).toBe(200);
+      expect(refreshBody.data.accessToken).toEqual(expect.any(String));
+      expect(refreshBody.data.accessToken).not.toBe(loginBody.data.accessToken);
+
+      const newRefreshTokenCookie = extractRefreshTokenCookie(
+        refreshResponse.headers['set-cookie'] as unknown as string[],
+      );
+      expect(newRefreshTokenCookie).not.toBe(oldRefreshTokenCookie);
+    });
+
+    it('rejette le rejeu du refresh token déjà utilisé (401 AUTH_REFRESH_TOKEN_REUSED) et révoque toute la famille de sessions', async () => {
+      const reuseEmail = `auth-integration-reuse-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      const user = await UserModel.create({
+        email: reuseEmail,
+        passwordHash,
+        fullName: 'Intégration Reuse',
+      });
+      await MembershipModel.create({
+        tenantId: 'auth-integration-tenant',
+        userId: user._id,
+        role: 'cashier',
+      });
+
+      const app = createApp();
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: reuseEmail, password });
+      const loginBody = loginResponse.body as SuccessBody;
+      const oldRefreshTokenCookie = extractRefreshTokenCookie(
+        loginResponse.headers['set-cookie'] as unknown as string[],
+      );
+
+      // Premier refresh : légitime, fait tourner le token.
+      const firstRefresh = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', oldRefreshTokenCookie)
+        .set('Authorization', `Bearer ${loginBody.data.accessToken}`)
+        .send();
+      expect(firstRefresh.status).toBe(200);
+
+      // Rejeu de l'ancien token (déjà révoqué par la rotation ci-dessus) :
+      // signe de vol (doc 07 §7.1), doit révoquer toute la famille.
+      const replay = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', oldRefreshTokenCookie)
+        .set('Authorization', `Bearer ${loginBody.data.accessToken}`)
+        .send();
+      const replayBody = replay.body as ErrorBody;
+
+      expect(replay.status).toBe(401);
+      expect(replayBody.error.code).toBe('AUTH_REFRESH_TOKEN_REUSED');
+
+      const activeSessions = await RefreshTokenModel.countDocuments({
+        userId: user._id,
+        revokedAt: null,
+      });
+      expect(activeSessions).toBe(0);
+    });
+
+    it('rejette une requête sans cookie refreshToken ni Access Token (401 AUTH_REFRESH_TOKEN_INVALID)', async () => {
+      const response = await request(createApp()).post('/api/v1/auth/refresh').send();
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_REFRESH_TOKEN_INVALID');
+    });
+  });
 });

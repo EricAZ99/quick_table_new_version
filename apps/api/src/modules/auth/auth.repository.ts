@@ -28,4 +28,23 @@ export class AuthRepository {
   findMembershipsByUserId(userId: string) {
     return MembershipModel.find({ userId }).setOptions({ [ALLOW_CROSS_TENANT_OPTION]: true });
   }
+
+  findRefreshTokenByHash(tokenHash: string) {
+    return RefreshTokenModel.findOne({ tokenHash });
+  }
+
+  revokeRefreshToken(id: string) {
+    return RefreshTokenModel.updateOne({ _id: id }, { revokedAt: new Date() });
+  }
+
+  /**
+   * Révocation de toute la famille de sessions d'un utilisateur (doc 07
+   * §7.1) : déclenchée quand un refresh token déjà révoqué est présenté
+   * (signe de vol/rejeu) — `refreshTokens` n'a pas de notion de "famille"
+   * explicite au schéma (doc 05), donc "toute la famille" = tous les
+   * tokens actifs de ce `userId`.
+   */
+  revokeAllUserRefreshTokens(userId: string) {
+    return RefreshTokenModel.updateMany({ userId, revokedAt: null }, { revokedAt: new Date() });
+  }
 }

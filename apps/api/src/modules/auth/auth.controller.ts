@@ -35,16 +35,45 @@ export class AuthController {
     // entamé par de précédentes tentatives infructueuses du même (email, IP).
     await resetLoginRateLimit(req);
 
-    res.cookie(REFRESH_TOKEN_COOKIE_NAME, result.refreshToken, {
-      httpOnly: true,
-      secure: this.secureCookies,
-      sameSite: 'strict',
-      expires: result.refreshTokenExpiresAt,
-    });
+    this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
 
     res.status(200).json({
       success: true,
       data: { accessToken: result.accessToken, user: result.user, tenants: result.tenants },
     });
   };
+
+  /**
+   * `POST /auth/refresh` (doc 07 §7.4) : lit le cookie `refreshToken`
+   * httpOnly posé au login et l'Access Token (même expiré) via
+   * `Authorization: Bearer` — nécessaire pour reconstruire le contexte
+   * tenant de la session (voir `AuthService#refresh`).
+   */
+  refresh = async (req: Request, res: Response): Promise<void> => {
+    const rawRefreshToken = req.cookies as Record<string, unknown> | undefined;
+    const refreshTokenCookie = rawRefreshToken?.[REFRESH_TOKEN_COOKIE_NAME];
+    const authHeader = req.headers.authorization;
+    const expiredAccessToken = authHeader?.startsWith('Bearer ')
+      ? authHeader.slice('Bearer '.length)
+      : undefined;
+
+    const result = await this.service.refresh(
+      typeof refreshTokenCookie === 'string' ? refreshTokenCookie : undefined,
+      expiredAccessToken,
+      { ip: req.ip, userAgent: req.headers['user-agent'] },
+    );
+
+    this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
+
+    res.status(200).json({ success: true, data: { accessToken: result.accessToken } });
+  };
+
+  private setRefreshTokenCookie(res: Response, refreshToken: string, expiresAt: Date): void {
+    res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {
+      httpOnly: true,
+      secure: this.secureCookies,
+      sameSite: 'strict',
+      expires: expiresAt,
+    });
+  }
 }

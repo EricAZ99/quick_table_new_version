@@ -90,3 +90,77 @@ describe('AuthController#login', () => {
     expect(service.login).not.toHaveBeenCalled();
   });
 });
+
+const REFRESH_RESULT = {
+  accessToken: 'new-access-token',
+  refreshToken: 'new-raw-refresh-token',
+  refreshTokenExpiresAt: new Date('2026-08-15'),
+};
+
+describe('AuthController#refresh', () => {
+  it("lit le cookie refreshToken et l'Access Token expiré (Authorization: Bearer), pose le nouveau cookie, renvoie uniquement accessToken", async () => {
+    const service = {
+      refresh: vi.fn().mockResolvedValue(REFRESH_RESULT),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = {
+      cookies: { refreshToken: 'old-raw-refresh-token' },
+      headers: { authorization: 'Bearer old-expired-access-token', 'user-agent': 'test-agent' },
+      ip: '203.0.113.42',
+    } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.refresh(req, res);
+
+    expect(service.refresh).toHaveBeenCalledWith(
+      'old-raw-refresh-token',
+      'old-expired-access-token',
+      { ip: '203.0.113.42', userAgent: 'test-agent' },
+    );
+    expect(res.cookie).toHaveBeenCalledWith('refreshToken', 'new-raw-refresh-token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      expires: REFRESH_RESULT.refreshTokenExpiresAt,
+    });
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { accessToken: 'new-access-token' },
+    });
+    expect(JSON.stringify(vi.mocked(res.json).mock.calls[0])).not.toContain(
+      'new-raw-refresh-token',
+    );
+  });
+
+  it("passe undefined au service si le cookie refreshToken est absent (pas d'exception au niveau controller)", async () => {
+    const service = {
+      refresh: vi.fn().mockResolvedValue(REFRESH_RESULT),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { cookies: {}, headers: {} } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.refresh(req, res);
+
+    expect(service.refresh).toHaveBeenCalledWith(undefined, undefined, {
+      ip: undefined,
+      userAgent: undefined,
+    });
+  });
+
+  it("ignore un header Authorization qui n'est pas au format Bearer", async () => {
+    const service = {
+      refresh: vi.fn().mockResolvedValue(REFRESH_RESULT),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = {
+      cookies: { refreshToken: 'raw-token' },
+      headers: { authorization: 'Basic dXNlcjpwYXNz' },
+    } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.refresh(req, res);
+
+    expect(service.refresh).toHaveBeenCalledWith('raw-token', undefined, expect.any(Object));
+  });
+});

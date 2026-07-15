@@ -35,3 +35,18 @@ export function signAccessToken(payload: AccessTokenPayload, secret: string): st
 export function verifyAccessToken(token: string, secret: string): AccessTokenPayload {
   return jwt.verify(token, secret) as AccessTokenPayload;
 }
+
+/**
+ * Vérifie la signature d'un Access Token **sans exiger qu'il soit encore
+ * valide dans le temps** (`ignoreExpiration`) — c'est précisément le cas
+ * d'usage de `POST /auth/refresh` (doc 07 §7.4) : le client y présente
+ * justement un Access Token expiré pour que le serveur en récupère
+ * `tenantId`/`role`/`membershipId` et les reporte dans le nouveau token
+ * (doc 06 §6.3 : "changement de restaurant = nouveau login/refresh
+ * scoping, pas un simple paramètre" — le contexte actif persiste tel quel
+ * tant qu'il n'a pas été explicitement changé). La signature reste
+ * pleinement vérifiée : seule l'expiration est ignorée, pas l'intégrité.
+ */
+export function decodeExpiredAccessToken(token: string, secret: string): AccessTokenPayload {
+  return jwt.verify(token, secret, { ignoreExpiration: true }) as AccessTokenPayload;
+}

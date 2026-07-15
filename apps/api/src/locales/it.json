@@ -3,5 +3,7 @@
   "HELLO_WORLD_INVALID_PAYLOAD": "Payload non valido.",
   "AUTH_INVALID_CREDENTIALS": "Email o password errati.",
   "AUTH_INVALID_PAYLOAD": "Email o password mancanti o non validi.",
-  "AUTH_LOGIN_RATE_LIMITED": "Troppi tentativi di accesso, riprova più tardi."
+  "AUTH_LOGIN_RATE_LIMITED": "Troppi tentativi di accesso, riprova più tardi.",
+  "AUTH_REFRESH_TOKEN_INVALID": "Sessione non valida, effettua di nuovo l'accesso.",
+  "AUTH_REFRESH_TOKEN_REUSED": "Sessione non valida, effettua di nuovo l'accesso."
 }

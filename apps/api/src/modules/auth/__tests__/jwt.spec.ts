@@ -1,7 +1,8 @@
+import jwt from 'jsonwebtoken';
 import { describe, expect, it } from 'vitest';
 
 import type { AccessTokenPayload } from '../jwt.js';
-import { signAccessToken, verifyAccessToken } from '../jwt.js';
+import { decodeExpiredAccessToken, signAccessToken, verifyAccessToken } from '../jwt.js';
 
 const SECRET = 'a'.repeat(32);
 const PAYLOAD: AccessTokenPayload = {
@@ -42,5 +43,27 @@ describe('signAccessToken / verifyAccessToken (doc 07 §7.2)', () => {
     const tampered = `${token.slice(0, -1)}${token.at(-1) === 'a' ? 'b' : 'a'}`;
 
     expect(() => verifyAccessToken(tampered, SECRET)).toThrow();
+  });
+});
+
+describe('decodeExpiredAccessToken (doc 07 §7.4)', () => {
+  it("décode un token expiré tant que la signature est valide (cas d'usage de /auth/refresh)", () => {
+    const expiredToken = jwt.sign(PAYLOAD, SECRET, { expiresIn: -10 });
+
+    expect(() => verifyAccessToken(expiredToken, SECRET)).toThrow();
+    expect(decodeExpiredAccessToken(expiredToken, SECRET)).toMatchObject(PAYLOAD);
+  });
+
+  it('rejette quand même un token expiré signé avec un autre secret (la signature reste vérifiée)', () => {
+    const expiredToken = jwt.sign(PAYLOAD, 'b'.repeat(32), { expiresIn: -10 });
+
+    expect(() => decodeExpiredAccessToken(expiredToken, SECRET)).toThrow();
+  });
+
+  it('rejette un token expiré altéré', () => {
+    const expiredToken = jwt.sign(PAYLOAD, SECRET, { expiresIn: -10 });
+    const tampered = `${expiredToken.slice(0, -1)}${expiredToken.at(-1) === 'a' ? 'b' : 'a'}`;
+
+    expect(() => decodeExpiredAccessToken(tampered, SECRET)).toThrow();
   });
 });

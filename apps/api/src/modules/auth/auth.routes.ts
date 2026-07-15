@@ -32,3 +32,12 @@ authRouter.post(
   loginRateLimiter,
   asyncHandler((req: Request, res: Response) => getController().login(req, res)),
 );
+
+// Pas de rate limiting dédié ici (doc 13 §13.2 n'en documente que pour
+// /auth/login et /auth/forgot-password) : le refresh token lui-même est
+// haute entropie et à usage unique (rotation), la surface de brute force
+// est différente d'un mot de passe.
+authRouter.post(
+  '/refresh',
+  asyncHandler((req: Request, res: Response) => getController().refresh(req, res)),
+);

@@ -4,14 +4,15 @@ import { UnauthorizedError } from '../../shared/errors/index.js';
 import type { UsersRepository } from '../users/users.repository.js';
 import type { AuthRepository } from './auth.repository.js';
 import type { LoginDto } from './auth.validators.js';
-import { signAccessToken, type AccessTokenPayload } from './jwt.js';
+import { decodeExpiredAccessToken, signAccessToken, type AccessTokenPayload } from './jwt.js';
 import {
   generateRefreshToken,
   hashRefreshToken,
   REFRESH_TOKEN_TTL_MS,
 } from './refreshToken.util.js';
 
-export interface LoginRequestMeta {
+/** Partagé par `login()` et `refresh()` — même besoin (traçabilité de session, doc 05 §"refreshTokens"). */
+export interface RequestMeta {
   ip?: string;
   userAgent?: string;
 }
@@ -22,6 +23,12 @@ export interface LoginResult {
   refreshTokenExpiresAt: Date;
   user: Record<string, unknown>;
   tenants: { tenantId: string; role: string; membershipId: string }[];
+}
+
+export interface RefreshResult {
+  accessToken: string;
+  refreshToken: string;
+  refreshTokenExpiresAt: Date;
 }
 
 /**
@@ -53,7 +60,7 @@ export class AuthService {
     private readonly jwtSecret: string,
   ) {}
 
-  async login(dto: LoginDto, meta: LoginRequestMeta): Promise<LoginResult> {
+  async login(dto: LoginDto, meta: RequestMeta): Promise<LoginResult> {
     const user = await this.usersRepository.findByEmailWithPasswordHash(dto.email);
 
     const passwordValid = await argon2.verify(
@@ -90,22 +97,17 @@ export class AuthService {
       permissionsVersion: 0,
     };
     const accessToken = signAccessToken(payload, this.jwtSecret);
-
-    const rawRefreshToken = generateRefreshToken();
-    const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
-    await this.authRepository.createRefreshToken({
-      userId: user._id.toString(),
-      tokenHash: hashRefreshToken(rawRefreshToken),
-      expiresAt: refreshTokenExpiresAt,
-      deviceInfo: { userAgent: meta.userAgent, ip: meta.ip },
-    });
+    const { refreshToken, refreshTokenExpiresAt } = await this.issueRefreshToken(
+      user._id.toString(),
+      meta,
+    );
 
     user.lastLoginAt = new Date();
     await user.save();
 
     return {
       accessToken,
-      refreshToken: rawRefreshToken,
+      refreshToken,
       refreshTokenExpiresAt,
       user: user.toJSON() as unknown as Record<string, unknown>,
       tenants: memberships.map((membership) => ({
@@ -114,5 +116,86 @@ export class AuthService {
         membershipId: membership.id,
       })),
     };
+  }
+
+  /**
+   * Rotation du refresh token (doc 07 §7.1/§7.4). Contexte tenant
+   * (`tenantId`/`role`/`membershipId`) repris tel quel depuis l'ancien
+   * Access Token (même expiré — seule sa signature est vérifiée, doc 06
+   * §6.3 : le contexte actif persiste jusqu'à un changement explicite via
+   * `POST /auth/select-tenant`, pas re-résolu à chaque refresh) — décision
+   * validée explicitement pour ce ticket.
+   */
+  async refresh(
+    rawRefreshToken: string | undefined,
+    expiredAccessToken: string | undefined,
+    meta: RequestMeta,
+  ): Promise<RefreshResult> {
+    if (!rawRefreshToken || !expiredAccessToken) {
+      throw new UnauthorizedError('AUTH_REFRESH_TOKEN_INVALID', 'Session invalide.');
+    }
+
+    let previousPayload: AccessTokenPayload;
+    try {
+      previousPayload = decodeExpiredAccessToken(expiredAccessToken, this.jwtSecret);
+    } catch {
+      throw new UnauthorizedError('AUTH_REFRESH_TOKEN_INVALID', 'Session invalide.');
+    }
+
+    const tokenHash = hashRefreshToken(rawRefreshToken);
+    const storedToken = await this.authRepository.findRefreshTokenByHash(tokenHash);
+
+    if (!storedToken || storedToken.expiresAt.getTime() < Date.now()) {
+      throw new UnauthorizedError('AUTH_REFRESH_TOKEN_INVALID', 'Session invalide.');
+    }
+
+    // Le refresh token doit appartenir au même utilisateur que l'Access
+    // Token présenté — un couple dépareillé (vol partiel, erreur client)
+    // ne doit jamais permettre de rejouer la session d'un autre.
+    if (storedToken.userId.toString() !== previousPayload.sub) {
+      throw new UnauthorizedError('AUTH_REFRESH_TOKEN_INVALID', 'Session invalide.');
+    }
+
+    if (storedToken.revokedAt !== null) {
+      // Rejeu d'un token déjà révoqué = signe de vol (doc 07 §7.1) :
+      // révoque toute la famille. L'envoi d'une notification de sécurité
+      // (doc 07 §7.1) est hors périmètre — aucun système d'envoi d'email
+      // n'existe encore (arrive avec un ticket séparé de cette Feature).
+      await this.authRepository.revokeAllUserRefreshTokens(storedToken.userId.toString());
+      throw new UnauthorizedError('AUTH_REFRESH_TOKEN_REUSED', 'Session invalide.');
+    }
+
+    await this.authRepository.revokeRefreshToken(storedToken.id);
+
+    const payload: AccessTokenPayload = {
+      sub: previousPayload.sub,
+      membershipId: previousPayload.membershipId,
+      tenantId: previousPayload.tenantId,
+      role: previousPayload.role,
+      isSuperAdmin: previousPayload.isSuperAdmin,
+      permissionsVersion: previousPayload.permissionsVersion,
+    };
+    const accessToken = signAccessToken(payload, this.jwtSecret);
+    const { refreshToken, refreshTokenExpiresAt } = await this.issueRefreshToken(
+      storedToken.userId.toString(),
+      meta,
+    );
+
+    return { accessToken, refreshToken, refreshTokenExpiresAt };
+  }
+
+  private async issueRefreshToken(
+    userId: string,
+    meta: RequestMeta,
+  ): Promise<{ refreshToken: string; refreshTokenExpiresAt: Date }> {
+    const refreshToken = generateRefreshToken();
+    const refreshTokenExpiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+    await this.authRepository.createRefreshToken({
+      userId,
+      tokenHash: hashRefreshToken(refreshToken),
+      expiresAt: refreshTokenExpiresAt,
+      deviceInfo: { userAgent: meta.userAgent, ip: meta.ip },
+    });
+    return { refreshToken, refreshTokenExpiresAt };
   }
 }

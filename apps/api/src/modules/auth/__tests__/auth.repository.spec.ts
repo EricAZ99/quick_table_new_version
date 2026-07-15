@@ -4,7 +4,7 @@ vi.mock('../../../database/models/membership.model.js', () => ({
   MembershipModel: { find: vi.fn() },
 }));
 vi.mock('../../../database/models/refreshToken.model.js', () => ({
-  RefreshTokenModel: { create: vi.fn() },
+  RefreshTokenModel: { create: vi.fn(), findOne: vi.fn(), updateOne: vi.fn(), updateMany: vi.fn() },
 }));
 
 import { MembershipModel } from '../../../database/models/membership.model.js';
@@ -35,5 +35,33 @@ describe('AuthRepository', () => {
 
     expect(MembershipModel.find).toHaveBeenCalledWith({ userId: 'user-a' });
     expect(setOptions).toHaveBeenCalledWith({ [ALLOW_CROSS_TENANT_OPTION]: true });
+  });
+
+  it('findRefreshTokenByHash() délègue directement à RefreshTokenModel.findOne', async () => {
+    const repository = new AuthRepository();
+
+    await repository.findRefreshTokenByHash('a'.repeat(64));
+
+    expect(RefreshTokenModel.findOne).toHaveBeenCalledWith({ tokenHash: 'a'.repeat(64) });
+  });
+
+  it('revokeRefreshToken() marque revokedAt sur le token ciblé par id', async () => {
+    const repository = new AuthRepository();
+
+    await repository.revokeRefreshToken('token-id-a');
+
+    const [filter, update] = vi.mocked(RefreshTokenModel.updateOne).mock.calls[0] ?? [];
+    expect(filter).toEqual({ _id: 'token-id-a' });
+    expect((update as { revokedAt: Date }).revokedAt).toBeInstanceOf(Date);
+  });
+
+  it("revokeAllUserRefreshTokens() marque revokedAt sur tous les tokens actifs de l'utilisateur (doc 07 §7.1 : révocation de toute la famille)", async () => {
+    const repository = new AuthRepository();
+
+    await repository.revokeAllUserRefreshTokens('user-a');
+
+    const [filter, update] = vi.mocked(RefreshTokenModel.updateMany).mock.calls[0] ?? [];
+    expect(filter).toEqual({ userId: 'user-a', revokedAt: null });
+    expect((update as { revokedAt: Date }).revokedAt).toBeInstanceOf(Date);
   });
 });
