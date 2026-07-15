@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 
 import { healthRouter } from './health/health.routes.js';
+import { helloWorldRouter } from './modules/hello-world/index.js';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
 import { errorHandlerMiddleware } from './middlewares/error-handler.middleware.js';
 
@@ -9,21 +10,27 @@ import { errorHandlerMiddleware } from './middlewares/error-handler.middleware.j
  *
  * Chaîne de middlewares introduite module par module à partir de la Feature
  * 0.3 (doc 12 §12.4 : helmet, cors, sanitize, rate-limit, correlationId,
- * auth, tenant, rbac, validate). `correlationId` doit précéder toute
- * logique métier (déjà en place) ; `errorHandler` doit être enregistré en
- * dernier, après toutes les routes (doc 12 §12.3) — les middlewares qui
- * doivent s'intercaler (helmet/cors/sanitize/rate-limit avant
- * `correlationId`, auth/tenant/rbac/validate avant les futures routes
- * métier) arrivent avec des tickets séparés ; les insérer entre ces lignes.
+ * auth, tenant, rbac, validate). `express.json()` arrive avec ce ticket
+ * (module de référence, premier POST de l'API) — respecte sa place
+ * documentée avant `correlationId` ; `helmet`/`cors`/`sanitize`/`rate-limit`
+ * (qui précèdent aussi `express.json()`) et `auth`/`tenant`/`rbac`/`validate`
+ * (qui suivent) arrivent avec des tickets séparés. `errorHandler` doit
+ * rester enregistré en dernier, après toutes les routes (doc 12 §12.3).
  *
  * `/health/*` est monté sans auth/tenant/rbac : les probes de load
  * balancer et le monitoring d'uptime (doc 25 §25.5) n'ont pas de JWT.
+ * `/api/v1/hello-world` est le module de référence (doc 15 §Phase 0) — un
+ * tenant de démonstration fixé côté serveur en tient lieu tant que
+ * `tenant.middleware.ts` n'existe pas (Epic 1), voir
+ * `hello-world.controller.ts`.
  */
 export function createApp(): Express {
   const app = express();
+  app.use(express.json());
   app.use(correlationIdMiddleware);
 
   app.use('/health', healthRouter);
+  app.use('/api/v1/hello-world', helloWorldRouter);
 
   app.use(errorHandlerMiddleware);
 

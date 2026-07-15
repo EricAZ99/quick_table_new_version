@@ -30,6 +30,15 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    # MONGODB_URI/REDIS_URL : pointent vers les bases staging reelles
+    # (Atlas/Upstash), pas un mock - le test d'integration du module de
+    # reference (doc 12, Feature 0.3) verifie le pattern controller ->
+    # service -> repository -> tenantScope -> Mongo/Redis de bout en
+    # bout, a chaque push/PR, pas seulement lors d'une verification
+    # manuelle ponctuelle.
+    env:
+      MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

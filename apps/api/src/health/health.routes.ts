@@ -2,6 +2,7 @@ import { Router } from 'express';
 import mongoose from 'mongoose';
 
 import { getRedisClient } from '../config/redis.js';
+import { asyncHandler } from '../shared/utils/asyncHandler.js';
 
 /**
  * Health checks (doc 25 §25.5). Répondent en < 50ms sans dépendance lourde
@@ -52,15 +53,11 @@ healthRouter.get('/live', (_req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-healthRouter.get('/ready', (_req, res, next) => {
-  // Express 4 ne rattrape pas les rejets d'un handler async (doc 12 §12.3) :
-  // `.catch(next)` explicite plutôt qu'un `async (req, res) => {...}`, pour
-  // qu'une erreur inattendue passe par error-handler.middleware.ts au lieu
-  // de devenir un rejet non géré silencieux.
-  checkReadiness()
-    .then((checks) => {
-      const isReady = Object.values(checks).every(Boolean);
-      res.status(isReady ? 200 : 503).json({ status: isReady ? 'ok' : 'unavailable', checks });
-    })
-    .catch(next);
-});
+healthRouter.get(
+  '/ready',
+  asyncHandler(async (_req, res) => {
+    const checks = await checkReadiness();
+    const isReady = Object.values(checks).every(Boolean);
+    res.status(isReady ? 200 : 503).json({ status: isReady ? 'ok' : 'unavailable', checks });
+  }),
+);
