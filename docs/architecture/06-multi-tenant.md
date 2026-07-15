@@ -5,6 +5,7 @@
 QuickTable démarre en **mode Pool** : tous les tenants (restaurants) partagent la même base MongoDB Atlas et la même application. L'isolation est **logique**, assurée par un champ `tenantId` sur chaque document, et non physique. C'est le modèle standard des SaaS B2B jusqu'à plusieurs milliers de clients (cf. AWS SaaS Tenant Isolation Strategies), pour un coût d'infrastructure minimal et une vélocité de développement maximale.
 
 L'architecture prévoit dès le départ, sans nécessiter de refonte, une évolution vers :
+
 - **Bridge** : certains tenants Business/Premium sur un cluster MongoDB Atlas dédié, mais même code applicatif.
 - **Silo** : les plus gros comptes Enterprise avec cluster + éventuellement instance API dédiée, pour des exigences de conformité/latence spécifiques.
 
@@ -42,12 +43,14 @@ sequenceDiagram
 ## 6.3 Middleware Tenant Resolver
 
 Rôle : à partir du JWT validé par `auth.middleware.ts`, résoudre :
+
 1. Le `membershipId` actif (si l'utilisateur a plusieurs memberships, un claim `activeTenantId` du token détermine le contexte courant — changement de restaurant = nouveau login/refresh scoping, pas un simple paramètre).
 2. Le tenant (`restaurants` document) et vérifier `status === 'active' || 'trial'` — un tenant `suspended` renvoie `403 TENANT_SUSPENDED` sur toute route sauf `/billing`.
 3. L'abonnement actif et ses `features[]`/`limits` — injectés dans `req.context.subscription` pour le feature gating (voir doc 08).
 4. La cible de connexion base de données (`clusterId`) si le tenant est en mode Silo.
 
 Cas particuliers gérés explicitement :
+
 - **Routes `platform-admin`** : bypass du Tenant Resolver, `req.context.tenantId = null`, réservé à `isSuperAdmin === true`.
 - **Routes publiques QR Code** (`/api/v1/public/qr/:code/*`) : le tenant est résolu non pas depuis un JWT (le client est anonyme) mais depuis `tables.qrCodeToken` → `tables.tenantId`. Un middleware dédié `publicTenant.middleware.ts` réalise cette résolution et applique un rate limiting spécifique (voir doc 13), plus strict que les routes authentifiées, car exposé à un public non identifié.
 
@@ -56,7 +59,7 @@ Cas particuliers gérés explicitement :
 Trois lignes de défense indépendantes, pour qu'une seule erreur humaine ne suffise jamais à provoquer une fuite inter-tenant :
 
 1. **BaseRepository générique** (`shared/base/BaseRepository.ts`) : toutes les méthodes (`find`, `findOne`, `updateOne`, `deleteOne`, `aggregate`) exigent un `context: { tenantId }` en paramètre obligatoire (erreur TypeScript à la compilation si omis) et fusionnent systématiquement `{ tenantId }` dans le filtre avant d'appeler Mongoose. Un repository de module ne peut pas contourner cette fusion — elle est faite dans la classe de base, pas dans chaque repository enfant. Un filtre additionnel de portée par propriétaire (ex. un serveur limité à ses propres commandes) suit le même principe de fusion obligatoire au niveau repository, jamais au niveau controller/service — voir le mécanisme dédié doc 08 §8.8.
-2. **Plugin Mongoose `tenantScope`** appliqué à tous les schémas tenant-scoped : ajoute un hook `pre('find')`, `pre('findOne')`, `pre('updateMany')`, `pre('aggregate')` qui **lève une exception** si aucun `tenantId` n'est présent dans la requête au moment de l'exécution — deuxième filet de sécurité au niveau ORM, indépendant du respect du BaseRepository.
+2. **Plugin Mongoose `tenantScope`** appliqué à tous les schémas tenant-scoped : ajoute un hook `pre('find')`, `pre('findOne')`, `pre('updateOne')`, `pre('updateMany')`, `pre('deleteOne')`, `pre('aggregate')` qui **lève une exception** si aucun `tenantId` n'est présent dans la requête au moment de l'exécution — deuxième filet de sécurité au niveau ORM, indépendant du respect du BaseRepository. Couvre explicitement les 5 méthodes exposées par `BaseRepository` (point 1 ci-dessus) — `updateOne`/`deleteOne` manquaient de la liste initiale, corrigé le 2026-07-15 (incohérence détectée en implémentant le plugin, doc 17 §17.7).
 3. **Tests d'isolation automatisés** (voir doc 15/16) : une suite de tests dédiée crée deux tenants de test A et B, peuple des données, et vérifie pour **chaque endpoint de l'API** qu'une requête authentifiée en tant que tenant A ne peut ni lire ni modifier une ressource de tenant B (`404`, jamais `403` avec fuite d'information sur l'existence de la ressource). Cette suite tourne en CI à chaque pull request touchant `modules/` ou `middlewares/`.
 
 ```mermaid
