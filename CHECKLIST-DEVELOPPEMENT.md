@@ -71,7 +71,7 @@
 
 🎯 **Livrable** : un compte utilisateur peut être créé et rattaché à un restaurant avec un rôle — données validées et persistées (authentification pas encore branchée).
 
-- [ ] Modéliser et implémenter le schéma `users` — 0,5j
+- [x] Modéliser et implémenter le schéma `users` — 0,5j — non tenant-scoped (identité globale, doc 05 §5.3) ; `passwordHash`/`twoFactorSecret` en `select:false` (exclus des requêtes par défaut) + `toJSON`/`toObject` transform (exclus même si récupérés explicitement) ; hachage Argon2id et chiffrement AES-256 du secret TOTP volontairement hors périmètre (arrivent avec Feature 1.2, pas anticipés) ; vérifié réellement contre Atlas (création, exclusion des secrets, `.select('+passwordHash')`, rejet d'un doublon email par l'index unique)
 - [ ] Modéliser et implémenter le schéma `memberships` — 0,5j
 - [ ] Implémenter `users.repository.ts` / `memberships.repository.ts` — 0,5j
 - [ ] Implémenter la validation Zod des DTO `users`/`memberships` — 0,5j
