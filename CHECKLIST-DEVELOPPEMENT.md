@@ -48,7 +48,7 @@
 - [x] Implémenter le logger structuré (pino) + middleware `correlationId` — 0,5j
 - [x] Implémenter `error-handler.middleware.ts` + classes d'erreurs typées — 1j
 - [x] Implémenter `BaseRepository` générique avec `tenantId` obligatoire — 1j
-- [ ] Implémenter les plugins Mongoose transverses (`tenantScope`, `timestamps`) — 1j
+- [x] Implémenter les plugins Mongoose transverses (`tenantScope`, `timestamps`) — 1j
 - [ ] Implémenter les health checks `/health/live`, `/health/ready` — 0,5j
 - [ ] Créer un module de référence traversant toutes les couches (validation du pattern) — 1j
 
@@ -95,7 +95,7 @@
 🎯 **Livrable** : l'isolation des données entre restaurants est garantie et vérifiée par une suite de tests automatisés bloquante en CI.
 
 - [ ] Implémenter `tenant.middleware.ts` (résolution depuis JWT) — 1j
-- [ ] Implémenter le plugin Mongoose `tenantScope` (garde-fou ORM) — 0,5j
+- [x] ~~Implémenter le plugin Mongoose `tenantScope` (garde-fou ORM) — 0,5j~~ doublon avec Feature 0.3 (déjà fait là-bas, le plugin n'a pas de dépendance sur `tenant.middleware.ts`)
 - [ ] Implémenter `TenantProvisioningService` (transaction multi-documents) — 1j
 - [ ] Écrire la suite de tests d'isolation multi-tenant — infrastructure de test — 1j
 - [ ] Écrire les tests d'isolation pour les endpoints Epic 1 — 0,5j
