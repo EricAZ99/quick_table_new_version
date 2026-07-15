@@ -39,6 +39,11 @@ jobs:
     env:
       MONGODB_URI: ${{ secrets.MONGODB_URI }}
       REDIS_URL: ${{ secrets.REDIS_URL }}
+      # Signature HS256 de l'Access Token (doc 07 §7.1) : contrairement à
+      # MONGODB_URI/REDIS_URL, ne pointe vers aucune infra tierce réelle,
+      # mais reste un secret de signature — jamais committé en clair même
+      # pour un usage CI/test.
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

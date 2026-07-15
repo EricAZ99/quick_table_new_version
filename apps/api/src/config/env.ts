@@ -29,6 +29,10 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(3000),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI est requis'),
   REDIS_URL: z.string().min(1, 'REDIS_URL est requis'),
+  // Clé de signature symétrique HS256 de l'Access Token (doc 07 §7.1) — 32
+  // caractères minimum pour rester raisonnablement résistante au brute
+  // force sur la clé elle-même (HMAC-SHA256).
+  JWT_SECRET: z.string().min(32, 'JWT_SECRET doit contenir au moins 32 caractères'),
 });
 
 export type Env = z.infer<typeof envSchema>;

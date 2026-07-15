@@ -55,17 +55,3 @@ export async function detectLocationFromIp(ip: string): Promise<GeoLocationResul
     clearTimeout(timeout);
   }
 }
-
-const IPV6_MAPPED_IPV4_PREFIX = '::ffff:';
-
-/**
- * `req.ip` (Express, `trust proxy` activé) peut renvoyer une IPv4 mappée en
- * IPv6 (`::ffff:127.0.0.1`) selon la pile réseau — `ip-api.com` attend une
- * IPv4/IPv6 nue.
- */
-export function normalizeClientIp(ip: string | undefined): string | undefined {
-  if (!ip) {
-    return undefined;
-  }
-  return ip.startsWith(IPV6_MAPPED_IPV4_PREFIX) ? ip.slice(IPV6_MAPPED_IPV4_PREFIX.length) : ip;
-}

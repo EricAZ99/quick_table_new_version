@@ -22,6 +22,15 @@ export class UsersRepository {
     return UserModel.findOne({ email: email.toLowerCase() });
   }
 
+  /**
+   * `passwordHash` a `select:false` au schéma (jamais retourné par défaut,
+   * doc 05 §"users") — seul le flux de vérification de mot de passe au
+   * login (doc 07 §7.3) a besoin de le lire explicitement.
+   */
+  findByEmailWithPasswordHash(email: string) {
+    return UserModel.findOne({ email: email.toLowerCase() }).select('+passwordHash');
+  }
+
   findById(id: string) {
     return UserModel.findById(id);
   }

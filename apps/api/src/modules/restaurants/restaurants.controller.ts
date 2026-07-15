@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 
-import { detectLocationFromIp, normalizeClientIp } from './geolocation.service.js';
+import { normalizeClientIp } from '../../shared/utils/normalizeClientIp.js';
+import { detectLocationFromIp } from './geolocation.service.js';
 
 /** Controller (doc 12 §12.2) : HTTP <-> DTO, réponse standard (doc 09 §9.1). */
 export class RestaurantsController {

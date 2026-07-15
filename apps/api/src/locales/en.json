@@ -1,4 +1,7 @@
 {
   "INTERNAL_SERVER_ERROR": "An unexpected error occurred.",
-  "HELLO_WORLD_INVALID_PAYLOAD": "Invalid payload."
+  "HELLO_WORLD_INVALID_PAYLOAD": "Invalid payload.",
+  "AUTH_INVALID_CREDENTIALS": "Incorrect email or password.",
+  "AUTH_INVALID_PAYLOAD": "Missing or invalid email or password.",
+  "AUTH_LOGIN_RATE_LIMITED": "Too many login attempts, please try again later."
 }

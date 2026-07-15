@@ -21,6 +21,22 @@ import type { PipelineStage, Schema } from 'mongoose';
 export const MISSING_TENANT_ID_MESSAGE =
   'tenantScope : tenantId manquant dans la requête — deuxième filet de sécurité (doc 06 §6.4), la première ligne de défense (BaseRepository) aurait dû le fournir.';
 
+/**
+ * Nom de l'option Mongoose (`.setOptions({ [ALLOW_CROSS_TENANT_OPTION]: true })`)
+ * ouvrant une échappatoire **explicite et greppable** au garde-fou
+ * `tenantScope` — pas documentée au doc 06 §6.4 au moment de son ajout
+ * (le garde-fou y est décrit comme absolu ; cette option l'assouplit pour
+ * un cas d'usage précis, à faire valider si le doc est mis à jour).
+ *
+ * Seul usage légitime identifié à ce jour : résoudre, au login (doc 07
+ * §7.3), *tous* les memberships d'un utilisateur toutes tenants confondues
+ * (`MembershipModel.find({ userId }).setOptions({ [ALLOW_CROSS_TENANT_OPTION]: true })`)
+ * — une opération de résolution d'identité plateforme, pas un accès à une
+ * donnée métier d'un tenant précis. Ne jamais utiliser cette option pour
+ * retourner des données métier (commandes, menus, etc.) à un appelant.
+ */
+export const ALLOW_CROSS_TENANT_OPTION = 'allowCrossTenant';
+
 /** Fonction pure, testable indépendamment des hooks Mongoose (find/findOne/updateOne/updateMany/deleteOne). */
 export function assertTenantIdInFilter(filter: Record<string, unknown> | undefined): void {
   if (!filter?.tenantId) {
@@ -59,6 +75,9 @@ export function tenantScope(schema: Schema): void {
   // `updateOne`/`deleteOne` étaient absents de la liste de hooks du doc 06
   // §6.4 point 2 (écart signalé et corrigé, cf. doc).
   schema.pre(['find', 'findOne', 'updateOne', 'updateMany', 'deleteOne'], function () {
+    if (this.getOptions()[ALLOW_CROSS_TENANT_OPTION] === true) {
+      return;
+    }
     assertTenantIdInFilter(this.getFilter());
   });
 

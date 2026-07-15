@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
+const { selectMock } = vi.hoisted(() => ({ selectMock: vi.fn() }));
+
 vi.mock('../../../database/models/user.model.js', () => ({
-  UserModel: { create: vi.fn(), findOne: vi.fn(), findById: vi.fn() },
+  UserModel: {
+    create: vi.fn(),
+    findOne: vi.fn().mockReturnValue({ select: selectMock }),
+    findById: vi.fn(),
+  },
 }));
 
 import { UserModel } from '../../../database/models/user.model.js';
@@ -23,6 +29,15 @@ describe('UsersRepository', () => {
     await repository.findByEmail('CHEF@QuickTable.io');
 
     expect(UserModel.findOne).toHaveBeenCalledWith({ email: 'chef@quicktable.io' });
+  });
+
+  it("findByEmailWithPasswordHash() normalise en lowercase et force l'inclusion de passwordHash (select:false par défaut)", () => {
+    const repository = new UsersRepository();
+
+    repository.findByEmailWithPasswordHash('CHEF@QuickTable.io');
+
+    expect(UserModel.findOne).toHaveBeenCalledWith({ email: 'chef@quicktable.io' });
+    expect(selectMock).toHaveBeenCalledWith('+passwordHash');
   });
 
   it('findById() délègue directement à UserModel.findById', async () => {

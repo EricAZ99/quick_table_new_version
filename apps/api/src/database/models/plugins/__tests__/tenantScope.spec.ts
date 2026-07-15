@@ -2,6 +2,7 @@ import type { Schema } from 'mongoose';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  ALLOW_CROSS_TENANT_OPTION,
   assertTenantIdInFilter,
   assertTenantIdInPipeline,
   MISSING_TENANT_ID_MESSAGE,
@@ -67,5 +68,36 @@ describe('tenantScope(schema) (doc 03 — déclare le champ + garde les requête
       expect.any(Function),
     );
     expect(schema.pre).toHaveBeenCalledWith('aggregate', expect.any(Function));
+  });
+
+  it('le hook find-family lève toujours par défaut (comportement inchangé)', () => {
+    const schema = { add: vi.fn(), index: vi.fn(), pre: vi.fn() } as unknown as Schema;
+    tenantScope(schema);
+
+    const hook = vi
+      .mocked(schema.pre)
+      .mock.calls.find(([methods]) => Array.isArray(methods) && methods.includes('find'))?.[1] as (
+      this: unknown,
+    ) => void;
+
+    const context = { getFilter: () => ({}), getOptions: () => ({}) };
+    expect(() => hook.call(context)).toThrow(MISSING_TENANT_ID_MESSAGE);
+  });
+
+  it(`le hook find-family bypasse le garde-fou si l'option ${ALLOW_CROSS_TENANT_OPTION} est true (résolution d'identité cross-tenant au login, doc 07 §7.3)`, () => {
+    const schema = { add: vi.fn(), index: vi.fn(), pre: vi.fn() } as unknown as Schema;
+    tenantScope(schema);
+
+    const hook = vi
+      .mocked(schema.pre)
+      .mock.calls.find(([methods]) => Array.isArray(methods) && methods.includes('find'))?.[1] as (
+      this: unknown,
+    ) => void;
+
+    const context = {
+      getFilter: () => ({}),
+      getOptions: () => ({ [ALLOW_CROSS_TENANT_OPTION]: true }),
+    };
+    expect(() => hook.call(context)).not.toThrow();
   });
 });

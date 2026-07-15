@@ -6,6 +6,7 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  UnauthorizedError,
   ValidationError,
 } from '../index.js';
 
@@ -16,6 +17,7 @@ describe('classes d’erreurs typées (doc 12 §12.3)', () => {
     [ForbiddenError, 403, 'Action non autorisée.'],
     [ConflictError, 409, 'Conflit détecté.'],
     [BusinessRuleError, 422, 'Règle métier violée.'],
+    [UnauthorizedError, 401, 'Authentification requise.'],
   ] as const)(
     '%s : httpStatus %i, message par défaut',
     (ErrorClass, httpStatus, defaultMessage) => {

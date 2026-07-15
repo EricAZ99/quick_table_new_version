@@ -5,6 +5,7 @@ import { parseEnv } from '../env.js';
 const validSource = {
   MONGODB_URI: 'mongodb://localhost:27017/quicktable?replicaSet=rs0',
   REDIS_URL: 'redis://localhost:6379',
+  JWT_SECRET: 'a'.repeat(32),
 };
 
 describe('parseEnv', () => {
@@ -23,12 +24,15 @@ describe('parseEnv', () => {
     expect(env.PORT).toBe(4000);
   });
 
-  it.each(['MONGODB_URI', 'REDIS_URL'])('refuse de démarrer si %s est absent', (key) => {
-    const source = { ...validSource };
-    delete (source as Record<string, string>)[key];
+  it.each(['MONGODB_URI', 'REDIS_URL', 'JWT_SECRET'])(
+    'refuse de démarrer si %s est absent',
+    (key) => {
+      const source = { ...validSource };
+      delete (source as Record<string, string>)[key];
 
-    expect(() => parseEnv(source)).toThrow(/Configuration invalide/);
-  });
+      expect(() => parseEnv(source)).toThrow(/Configuration invalide/);
+    },
+  );
 
   it('refuse une valeur NODE_ENV hors de la liste autorisée', () => {
     expect(() => parseEnv({ ...validSource, NODE_ENV: 'preprod' })).toThrow(
@@ -38,5 +42,11 @@ describe('parseEnv', () => {
 
   it('refuse un PORT non numérique', () => {
     expect(() => parseEnv({ ...validSource, PORT: 'abc' })).toThrow(/Configuration invalide/);
+  });
+
+  it('refuse un JWT_SECRET de moins de 32 caractères (doc 07 §7.1)', () => {
+    expect(() => parseEnv({ ...validSource, JWT_SECRET: 'trop-court' })).toThrow(
+      /Configuration invalide/,
+    );
   });
 });

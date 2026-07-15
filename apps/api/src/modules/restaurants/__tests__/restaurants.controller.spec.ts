@@ -3,10 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../geolocation.service.js', () => ({
   detectLocationFromIp: vi.fn(),
+}));
+vi.mock('../../../shared/utils/normalizeClientIp.js', () => ({
   normalizeClientIp: vi.fn((ip: string | undefined) => ip),
 }));
 
-import { detectLocationFromIp, normalizeClientIp } from '../geolocation.service.js';
+import { normalizeClientIp } from '../../../shared/utils/normalizeClientIp.js';
+import { detectLocationFromIp } from '../geolocation.service.js';
 import { RestaurantsController } from '../restaurants.controller.js';
 
 function createMockReqRes(ip: string | undefined) {
