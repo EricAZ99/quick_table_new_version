@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Schema, Types, model } from 'mongoose';
 
 import { tenantScope } from './plugins/tenantScope.js';
 
@@ -30,7 +30,7 @@ export type MembershipRole = (typeof MEMBERSHIP_ROLES)[number];
  */
 export interface MembershipDocument {
   tenantId: string;
-  userId: Schema.Types.ObjectId;
+  userId: Types.ObjectId;
   role: MembershipRole;
   permissionsOverrides: string[];
   jobTitle?: string;
