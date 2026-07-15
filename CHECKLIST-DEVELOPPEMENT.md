@@ -49,7 +49,7 @@
 - [x] Implémenter `error-handler.middleware.ts` + classes d'erreurs typées — 1j
 - [x] Implémenter `BaseRepository` générique avec `tenantId` obligatoire — 1j
 - [x] Implémenter les plugins Mongoose transverses (`tenantScope`, `timestamps`) — 1j
-- [ ] Implémenter les health checks `/health/live`, `/health/ready` — 0,5j
+- [x] Implémenter les health checks `/health/live`, `/health/ready` — 0,5j — `/health/ready` vérifie MongoDB + Redis ; le critère "migrations à jour" (doc 25 §25.5) n'est pas vérifiable, aucun système de migrations n'existe encore (arrivera avec le premier schéma versionné)
 - [ ] Créer un module de référence traversant toutes les couches (validation du pattern) — 1j
 
 ### Feature 0.4 — Internationalisation, socle
