@@ -1,0 +1,8 @@
+{
+  "app": {
+    "greeting": "Ciao da QuickTable"
+  },
+  "language": {
+    "label": "Lingua"
+  }
+}
