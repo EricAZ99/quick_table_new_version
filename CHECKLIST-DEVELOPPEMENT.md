@@ -28,7 +28,7 @@
 - [x] Configurer Commitlint (Conventional Commits) — 0,25j
 - [x] Écrire le pipeline CI GitHub Actions (lint + test + build) — 1j
 - [x] Configurer déploiement auto Vercel (`apps/web`, preview + prod) — 0,5j
-- [ ] Configurer déploiement auto Railway (`apps/api`, staging + prod) — 0,5j
+- [x] Configurer déploiement auto Railway (`apps/api`, staging + prod) — 0,5j — provisionné directement depuis le dashboard Railway (service `@quicktable/api`, projet `beautiful-beauty`, auto-deploy sur push GitHub `main`) plutôt que documenté au fil de l'eau, d'où ce rattrapage tardif de la case ; un seul environnement `production` partagé staging/prod (même logique budget-serré qu'Atlas/Upstash, doc lignes 38-39) ; vérifié réellement en HTTPS sur `quicktableapi.up.railway.app` : `/health/live` et `/health/ready` (Mongo + Redis connectés) et `/api/v1/restaurants/detect-location` répondent 200
 
 ### Feature 0.2 — Infrastructure de données
 
@@ -61,7 +61,7 @@
 - [x] Modéliser et seeder la collection `countryDefaults` (Bénin, France, Italie, Espagne, USA) — 0,5j — modèle Mongoose non tenant-scoped (`database/models/countryDefault.model.ts`) + seed idempotent par upsert (`database/seeders/countryDefaults.seed.ts`, `pnpm --filter @quicktable/api seed:country-defaults`) ; `{ timestamps: true }` ajouté bien qu'absent du tableau de champs doc 05 (jugé oubli plutôt que choix délibéré, documenté dans le code — pas une contradiction entre deux sections de doc) ; fuseau US simplifié à `America/New_York` (choix documenté, un restaurant peut surcharger `restaurants.timezone` après provisioning)
 - [x] Implémenter le service de géolocalisation IP (`GET /restaurants/detect-location`) — 1j — fournisseur `ip-api.com` retenu (doc 35 §35.2 laissait le choix ouvert, validé avec le PO plutôt que MaxMind GeoLite2, hors budget de ce ticket) ; jamais bloquant (`{country:null,city:null}` sur IP privée/timeout/panne tierce, jamais un 500) ; `app.set('trust proxy', 1)` ajouté (nécessaire derrière le reverse proxy Railway pour que `req.ip` reflète le vrai client) ; endpoint Public, sans rate-limit (ticket transverse séparé, doc 12 §12.4, pas encore implémenté) ; vérifié en conditions réelles avec de vraies IP publiques (US, FR) via `X-Forwarded-For`
 
-> **Critère de sortie Epic 0** : module "Hello World" déployé en staging, health checks verts, CI bloquante fonctionnelle, sélecteur de langue FR/EN/IT/ES opérationnel.
+> **Critère de sortie Epic 0** : module "Hello World" déployé en staging, health checks verts, CI bloquante fonctionnelle, sélecteur de langue FR/EN/IT/ES opérationnel. — ✅ **atteint**, vérifié réellement le 2026-07-15 (`quicktableapi.up.railway.app` : `/health/live`, `/health/ready` Mongo+Redis OK, `/api/v1/hello-world` répond 200). Restent hors périmètre de ce critère, déjà documentés comme bloqués plus haut : `docker-compose.yml` non vérifié par exécution, Firebase Storage non provisionné (carte bancaire manquante).
 
 ---
 
