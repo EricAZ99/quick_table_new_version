@@ -47,7 +47,7 @@
 
 - [x] Implémenter le logger structuré (pino) + middleware `correlationId` — 0,5j
 - [x] Implémenter `error-handler.middleware.ts` + classes d'erreurs typées — 1j
-- [ ] Implémenter `BaseRepository` générique avec `tenantId` obligatoire — 1j
+- [x] Implémenter `BaseRepository` générique avec `tenantId` obligatoire — 1j
 - [ ] Implémenter les plugins Mongoose transverses (`tenantScope`, `timestamps`) — 1j
 - [ ] Implémenter les health checks `/health/live`, `/health/ready` — 0,5j
 - [ ] Créer un module de référence traversant toutes les couches (validation du pattern) — 1j

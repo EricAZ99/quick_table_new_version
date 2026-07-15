@@ -51,13 +51,26 @@ export const baseConfig = tseslint.config(
  * (déjà exécuté par `pnpm typecheck`/`build`) reste la source de vérité du
  * typage sur `apps/web`.
  */
-export const typeCheckedConfig = tseslint.config({
-  files: ['**/*.ts', '**/*.tsx'],
-  extends: [...tseslint.configs.recommendedTypeChecked],
-  languageOptions: {
-    parserOptions: {
-      projectService: true,
-      tsconfigRootDir: process.cwd(),
+export const typeCheckedConfig = tseslint.config(
+  {
+    files: ['**/*.ts', '**/*.tsx'],
+    extends: [...tseslint.configs.recommendedTypeChecked],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: process.cwd(),
+      },
     },
   },
-});
+  {
+    // `expect(model.find).toHaveBeenCalledWith(...)` (Vitest) référence une
+    // méthode d'interface typée (ex. `Model<T>.find`, Mongoose) sans
+    // l'appeler avec son `this` — faux positif connu de `unbound-method`
+    // sur des mocks, sans rapport avec un vrai risque de perte de `this`
+    // (aucun de ces appels n'exécute réellement la méthode).
+    files: ['**/__tests__/**/*.ts', '**/*.spec.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
+);
