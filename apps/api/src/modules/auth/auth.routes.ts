@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 
 import { getEnv } from '../../config/env.js';
+import { enqueueEmailJob } from '../../jobs/queues.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { UsersRepository } from '../users/index.js';
 import { AuthController } from './auth.controller.js';
@@ -20,7 +21,12 @@ let cachedController: AuthController | undefined;
 function getController(): AuthController {
   if (!cachedController) {
     const env = getEnv();
-    const service = new AuthService(new UsersRepository(), new AuthRepository(), env.JWT_SECRET);
+    const service = new AuthService(
+      new UsersRepository(),
+      new AuthRepository(),
+      env.JWT_SECRET,
+      enqueueEmailJob,
+    );
     cachedController = new AuthController(service, env.NODE_ENV === 'production');
   }
   return cachedController;

@@ -33,6 +33,14 @@ const envSchema = z.object({
   // caractères minimum pour rester raisonnablement résistante au brute
   // force sur la clé elle-même (HMAC-SHA256).
   JWT_SECRET: z.string().min(32, 'JWT_SECRET doit contenir au moins 32 caractères'),
+  // Relais SMTP Brevo (doc 04 §4.1) — consommé par `EmailSenderService`
+  // (process API pour l'enfilage des jobs, process `workers` pour l'envoi
+  // réel), jamais lu ailleurs (doc 04 : "seul point du code qui importe
+  // Nodemailer").
+  SMTP_HOST: z.string().min(1, 'SMTP_HOST est requis'),
+  SMTP_PORT: z.coerce.number().int().positive(),
+  SMTP_USER: z.string().min(1, 'SMTP_USER est requis'),
+  SMTP_PASS: z.string().min(1, 'SMTP_PASS est requis'),
 });
 
 export type Env = z.infer<typeof envSchema>;

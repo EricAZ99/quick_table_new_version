@@ -1,7 +1,10 @@
 import argon2 from 'argon2';
 
-import { logger } from '../../logger/logger.js';
+import type { EmailJobData } from '../../jobs/queues.js';
+import { DEFAULT_LOCALE } from '../../middlewares/i18n.middleware.js';
 import { UnauthorizedError } from '../../shared/errors/index.js';
+import { passwordChangedEmailTemplate } from '../notifications/email-templates/passwordChanged.template.js';
+import { passwordResetEmailTemplate } from '../notifications/email-templates/passwordReset.template.js';
 import type { UsersRepository } from '../users/users.repository.js';
 import type { AuthRepository } from './auth.repository.js';
 import type { ForgotPasswordDto, LoginDto } from './auth.validators.js';
@@ -64,6 +67,11 @@ export class AuthService {
     private readonly usersRepository: UsersRepository,
     private readonly authRepository: AuthRepository,
     private readonly jwtSecret: string,
+    // Enfilage injecté (pas un import direct de `jobs/queues.ts`) pour que
+    // ce service reste testable unitairement sans connexion BullMQ/Redis
+    // réelle — même logique que `jwtSecret` en paramètre plutôt que
+    // `getEnv()` interne.
+    private readonly enqueueEmailJob: (data: EmailJobData) => Promise<void>,
   ) {}
 
   async login(dto: LoginDto, meta: RequestMeta): Promise<LoginResult> {
@@ -215,11 +223,9 @@ export class AuthService {
    * toujours de la même façon (aucune valeur de retour, jamais d'erreur)
    * que l'email existe ou non, le controller renvoie systématiquement 200.
    *
-   * Envoi d'email hors périmètre de ce ticket : aucun worker
-   * Nodemailer/Brevo n'existe encore (ticket séparé de cette Feature). En
-   * attendant, le lien de réinitialisation est loggé — un contributeur qui
-   * teste le flux en local/staging peut le récupérer dans les logs, pas
-   * dans sa boîte mail.
+   * L'email est enfilé (BullMQ, `jobs/queues.ts`) plutôt qu'envoyé en
+   * synchrone : un worker séparé (`workers/email.worker.ts`) le consomme,
+   * la requête HTTP ne dépend jamais de la latence/disponibilité de Brevo.
    */
   async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
     const user = await this.usersRepository.findByEmail(dto.email);
@@ -235,22 +241,18 @@ export class AuthService {
       expiresAt,
     });
 
-    logger.info(
-      {
-        userId: user._id.toString(),
-        resetLink: `https://app.quicktable.io/reset-password?token=${rawToken}`,
-      },
-      "Lien de réinitialisation de mot de passe généré (email non envoyé — worker d'envoi pas encore construit)",
-    );
+    const resetLink = `https://app.quicktable.io/reset-password?token=${rawToken}`;
+    const locale = user.preferredLocale ?? DEFAULT_LOCALE;
+    const { subject, html, text } = passwordResetEmailTemplate(locale, resetLink);
+    await this.enqueueEmailJob({ to: user.email, subject, html, text });
   }
 
   /**
    * `POST /auth/reset-password` (doc 07 §7.5) : vérifie le token à usage
    * unique, met à jour `passwordHash`, puis révoque **toutes** les sessions
    * actives de l'utilisateur (déconnexion de sécurité, différent du
-   * `logout` qui ne révoque que la session courante). Notification de
-   * confirmation par email hors périmètre (même raison que
-   * `forgotPassword`).
+   * `logout` qui ne révoque que la session courante), puis enfile une
+   * notification de confirmation par email.
    */
   async resetPassword(rawToken: string, newPassword: string): Promise<void> {
     const tokenHash = hashPasswordResetToken(rawToken);
@@ -272,6 +274,13 @@ export class AuthService {
     await this.usersRepository.updatePasswordHash(userId, passwordHash);
     await this.authRepository.markPasswordResetTokenUsed(storedToken.id);
     await this.authRepository.revokeAllUserRefreshTokens(userId);
+
+    const user = await this.usersRepository.findById(userId);
+    if (user) {
+      const locale = user.preferredLocale ?? DEFAULT_LOCALE;
+      const { subject, html, text } = passwordChangedEmailTemplate(locale);
+      await this.enqueueEmailJob({ to: user.email, subject, html, text });
+    }
   }
 
   private async issueRefreshToken(

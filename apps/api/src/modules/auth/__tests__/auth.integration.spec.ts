@@ -9,6 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../../app.js';
 import { connectDatabase, disconnectDatabase } from '../../../config/database.js';
 import { connectRedis, disconnectRedis, getRedisClient } from '../../../config/redis.js';
+import { connectEmailQueue, disconnectEmailQueue, getEmailQueue } from '../../../jobs/queues.js';
 import { MembershipModel } from '../../../database/models/membership.model.js';
 import { PasswordResetTokenModel } from '../../../database/models/passwordResetToken.model.js';
 import { RefreshTokenModel } from '../../../database/models/refreshToken.model.js';
@@ -63,6 +64,7 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
   beforeAll(async () => {
     await connectDatabase(mongodbUri as string);
     await connectRedis(redisUrl as string);
+    connectEmailQueue(redisUrl as string);
   });
 
   afterAll(async () => {
@@ -71,8 +73,14 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
     await PasswordResetTokenModel.deleteMany({ userId: { $in: testUsers.map((u) => u._id) } });
     await UserModel.collection.deleteMany({ email: /^auth-integration-/ });
     await MembershipModel.collection.deleteMany({ tenantId: 'auth-integration-tenant' });
+    // Aucun worker ne consomme la queue pendant ces tests (doc 12 §12.5,
+    // le worker est un process séparé) — sans ce nettoyage, les jobs
+    // `waiting` s'accumuleraient indéfiniment sur la vraie instance Redis
+    // d'un run de test à l'autre.
+    await getEmailQueue().drain(true);
     await disconnectDatabase();
     await disconnectRedis();
+    await disconnectEmailQueue();
   });
 
   beforeAll(() => {
@@ -347,6 +355,12 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       const storedTokens = await PasswordResetTokenModel.find({ userId: user._id });
       expect(storedTokens).toHaveLength(1);
       expect(storedTokens[0]?.usedAt).toBeNull();
+
+      // Vérifie que l'email de réinitialisation a bien été enfilé sur la
+      // vraie queue BullMQ/Redis (pas juste que le token a été stocké) —
+      // aucun worker ne tourne pendant ce test, le job reste `waiting`.
+      const jobs = await getEmailQueue().getJobs(['waiting', 'delayed']);
+      expect(jobs.some((job) => job.data.to === forgotEmail)).toBe(true);
     });
 
     it('répond de façon identique (200, data:null) pour un email inconnu — anti-énumération, aucun token créé', async () => {
@@ -422,6 +436,9 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       // Toutes les sessions d'avant le reset sont révoquées ; seule la
       // nouvelle session issue de `loginWithNewPassword` ci-dessus reste active.
       expect(activeSessions).toBe(1);
+
+      const jobs = await getEmailQueue().getJobs(['waiting', 'delayed']);
+      expect(jobs.some((job) => job.data.to === resetEmail)).toBe(true);
     });
 
     it('rejette un token inconnu (401 AUTH_RESET_TOKEN_INVALID)', async () => {

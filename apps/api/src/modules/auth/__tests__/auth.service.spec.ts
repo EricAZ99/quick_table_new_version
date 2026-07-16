@@ -7,6 +7,7 @@ vi.mock('argon2', () => ({
 
 import argon2 from 'argon2';
 
+import type { EmailJobData } from '../../../jobs/queues.js';
 import type { AuthRepository } from '../auth.repository.js';
 import { AuthService } from '../auth.service.js';
 import type { AccessTokenPayload } from '../jwt.js';
@@ -14,6 +15,14 @@ import { verifyAccessToken } from '../jwt.js';
 import type { UsersRepository } from '../../users/users.repository.js';
 
 const SECRET = 's'.repeat(32);
+
+function createService(
+  usersRepository: UsersRepository,
+  authRepository: AuthRepository,
+  enqueueEmailJob: (data: EmailJobData) => Promise<void> = vi.fn().mockResolvedValue(undefined),
+) {
+  return new AuthService(usersRepository, authRepository, SECRET, enqueueEmailJob);
+}
 
 function createUserDoc(overrides: Partial<Record<string, unknown>> = {}) {
   return {
@@ -55,6 +64,7 @@ function createUsersRepositoryMock(overrides: Partial<Record<string, unknown>> =
   return {
     findByEmailWithPasswordHash: vi.fn().mockResolvedValue(null),
     findByEmail: vi.fn().mockResolvedValue(null),
+    findById: vi.fn().mockResolvedValue(null),
     updatePasswordHash: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   } as unknown as UsersRepository;
@@ -108,7 +118,7 @@ describe('AuthService#login', () => {
     const userDoc = createUserDoc();
     const membership = createMembership();
     const { usersRepository, authRepository } = createServices(userDoc, [membership]);
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const service = createService(usersRepository, authRepository);
 
     const result = await service.login(
       { email: 'chef@quicktable.io', password: 'le-bon-mdp' },
@@ -139,7 +149,7 @@ describe('AuthService#login', () => {
   it("rejette avec un code générique si l'utilisateur n'existe pas (anti-énumération)", async () => {
     vi.mocked(argon2.verify).mockResolvedValue(false);
     const { usersRepository, authRepository } = createServices(null, []);
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const service = createService(usersRepository, authRepository);
 
     await expect(
       service.login({ email: 'inconnu@quicktable.io', password: 'x' }, {}),
@@ -152,7 +162,7 @@ describe('AuthService#login', () => {
     vi.mocked(argon2.verify).mockResolvedValue(false);
     const userDoc = createUserDoc();
     const { usersRepository, authRepository } = createServices(userDoc, []);
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const service = createService(usersRepository, authRepository);
 
     await expect(
       service.login({ email: 'chef@quicktable.io', password: 'mauvais-mdp' }, {}),
@@ -163,7 +173,7 @@ describe('AuthService#login', () => {
     vi.mocked(argon2.verify).mockResolvedValue(true);
     const userDoc = createUserDoc({ isSuperAdmin: true });
     const { usersRepository, authRepository } = createServices(userDoc, []);
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const service = createService(usersRepository, authRepository);
 
     const result = await service.login({ email: 'chef@quicktable.io', password: 'x' }, {});
 
@@ -187,7 +197,7 @@ describe('AuthService#login', () => {
       role: 'manager',
     });
     const { usersRepository, authRepository } = createServices(userDoc, [membershipA, membershipB]);
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const service = createService(usersRepository, authRepository);
 
     const result = await service.login({ email: 'chef@quicktable.io', password: 'x' }, {});
 
@@ -206,7 +216,7 @@ describe('AuthService#refresh', () => {
     const authRepository = createAuthRepositoryMock({
       findRefreshTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     const result = await service.refresh('raw-refresh-token', expiredAccessToken, {
       ip: '203.0.113.42',
@@ -223,7 +233,7 @@ describe('AuthService#refresh', () => {
 
   it('rejette si le cookie refreshToken est absent', async () => {
     const authRepository = createAuthRepositoryMock();
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(
       service.refresh(undefined, jwt.sign(PREVIOUS_PAYLOAD, SECRET, { expiresIn: -10 }), {}),
@@ -232,7 +242,7 @@ describe('AuthService#refresh', () => {
 
   it("rejette si l'Access Token expiré est absent", async () => {
     const authRepository = createAuthRepositoryMock();
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(service.refresh('raw-refresh-token', undefined, {})).rejects.toMatchObject({
       code: 'AUTH_REFRESH_TOKEN_INVALID',
@@ -245,7 +255,7 @@ describe('AuthService#refresh', () => {
       expiresIn: -10,
     });
     const authRepository = createAuthRepositoryMock();
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(service.refresh('raw-refresh-token', forgedToken, {})).rejects.toMatchObject({
       code: 'AUTH_REFRESH_TOKEN_INVALID',
@@ -258,7 +268,7 @@ describe('AuthService#refresh', () => {
     const authRepository = createAuthRepositoryMock({
       findRefreshTokenByHash: vi.fn().mockResolvedValue(null),
     });
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(
       service.refresh('raw-refresh-token', expiredAccessToken, {}),
@@ -271,7 +281,7 @@ describe('AuthService#refresh', () => {
     const authRepository = createAuthRepositoryMock({
       findRefreshTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(
       service.refresh('raw-refresh-token', expiredAccessToken, {}),
@@ -284,7 +294,7 @@ describe('AuthService#refresh', () => {
     const authRepository = createAuthRepositoryMock({
       findRefreshTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(
       service.refresh('raw-refresh-token', expiredAccessToken, {}),
@@ -297,7 +307,7 @@ describe('AuthService#refresh', () => {
     const authRepository = createAuthRepositoryMock({
       findRefreshTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(
       service.refresh('raw-refresh-token', expiredAccessToken, {}),
@@ -312,7 +322,7 @@ describe('AuthService#logout', () => {
     const authRepository = createAuthRepositoryMock({
       findRefreshTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await service.logout('raw-refresh-token');
 
@@ -321,7 +331,7 @@ describe('AuthService#logout', () => {
 
   it("ne fait rien (pas d'exception) si aucun refresh token n'est fourni — logout idempotent", async () => {
     const authRepository = createAuthRepositoryMock();
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(service.logout(undefined)).resolves.toBeUndefined();
     expect(authRepository.findRefreshTokenByHash).not.toHaveBeenCalled();
@@ -331,7 +341,7 @@ describe('AuthService#logout', () => {
     const authRepository = createAuthRepositoryMock({
       findRefreshTokenByHash: vi.fn().mockResolvedValue(null),
     });
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await expect(service.logout('token-inconnu')).resolves.toBeUndefined();
     expect(authRepository.revokeRefreshToken).not.toHaveBeenCalled();
@@ -342,7 +352,7 @@ describe('AuthService#logout', () => {
     const authRepository = createAuthRepositoryMock({
       findRefreshTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+    const service = createService(NOOP_USERS_REPOSITORY, authRepository);
 
     await service.logout('raw-refresh-token');
 
@@ -351,43 +361,53 @@ describe('AuthService#logout', () => {
 });
 
 describe('AuthService#forgotPassword', () => {
-  it('génère et stocke un token de reset quand l’utilisateur existe', async () => {
+  it('génère et stocke un token de reset quand l’utilisateur existe, puis enfile l’email de réinitialisation', async () => {
     const userDoc = createUserDoc();
     const usersRepository = createUsersRepositoryMock({
       findByEmail: vi.fn().mockResolvedValue(userDoc),
     });
     const authRepository = createAuthRepositoryMock();
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const enqueueEmailJob = vi.fn().mockResolvedValue(undefined);
+    const service = createService(usersRepository, authRepository, enqueueEmailJob);
 
     await service.forgotPassword({ email: 'chef@quicktable.io' });
 
     expect(authRepository.createPasswordResetToken).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-a' }),
     );
+    expect(enqueueEmailJob).toHaveBeenCalledOnce();
+    const [emailJob] = vi.mocked(enqueueEmailJob).mock.calls[0] as [{ to: string }];
+    expect(emailJob.to).toBe('chef@quicktable.io');
   });
 
-  it("ne fait rien (pas d'exception) si l'email n'existe pas — anti-énumération (doc 07 §7.5)", async () => {
+  it("ne fait rien (pas d'exception, pas d'email) si l'email n'existe pas — anti-énumération (doc 07 §7.5)", async () => {
     const usersRepository = createUsersRepositoryMock({
       findByEmail: vi.fn().mockResolvedValue(null),
     });
     const authRepository = createAuthRepositoryMock();
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const enqueueEmailJob = vi.fn().mockResolvedValue(undefined);
+    const service = createService(usersRepository, authRepository, enqueueEmailJob);
 
     await expect(
       service.forgotPassword({ email: 'inconnu@quicktable.io' }),
     ).resolves.toBeUndefined();
     expect(authRepository.createPasswordResetToken).not.toHaveBeenCalled();
+    expect(enqueueEmailJob).not.toHaveBeenCalled();
   });
 });
 
 describe('AuthService#resetPassword', () => {
-  it('met à jour le mot de passe, marque le token utilisé, révoque toutes les sessions (doc 07 §7.5)', async () => {
+  it('met à jour le mot de passe, marque le token utilisé, révoque toutes les sessions, enfile l’email de confirmation (doc 07 §7.5)', async () => {
     const storedToken = createStoredPasswordResetToken();
-    const usersRepository = createUsersRepositoryMock();
+    const userDoc = createUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findById: vi.fn().mockResolvedValue(userDoc),
+    });
     const authRepository = createAuthRepositoryMock({
       findPasswordResetTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const enqueueEmailJob = vi.fn().mockResolvedValue(undefined);
+    const service = createService(usersRepository, authRepository, enqueueEmailJob);
 
     await service.resetPassword('raw-reset-token', 'un-nouveau-mdp-solide');
 
@@ -397,6 +417,26 @@ describe('AuthService#resetPassword', () => {
     );
     expect(authRepository.markPasswordResetTokenUsed).toHaveBeenCalledWith('reset-token-id-a');
     expect(authRepository.revokeAllUserRefreshTokens).toHaveBeenCalledWith('user-a');
+    expect(enqueueEmailJob).toHaveBeenCalledOnce();
+    const [emailJob] = vi.mocked(enqueueEmailJob).mock.calls[0] as [{ to: string }];
+    expect(emailJob.to).toBe('chef@quicktable.io');
+  });
+
+  it("n'envoie pas d'email de confirmation si l'utilisateur n'est plus trouvable (compte supprimé entre-temps)", async () => {
+    const storedToken = createStoredPasswordResetToken();
+    const usersRepository = createUsersRepositoryMock({
+      findById: vi.fn().mockResolvedValue(null),
+    });
+    const authRepository = createAuthRepositoryMock({
+      findPasswordResetTokenByHash: vi.fn().mockResolvedValue(storedToken),
+    });
+    const enqueueEmailJob = vi.fn().mockResolvedValue(undefined);
+    const service = createService(usersRepository, authRepository, enqueueEmailJob);
+
+    await expect(
+      service.resetPassword('raw-reset-token', 'un-nouveau-mdp-solide'),
+    ).resolves.toBeUndefined();
+    expect(enqueueEmailJob).not.toHaveBeenCalled();
   });
 
   it('rejette si le token ne correspond à aucun reset connu', async () => {
@@ -404,7 +444,7 @@ describe('AuthService#resetPassword', () => {
     const authRepository = createAuthRepositoryMock({
       findPasswordResetTokenByHash: vi.fn().mockResolvedValue(null),
     });
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const service = createService(usersRepository, authRepository);
 
     await expect(
       service.resetPassword('token-inconnu', 'un-nouveau-mdp-solide'),
@@ -418,7 +458,7 @@ describe('AuthService#resetPassword', () => {
     const authRepository = createAuthRepositoryMock({
       findPasswordResetTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const service = createService(usersRepository, authRepository);
 
     await expect(
       service.resetPassword('raw-reset-token', 'un-nouveau-mdp-solide'),
@@ -431,7 +471,7 @@ describe('AuthService#resetPassword', () => {
     const authRepository = createAuthRepositoryMock({
       findPasswordResetTokenByHash: vi.fn().mockResolvedValue(storedToken),
     });
-    const service = new AuthService(usersRepository, authRepository, SECRET);
+    const service = createService(usersRepository, authRepository);
 
     await expect(
       service.resetPassword('raw-reset-token', 'un-nouveau-mdp-solide'),

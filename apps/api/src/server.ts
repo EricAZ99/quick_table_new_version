@@ -2,6 +2,7 @@ import { createApp } from './app.js';
 import { connectDatabase } from './config/database.js';
 import { getEnv } from './config/env.js';
 import { connectRedis } from './config/redis.js';
+import { connectEmailQueue } from './jobs/queues.js';
 import { logger } from './logger/logger.js';
 
 /**
@@ -13,12 +14,17 @@ import { logger } from './logger/logger.js';
  * injoignable (doc 12 §12.9). Utilise désormais le logger structuré (doc
  * 12 §12.8, disponible depuis ce ticket de la Feature 0.3) plutôt que
  * `console.log`.
+ *
+ * `connectEmailQueue` : le process API est le **producteur** des jobs
+ * `email` (doc 12 §12.5) — le worker qui les consomme (`workers/worker.ts`)
+ * est un process Railway séparé, jamais démarré ici.
  */
 const env = getEnv();
 
 async function main(): Promise<void> {
   await connectDatabase(env.MONGODB_URI);
   await connectRedis(env.REDIS_URL);
+  connectEmailQueue(env.REDIS_URL);
 
   const app = createApp();
 
