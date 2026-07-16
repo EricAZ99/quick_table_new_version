@@ -280,3 +280,47 @@ describe('AuthService#refresh', () => {
     expect(authRepository.revokeAllUserRefreshTokens).toHaveBeenCalledWith('user-a');
   });
 });
+
+describe('AuthService#logout', () => {
+  it('révoque la session correspondant au refresh token présenté', async () => {
+    const storedToken = createStoredRefreshToken();
+    const authRepository = createAuthRepositoryMock({
+      findRefreshTokenByHash: vi.fn().mockResolvedValue(storedToken),
+    });
+    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+
+    await service.logout('raw-refresh-token');
+
+    expect(authRepository.revokeRefreshToken).toHaveBeenCalledWith('refresh-token-id-a');
+  });
+
+  it("ne fait rien (pas d'exception) si aucun refresh token n'est fourni — logout idempotent", async () => {
+    const authRepository = createAuthRepositoryMock();
+    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+
+    await expect(service.logout(undefined)).resolves.toBeUndefined();
+    expect(authRepository.findRefreshTokenByHash).not.toHaveBeenCalled();
+  });
+
+  it('ne fait rien si le token présenté ne correspond à aucune session connue — pas une erreur', async () => {
+    const authRepository = createAuthRepositoryMock({
+      findRefreshTokenByHash: vi.fn().mockResolvedValue(null),
+    });
+    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+
+    await expect(service.logout('token-inconnu')).resolves.toBeUndefined();
+    expect(authRepository.revokeRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it('ne re-révoque pas un token déjà révoqué (pas de mutation superflue)', async () => {
+    const storedToken = createStoredRefreshToken({ revokedAt: new Date() });
+    const authRepository = createAuthRepositoryMock({
+      findRefreshTokenByHash: vi.fn().mockResolvedValue(storedToken),
+    });
+    const service = new AuthService(NOOP_USERS_REPOSITORY, authRepository, SECRET);
+
+    await service.logout('raw-refresh-token');
+
+    expect(authRepository.revokeRefreshToken).not.toHaveBeenCalled();
+  });
+});

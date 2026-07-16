@@ -254,4 +254,52 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       expect(body.error.code).toBe('AUTH_REFRESH_TOKEN_INVALID');
     });
   });
+
+  describe('POST /api/v1/auth/logout', () => {
+    it('révoque la session courante en base et efface le cookie refreshToken', async () => {
+      const logoutEmail = `auth-integration-logout-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      const user = await UserModel.create({
+        email: logoutEmail,
+        passwordHash,
+        fullName: 'Intégration Logout',
+      });
+      await MembershipModel.create({
+        tenantId: 'auth-integration-tenant',
+        userId: user._id,
+        role: 'waiter',
+      });
+
+      const app = createApp();
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: logoutEmail, password });
+      const refreshTokenCookie = extractRefreshTokenCookie(
+        loginResponse.headers['set-cookie'] as unknown as string[],
+      );
+
+      const logoutResponse = await request(app)
+        .post('/api/v1/auth/logout')
+        .set('Cookie', refreshTokenCookie)
+        .send();
+
+      expect(logoutResponse.status).toBe(204);
+      const clearedCookie = (logoutResponse.headers['set-cookie'] as unknown as string[]).find(
+        (c) => c.startsWith('refreshToken='),
+      );
+      expect(clearedCookie).toMatch(/refreshToken=;/);
+
+      const activeSessions = await RefreshTokenModel.countDocuments({
+        userId: user._id,
+        revokedAt: null,
+      });
+      expect(activeSessions).toBe(0);
+    });
+
+    it('reste idempotent (204) sans cookie refreshToken', async () => {
+      const response = await request(createApp()).post('/api/v1/auth/logout').send();
+
+      expect(response.status).toBe(204);
+    });
+  });
 });

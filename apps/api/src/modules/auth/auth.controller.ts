@@ -50,23 +50,38 @@ export class AuthController {
    * tenant de la session (voir `AuthService#refresh`).
    */
   refresh = async (req: Request, res: Response): Promise<void> => {
-    const rawRefreshToken = req.cookies as Record<string, unknown> | undefined;
-    const refreshTokenCookie = rawRefreshToken?.[REFRESH_TOKEN_COOKIE_NAME];
     const authHeader = req.headers.authorization;
     const expiredAccessToken = authHeader?.startsWith('Bearer ')
       ? authHeader.slice('Bearer '.length)
       : undefined;
 
-    const result = await this.service.refresh(
-      typeof refreshTokenCookie === 'string' ? refreshTokenCookie : undefined,
-      expiredAccessToken,
-      { ip: req.ip, userAgent: req.headers['user-agent'] },
-    );
+    const result = await this.service.refresh(this.getRefreshTokenCookie(req), expiredAccessToken, {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
 
     this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
 
     res.status(200).json({ success: true, data: { accessToken: result.accessToken } });
   };
+
+  /**
+   * `POST /auth/logout` (doc 07 §7.10) : révoque uniquement la session
+   * courante — idempotent, jamais d'erreur même sans cookie ou sur un
+   * token déjà révoqué (`AuthService#logout`).
+   */
+  logout = async (req: Request, res: Response): Promise<void> => {
+    await this.service.logout(this.getRefreshTokenCookie(req));
+
+    res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, { path: '/' });
+    res.status(204).send();
+  };
+
+  private getRefreshTokenCookie(req: Request): string | undefined {
+    const cookies = req.cookies as Record<string, unknown> | undefined;
+    const value = cookies?.[REFRESH_TOKEN_COOKIE_NAME];
+    return typeof value === 'string' ? value : undefined;
+  }
 
   private setRefreshTokenCookie(res: Response, refreshToken: string, expiresAt: Date): void {
     res.cookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, {

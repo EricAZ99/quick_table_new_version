@@ -12,12 +12,16 @@ import { resetLoginRateLimit } from '../login-rate-limit.js';
 
 function createMockRes() {
   const json = vi.fn();
+  const send = vi.fn();
   const cookie = vi.fn();
-  const status = vi.fn().mockReturnValue({ json });
-  return { status, json, cookie } as unknown as Response & {
+  const clearCookie = vi.fn();
+  const status = vi.fn().mockReturnValue({ json, send });
+  return { status, json, send, cookie, clearCookie } as unknown as Response & {
     status: typeof status;
     json: typeof json;
+    send: typeof send;
     cookie: typeof cookie;
+    clearCookie: typeof clearCookie;
   };
 }
 
@@ -162,5 +166,33 @@ describe('AuthController#refresh', () => {
     await controller.refresh(req, res);
 
     expect(service.refresh).toHaveBeenCalledWith('raw-token', undefined, expect.any(Object));
+  });
+});
+
+describe('AuthController#logout', () => {
+  it('révoque la session, efface le cookie refreshToken, répond 204 sans corps', async () => {
+    const service = { logout: vi.fn().mockResolvedValue(undefined) } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { cookies: { refreshToken: 'raw-refresh-token' } } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.logout(req, res);
+
+    expect(service.logout).toHaveBeenCalledWith('raw-refresh-token');
+    expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', { path: '/' });
+    expect(res.status).toHaveBeenCalledWith(204);
+    expect(res.send).toHaveBeenCalledWith();
+  });
+
+  it("fonctionne sans cookie (logout idempotent, pas d'exception)", async () => {
+    const service = { logout: vi.fn().mockResolvedValue(undefined) } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { cookies: {} } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.logout(req, res);
+
+    expect(service.logout).toHaveBeenCalledWith(undefined);
+    expect(res.status).toHaveBeenCalledWith(204);
   });
 });

@@ -41,3 +41,8 @@ authRouter.post(
   '/refresh',
   asyncHandler((req: Request, res: Response) => getController().refresh(req, res)),
 );
+
+authRouter.post(
+  '/logout',
+  asyncHandler((req: Request, res: Response) => getController().logout(req, res)),
+);

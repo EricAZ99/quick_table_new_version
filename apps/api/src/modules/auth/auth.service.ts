@@ -184,6 +184,26 @@ export class AuthService {
     return { accessToken, refreshToken, refreshTokenExpiresAt };
   }
 
+  /**
+   * Révocation de la session courante (doc 07 §7.10) — idempotent : pas de
+   * cookie, token inconnu ou déjà révoqué ne sont jamais des erreurs (un
+   * logout "à vide" est un no-op réussi, pas un échec). Ne révoque que
+   * *cette* session, contrairement à `revokeAllUserRefreshTokens` (rejeu
+   * détecté au refresh) ou à la révocation globale de `reset-password`
+   * (doc 07 §7.5, ticket séparé).
+   */
+  async logout(rawRefreshToken: string | undefined): Promise<void> {
+    if (!rawRefreshToken) {
+      return;
+    }
+
+    const tokenHash = hashRefreshToken(rawRefreshToken);
+    const storedToken = await this.authRepository.findRefreshTokenByHash(tokenHash);
+    if (storedToken && storedToken.revokedAt === null) {
+      await this.authRepository.revokeRefreshToken(storedToken.id);
+    }
+  }
+
   private async issueRefreshToken(
     userId: string,
     meta: RequestMeta,
