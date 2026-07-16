@@ -44,6 +44,15 @@ jobs:
       # mais reste un secret de signature — jamais committé en clair même
       # pour un usage CI/test.
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      # Relais SMTP Brevo (doc 04 §4.1) : requis par `config/env.ts`
+      # (fail-fast) dès qu'une route /auth/* est exercée, mais aucun test
+      # CI n'envoie réellement d'email (le worker qui consomme la queue
+      # BullMQ tourne dans un process séparé, jamais démarré ici) — valeurs
+      # arbitraires, pas des identifiants réels, donc pas des secrets.
+      SMTP_HOST: smtp-relay.brevo.com
+      SMTP_PORT: '587'
+      SMTP_USER: ci-placeholder
+      SMTP_PASS: ci-placeholder
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
