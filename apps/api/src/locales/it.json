@@ -5,5 +5,7 @@
   "AUTH_INVALID_PAYLOAD": "Email o password mancanti o non validi.",
   "AUTH_LOGIN_RATE_LIMITED": "Troppi tentativi di accesso, riprova più tardi.",
   "AUTH_REFRESH_TOKEN_INVALID": "Sessione non valida, effettua di nuovo l'accesso.",
-  "AUTH_REFRESH_TOKEN_REUSED": "Sessione non valida, effettua di nuovo l'accesso."
+  "AUTH_REFRESH_TOKEN_REUSED": "Sessione non valida, effettua di nuovo l'accesso.",
+  "AUTH_FORGOT_PASSWORD_RATE_LIMITED": "Troppe richieste di reimpostazione, riprova più tardi.",
+  "AUTH_RESET_TOKEN_INVALID": "Link di reimpostazione non valido o scaduto."
 }

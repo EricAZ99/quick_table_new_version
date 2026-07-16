@@ -34,4 +34,9 @@ export class UsersRepository {
   findById(id: string) {
     return UserModel.findById(id);
   }
+
+  /** Réinitialisation de mot de passe (doc 07 §7.5) — le hachage Argon2id reste à la charge de l'appelant. */
+  updatePasswordHash(userId: string, passwordHash: string) {
+    return UserModel.updateOne({ _id: userId }, { passwordHash });
+  }
 }

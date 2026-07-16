@@ -5,5 +5,7 @@
   "AUTH_INVALID_PAYLOAD": "Email ou mot de passe manquant ou invalide.",
   "AUTH_LOGIN_RATE_LIMITED": "Trop de tentatives de connexion, réessayez plus tard.",
   "AUTH_REFRESH_TOKEN_INVALID": "Session invalide, veuillez vous reconnecter.",
-  "AUTH_REFRESH_TOKEN_REUSED": "Session invalide, veuillez vous reconnecter."
+  "AUTH_REFRESH_TOKEN_REUSED": "Session invalide, veuillez vous reconnecter.",
+  "AUTH_FORGOT_PASSWORD_RATE_LIMITED": "Trop de demandes de réinitialisation, réessayez plus tard.",
+  "AUTH_RESET_TOKEN_INVALID": "Lien de réinitialisation invalide ou expiré."
 }

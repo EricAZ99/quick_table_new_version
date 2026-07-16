@@ -6,6 +6,7 @@ import { UsersRepository } from '../users/index.js';
 import { AuthController } from './auth.controller.js';
 import { AuthRepository } from './auth.repository.js';
 import { AuthService } from './auth.service.js';
+import { forgotPasswordRateLimiter } from './forgot-password-rate-limit.js';
 import { loginRateLimiter } from './login-rate-limit.js';
 
 /**
@@ -45,4 +46,15 @@ authRouter.post(
 authRouter.post(
   '/logout',
   asyncHandler((req: Request, res: Response) => getController().logout(req, res)),
+);
+
+authRouter.post(
+  '/forgot-password',
+  forgotPasswordRateLimiter,
+  asyncHandler((req: Request, res: Response) => getController().forgotPassword(req, res)),
+);
+
+authRouter.post(
+  '/reset-password',
+  asyncHandler((req: Request, res: Response) => getController().resetPassword(req, res)),
 );

@@ -1,7 +1,9 @@
 import jwt from 'jsonwebtoken';
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('argon2', () => ({ default: { verify: vi.fn() } }));
+vi.mock('argon2', () => ({
+  default: { verify: vi.fn(), hash: vi.fn().mockResolvedValue('new-hashed-password'), argon2id: 2 },
+}));
 
 import argon2 from 'argon2';
 
@@ -42,14 +44,26 @@ function createAuthRepositoryMock(overrides: Partial<Record<string, unknown>> = 
     findRefreshTokenByHash: vi.fn().mockResolvedValue(null),
     revokeRefreshToken: vi.fn().mockResolvedValue(undefined),
     revokeAllUserRefreshTokens: vi.fn().mockResolvedValue(undefined),
+    createPasswordResetToken: vi.fn().mockResolvedValue(undefined),
+    findPasswordResetTokenByHash: vi.fn().mockResolvedValue(null),
+    markPasswordResetTokenUsed: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   } as unknown as AuthRepository;
 }
 
-function createServices(userDoc: unknown, memberships: unknown[]) {
-  const usersRepository = {
-    findByEmailWithPasswordHash: vi.fn().mockResolvedValue(userDoc),
+function createUsersRepositoryMock(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    findByEmailWithPasswordHash: vi.fn().mockResolvedValue(null),
+    findByEmail: vi.fn().mockResolvedValue(null),
+    updatePasswordHash: vi.fn().mockResolvedValue(undefined),
+    ...overrides,
   } as unknown as UsersRepository;
+}
+
+function createServices(userDoc: unknown, memberships: unknown[]) {
+  const usersRepository = createUsersRepositoryMock({
+    findByEmailWithPasswordHash: vi.fn().mockResolvedValue(userDoc),
+  });
   const authRepository = createAuthRepositoryMock({
     findMembershipsByUserId: vi.fn().mockResolvedValue(memberships),
   });
@@ -64,6 +78,17 @@ function createStoredRefreshToken(overrides: Partial<Record<string, unknown>> = 
     tokenHash: 'a'.repeat(64),
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     revokedAt: null,
+    ...overrides,
+  };
+}
+
+function createStoredPasswordResetToken(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: 'reset-token-id-a',
+    userId: { toString: () => 'user-a' },
+    tokenHash: 'b'.repeat(64),
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+    usedAt: null,
     ...overrides,
   };
 }
@@ -322,5 +347,94 @@ describe('AuthService#logout', () => {
     await service.logout('raw-refresh-token');
 
     expect(authRepository.revokeRefreshToken).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService#forgotPassword', () => {
+  it('génère et stocke un token de reset quand l’utilisateur existe', async () => {
+    const userDoc = createUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findByEmail: vi.fn().mockResolvedValue(userDoc),
+    });
+    const authRepository = createAuthRepositoryMock();
+    const service = new AuthService(usersRepository, authRepository, SECRET);
+
+    await service.forgotPassword({ email: 'chef@quicktable.io' });
+
+    expect(authRepository.createPasswordResetToken).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'user-a' }),
+    );
+  });
+
+  it("ne fait rien (pas d'exception) si l'email n'existe pas — anti-énumération (doc 07 §7.5)", async () => {
+    const usersRepository = createUsersRepositoryMock({
+      findByEmail: vi.fn().mockResolvedValue(null),
+    });
+    const authRepository = createAuthRepositoryMock();
+    const service = new AuthService(usersRepository, authRepository, SECRET);
+
+    await expect(
+      service.forgotPassword({ email: 'inconnu@quicktable.io' }),
+    ).resolves.toBeUndefined();
+    expect(authRepository.createPasswordResetToken).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService#resetPassword', () => {
+  it('met à jour le mot de passe, marque le token utilisé, révoque toutes les sessions (doc 07 §7.5)', async () => {
+    const storedToken = createStoredPasswordResetToken();
+    const usersRepository = createUsersRepositoryMock();
+    const authRepository = createAuthRepositoryMock({
+      findPasswordResetTokenByHash: vi.fn().mockResolvedValue(storedToken),
+    });
+    const service = new AuthService(usersRepository, authRepository, SECRET);
+
+    await service.resetPassword('raw-reset-token', 'un-nouveau-mdp-solide');
+
+    expect(usersRepository.updatePasswordHash).toHaveBeenCalledWith(
+      'user-a',
+      'new-hashed-password',
+    );
+    expect(authRepository.markPasswordResetTokenUsed).toHaveBeenCalledWith('reset-token-id-a');
+    expect(authRepository.revokeAllUserRefreshTokens).toHaveBeenCalledWith('user-a');
+  });
+
+  it('rejette si le token ne correspond à aucun reset connu', async () => {
+    const usersRepository = createUsersRepositoryMock();
+    const authRepository = createAuthRepositoryMock({
+      findPasswordResetTokenByHash: vi.fn().mockResolvedValue(null),
+    });
+    const service = new AuthService(usersRepository, authRepository, SECRET);
+
+    await expect(
+      service.resetPassword('token-inconnu', 'un-nouveau-mdp-solide'),
+    ).rejects.toMatchObject({ code: 'AUTH_RESET_TOKEN_INVALID', httpStatus: 401 });
+    expect(usersRepository.updatePasswordHash).not.toHaveBeenCalled();
+  });
+
+  it('rejette si le token a déjà été utilisé (usage unique, doc 07 §7.5)', async () => {
+    const storedToken = createStoredPasswordResetToken({ usedAt: new Date() });
+    const usersRepository = createUsersRepositoryMock();
+    const authRepository = createAuthRepositoryMock({
+      findPasswordResetTokenByHash: vi.fn().mockResolvedValue(storedToken),
+    });
+    const service = new AuthService(usersRepository, authRepository, SECRET);
+
+    await expect(
+      service.resetPassword('raw-reset-token', 'un-nouveau-mdp-solide'),
+    ).rejects.toMatchObject({ code: 'AUTH_RESET_TOKEN_INVALID', httpStatus: 401 });
+  });
+
+  it('rejette si le token est expiré', async () => {
+    const storedToken = createStoredPasswordResetToken({ expiresAt: new Date(Date.now() - 1000) });
+    const usersRepository = createUsersRepositoryMock();
+    const authRepository = createAuthRepositoryMock({
+      findPasswordResetTokenByHash: vi.fn().mockResolvedValue(storedToken),
+    });
+    const service = new AuthService(usersRepository, authRepository, SECRET);
+
+    await expect(
+      service.resetPassword('raw-reset-token', 'un-nouveau-mdp-solide'),
+    ).rejects.toMatchObject({ code: 'AUTH_RESET_TOKEN_INVALID', httpStatus: 401 });
   });
 });

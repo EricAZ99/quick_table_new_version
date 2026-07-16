@@ -6,8 +6,12 @@ vi.mock('../../../database/models/membership.model.js', () => ({
 vi.mock('../../../database/models/refreshToken.model.js', () => ({
   RefreshTokenModel: { create: vi.fn(), findOne: vi.fn(), updateOne: vi.fn(), updateMany: vi.fn() },
 }));
+vi.mock('../../../database/models/passwordResetToken.model.js', () => ({
+  PasswordResetTokenModel: { create: vi.fn(), findOne: vi.fn(), updateOne: vi.fn() },
+}));
 
 import { MembershipModel } from '../../../database/models/membership.model.js';
+import { PasswordResetTokenModel } from '../../../database/models/passwordResetToken.model.js';
 import { ALLOW_CROSS_TENANT_OPTION } from '../../../database/models/plugins/tenantScope.js';
 import { RefreshTokenModel } from '../../../database/models/refreshToken.model.js';
 import { AuthRepository } from '../auth.repository.js';
@@ -63,5 +67,36 @@ describe('AuthRepository', () => {
     const [filter, update] = vi.mocked(RefreshTokenModel.updateMany).mock.calls[0] ?? [];
     expect(filter).toEqual({ userId: 'user-a', revokedAt: null });
     expect((update as { revokedAt: Date }).revokedAt).toBeInstanceOf(Date);
+  });
+
+  it('createPasswordResetToken() délègue directement à PasswordResetTokenModel.create', async () => {
+    const repository = new AuthRepository();
+    const input = {
+      userId: 'user-a',
+      tokenHash: 'b'.repeat(64),
+      expiresAt: new Date('2026-08-01'),
+    };
+
+    await repository.createPasswordResetToken(input);
+
+    expect(PasswordResetTokenModel.create).toHaveBeenCalledWith(input);
+  });
+
+  it('findPasswordResetTokenByHash() délègue directement à PasswordResetTokenModel.findOne', async () => {
+    const repository = new AuthRepository();
+
+    await repository.findPasswordResetTokenByHash('b'.repeat(64));
+
+    expect(PasswordResetTokenModel.findOne).toHaveBeenCalledWith({ tokenHash: 'b'.repeat(64) });
+  });
+
+  it('markPasswordResetTokenUsed() marque usedAt sur le token ciblé par id', async () => {
+    const repository = new AuthRepository();
+
+    await repository.markPasswordResetTokenUsed('reset-token-id-a');
+
+    const [filter, update] = vi.mocked(PasswordResetTokenModel.updateOne).mock.calls[0] ?? [];
+    expect(filter).toEqual({ _id: 'reset-token-id-a' });
+    expect((update as { usedAt: Date }).usedAt).toBeInstanceOf(Date);
   });
 });

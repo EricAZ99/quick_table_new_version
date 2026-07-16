@@ -7,6 +7,7 @@ vi.mock('../../../database/models/user.model.js', () => ({
     create: vi.fn(),
     findOne: vi.fn().mockReturnValue({ select: selectMock }),
     findById: vi.fn(),
+    updateOne: vi.fn(),
   },
 }));
 
@@ -46,5 +47,16 @@ describe('UsersRepository', () => {
     await repository.findById('507f1f77bcf86cd799439011');
 
     expect(UserModel.findById).toHaveBeenCalledWith('507f1f77bcf86cd799439011');
+  });
+
+  it('updatePasswordHash() met à jour passwordHash pour le userId ciblé (doc 07 §7.5)', async () => {
+    const repository = new UsersRepository();
+
+    await repository.updatePasswordHash('507f1f77bcf86cd799439011', 'nouveau-hash');
+
+    expect(UserModel.updateOne).toHaveBeenCalledWith(
+      { _id: '507f1f77bcf86cd799439011' },
+      { passwordHash: 'nouveau-hash' },
+    );
   });
 });

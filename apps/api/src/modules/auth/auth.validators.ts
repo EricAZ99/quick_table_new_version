@@ -14,3 +14,21 @@ export const loginSchema = z.object({
 });
 
 export type LoginDto = z.infer<typeof loginSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().email('email invalide'),
+});
+
+export type ForgotPasswordDto = z.infer<typeof forgotPasswordSchema>;
+
+/**
+ * `newPassword` impose la politique de complexité (min 10, doc 07 §7.8) —
+ * contrairement à `loginSchema.password`, c'est une création de mot de
+ * passe, pas sa vérification.
+ */
+export const resetPasswordSchema = z.object({
+  token: z.string().min(1, 'token est requis'),
+  newPassword: z.string().min(10, 'le mot de passe doit contenir au moins 10 caractères'),
+});
+
+export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;

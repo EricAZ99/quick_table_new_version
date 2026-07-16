@@ -196,3 +196,59 @@ describe('AuthController#logout', () => {
     expect(res.status).toHaveBeenCalledWith(204);
   });
 });
+
+describe('AuthController#forgotPassword', () => {
+  it('répond 200 avec data:null même quand le service ne fait rien (anti-énumération, doc 07 §7.5)', async () => {
+    const service = {
+      forgotPassword: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { body: { email: 'chef@quicktable.io' } } as Request;
+    const res = createMockRes();
+
+    await controller.forgotPassword(req, res);
+
+    expect(service.forgotPassword).toHaveBeenCalledWith({ email: 'chef@quicktable.io' });
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: null });
+  });
+
+  it('lève une ValidationError sur un email invalide, jamais un 500', async () => {
+    const service = { forgotPassword: vi.fn() } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { body: { email: 'pas-un-email' } } as Request;
+    const res = createMockRes();
+
+    await expect(controller.forgotPassword(req, res)).rejects.toBeInstanceOf(ValidationError);
+    expect(service.forgotPassword).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthController#resetPassword', () => {
+  it('appelle le service avec token/newPassword, répond 200 avec data:null', async () => {
+    const service = {
+      resetPassword: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = {
+      body: { token: 'un-token', newPassword: 'un-nouveau-mdp-solide' },
+    } as Request;
+    const res = createMockRes();
+
+    await controller.resetPassword(req, res);
+
+    expect(service.resetPassword).toHaveBeenCalledWith('un-token', 'un-nouveau-mdp-solide');
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: null });
+  });
+
+  it('lève une ValidationError sur un newPassword trop court, jamais un 500', async () => {
+    const service = { resetPassword: vi.fn() } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { body: { token: 'un-token', newPassword: 'court' } } as Request;
+    const res = createMockRes();
+
+    await expect(controller.resetPassword(req, res)).rejects.toBeInstanceOf(ValidationError);
+    expect(service.resetPassword).not.toHaveBeenCalled();
+  });
+});

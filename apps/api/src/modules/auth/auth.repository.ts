@@ -1,4 +1,5 @@
 import { MembershipModel } from '../../database/models/membership.model.js';
+import { PasswordResetTokenModel } from '../../database/models/passwordResetToken.model.js';
 import { RefreshTokenModel } from '../../database/models/refreshToken.model.js';
 import { ALLOW_CROSS_TENANT_OPTION } from '../../database/models/plugins/tenantScope.js';
 
@@ -7,6 +8,12 @@ export interface CreateRefreshTokenInput {
   tokenHash: string;
   expiresAt: Date;
   deviceInfo?: { userAgent?: string; ip?: string; deviceLabel?: string };
+}
+
+export interface CreatePasswordResetTokenInput {
+  userId: string;
+  tokenHash: string;
+  expiresAt: Date;
 }
 
 /**
@@ -46,5 +53,17 @@ export class AuthRepository {
    */
   revokeAllUserRefreshTokens(userId: string) {
     return RefreshTokenModel.updateMany({ userId, revokedAt: null }, { revokedAt: new Date() });
+  }
+
+  createPasswordResetToken(input: CreatePasswordResetTokenInput) {
+    return PasswordResetTokenModel.create(input);
+  }
+
+  findPasswordResetTokenByHash(tokenHash: string) {
+    return PasswordResetTokenModel.findOne({ tokenHash });
+  }
+
+  markPasswordResetTokenUsed(id: string) {
+    return PasswordResetTokenModel.updateOne({ _id: id }, { usedAt: new Date() });
   }
 }

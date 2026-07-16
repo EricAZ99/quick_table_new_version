@@ -1,10 +1,16 @@
 import argon2 from 'argon2';
 
+import { logger } from '../../logger/logger.js';
 import { UnauthorizedError } from '../../shared/errors/index.js';
 import type { UsersRepository } from '../users/users.repository.js';
 import type { AuthRepository } from './auth.repository.js';
-import type { LoginDto } from './auth.validators.js';
+import type { ForgotPasswordDto, LoginDto } from './auth.validators.js';
 import { decodeExpiredAccessToken, signAccessToken, type AccessTokenPayload } from './jwt.js';
+import {
+  generatePasswordResetToken,
+  hashPasswordResetToken,
+  PASSWORD_RESET_TOKEN_TTL_MS,
+} from './passwordResetToken.util.js';
 import {
   generateRefreshToken,
   hashRefreshToken,
@@ -202,6 +208,70 @@ export class AuthService {
     if (storedToken && storedToken.revokedAt === null) {
       await this.authRepository.revokeRefreshToken(storedToken.id);
     }
+  }
+
+  /**
+   * `POST /auth/forgot-password` (doc 07 §7.5) — anti-énumération : répond
+   * toujours de la même façon (aucune valeur de retour, jamais d'erreur)
+   * que l'email existe ou non, le controller renvoie systématiquement 200.
+   *
+   * Envoi d'email hors périmètre de ce ticket : aucun worker
+   * Nodemailer/Brevo n'existe encore (ticket séparé de cette Feature). En
+   * attendant, le lien de réinitialisation est loggé — un contributeur qui
+   * teste le flux en local/staging peut le récupérer dans les logs, pas
+   * dans sa boîte mail.
+   */
+  async forgotPassword(dto: ForgotPasswordDto): Promise<void> {
+    const user = await this.usersRepository.findByEmail(dto.email);
+    if (!user) {
+      return;
+    }
+
+    const rawToken = generatePasswordResetToken();
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+    await this.authRepository.createPasswordResetToken({
+      userId: user._id.toString(),
+      tokenHash: hashPasswordResetToken(rawToken),
+      expiresAt,
+    });
+
+    logger.info(
+      {
+        userId: user._id.toString(),
+        resetLink: `https://app.quicktable.io/reset-password?token=${rawToken}`,
+      },
+      "Lien de réinitialisation de mot de passe généré (email non envoyé — worker d'envoi pas encore construit)",
+    );
+  }
+
+  /**
+   * `POST /auth/reset-password` (doc 07 §7.5) : vérifie le token à usage
+   * unique, met à jour `passwordHash`, puis révoque **toutes** les sessions
+   * actives de l'utilisateur (déconnexion de sécurité, différent du
+   * `logout` qui ne révoque que la session courante). Notification de
+   * confirmation par email hors périmètre (même raison que
+   * `forgotPassword`).
+   */
+  async resetPassword(rawToken: string, newPassword: string): Promise<void> {
+    const tokenHash = hashPasswordResetToken(rawToken);
+    const storedToken = await this.authRepository.findPasswordResetTokenByHash(tokenHash);
+
+    if (
+      !storedToken ||
+      storedToken.usedAt !== null ||
+      storedToken.expiresAt.getTime() < Date.now()
+    ) {
+      throw new UnauthorizedError(
+        'AUTH_RESET_TOKEN_INVALID',
+        'Lien de réinitialisation invalide ou expiré.',
+      );
+    }
+
+    const passwordHash = await argon2.hash(newPassword, { type: argon2.argon2id });
+    const userId = storedToken.userId.toString();
+    await this.usersRepository.updatePasswordHash(userId, passwordHash);
+    await this.authRepository.markPasswordResetTokenUsed(storedToken.id);
+    await this.authRepository.revokeAllUserRefreshTokens(userId);
   }
 
   private async issueRefreshToken(

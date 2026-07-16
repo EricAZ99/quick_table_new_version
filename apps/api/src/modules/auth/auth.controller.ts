@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 
 import { ValidationError } from '../../shared/errors/index.js';
 import type { AuthService } from './auth.service.js';
-import { loginSchema } from './auth.validators.js';
+import { forgotPasswordSchema, loginSchema, resetPasswordSchema } from './auth.validators.js';
 import { resetLoginRateLimit } from './login-rate-limit.js';
 
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -75,6 +75,43 @@ export class AuthController {
 
     res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, { path: '/' });
     res.status(204).send();
+  };
+
+  /**
+   * `POST /auth/forgot-password` (doc 07 §7.5) — répond toujours `200`
+   * identique, que l'email existe ou non (anti-énumération) : le
+   * controller ne distingue jamais les deux cas, `AuthService#forgotPassword`
+   * ne lève aucune erreur.
+   */
+  forgotPassword = async (req: Request, res: Response): Promise<void> => {
+    const parsed = forgotPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ValidationError(
+        'AUTH_INVALID_PAYLOAD',
+        'Email manquant ou invalide.',
+        parsed.error.issues,
+      );
+    }
+
+    await this.service.forgotPassword(parsed.data);
+
+    res.status(200).json({ success: true, data: null });
+  };
+
+  /** `POST /auth/reset-password` (doc 07 §7.5). */
+  resetPassword = async (req: Request, res: Response): Promise<void> => {
+    const parsed = resetPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ValidationError(
+        'AUTH_INVALID_PAYLOAD',
+        'Token ou nouveau mot de passe manquant ou invalide.',
+        parsed.error.issues,
+      );
+    }
+
+    await this.service.resetPassword(parsed.data.token, parsed.data.newPassword);
+
+    res.status(200).json({ success: true, data: null });
   };
 
   private getRefreshTokenCookie(req: Request): string | undefined {

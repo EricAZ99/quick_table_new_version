@@ -5,5 +5,7 @@
   "AUTH_INVALID_PAYLOAD": "Email o contraseña faltante o inválido.",
   "AUTH_LOGIN_RATE_LIMITED": "Demasiados intentos de inicio de sesión, inténtalo más tarde.",
   "AUTH_REFRESH_TOKEN_INVALID": "Sesión inválida, vuelve a iniciar sesión.",
-  "AUTH_REFRESH_TOKEN_REUSED": "Sesión inválida, vuelve a iniciar sesión."
+  "AUTH_REFRESH_TOKEN_REUSED": "Sesión inválida, vuelve a iniciar sesión.",
+  "AUTH_FORGOT_PASSWORD_RATE_LIMITED": "Demasiadas solicitudes de restablecimiento, inténtalo más tarde.",
+  "AUTH_RESET_TOKEN_INVALID": "Enlace de restablecimiento inválido o caducado."
 }

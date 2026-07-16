@@ -8,10 +8,12 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { createApp } from '../../../app.js';
 import { connectDatabase, disconnectDatabase } from '../../../config/database.js';
-import { connectRedis, disconnectRedis } from '../../../config/redis.js';
+import { connectRedis, disconnectRedis, getRedisClient } from '../../../config/redis.js';
 import { MembershipModel } from '../../../database/models/membership.model.js';
+import { PasswordResetTokenModel } from '../../../database/models/passwordResetToken.model.js';
 import { RefreshTokenModel } from '../../../database/models/refreshToken.model.js';
 import { UserModel } from '../../../database/models/user.model.js';
+import { generatePasswordResetToken, hashPasswordResetToken } from '../passwordResetToken.util.js';
 
 // Même convention que hello-world.integration.spec.ts (doc 14 §14.6).
 const envPath = resolve(import.meta.dirname, '../../../../../../.env');
@@ -66,6 +68,7 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
   afterAll(async () => {
     const testUsers = await UserModel.find({ email: /^auth-integration-/ });
     await RefreshTokenModel.deleteMany({ userId: { $in: testUsers.map((u) => u._id) } });
+    await PasswordResetTokenModel.deleteMany({ userId: { $in: testUsers.map((u) => u._id) } });
     await UserModel.collection.deleteMany({ email: /^auth-integration-/ });
     await MembershipModel.collection.deleteMany({ tenantId: 'auth-integration-tenant' });
     await disconnectDatabase();
@@ -310,6 +313,165 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       const response = await request(createApp()).post('/api/v1/auth/logout').send();
 
       expect(response.status).toBe(204);
+    });
+  });
+
+  describe('POST /api/v1/auth/forgot-password', () => {
+    // Verrouillage par IP seule (doc 13 §13.2 : 3/h) — sans ce nettoyage,
+    // des exécutions répétées de la suite depuis la même machine (même IP)
+    // épuiseraient le quota entre les runs et ce bloc deviendrait flaky,
+    // indépendamment du code applicatif.
+    beforeAll(async () => {
+      const keys = await getRedisClient().keys('auth:forgot-password-rl:*');
+      if (keys.length > 0) {
+        await getRedisClient().del(keys);
+      }
+    });
+
+    it("génère et stocke réellement un token quand l'email existe (200, réponse identique dans les deux cas)", async () => {
+      const forgotEmail = `auth-integration-forgot-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      const user = await UserModel.create({
+        email: forgotEmail,
+        passwordHash,
+        fullName: 'Intégration Forgot',
+      });
+
+      const response = await request(createApp())
+        .post('/api/v1/auth/forgot-password')
+        .send({ email: forgotEmail });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ success: true, data: null });
+
+      const storedTokens = await PasswordResetTokenModel.find({ userId: user._id });
+      expect(storedTokens).toHaveLength(1);
+      expect(storedTokens[0]?.usedAt).toBeNull();
+    });
+
+    it('répond de façon identique (200, data:null) pour un email inconnu — anti-énumération, aucun token créé', async () => {
+      const countBefore = await PasswordResetTokenModel.countDocuments({});
+
+      const response = await request(createApp())
+        .post('/api/v1/auth/forgot-password')
+        .send({ email: `jamais-vu-forgot-${Date.now()}@quicktable.io` });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({ success: true, data: null });
+      expect(await PasswordResetTokenModel.countDocuments({})).toBe(countBefore);
+    });
+  });
+
+  describe('POST /api/v1/auth/reset-password', () => {
+    it('change réellement le mot de passe, marque le token utilisé, révoque toutes les sessions actives', async () => {
+      const resetEmail = `auth-integration-reset-${Date.now()}@quicktable.io`;
+      const oldPasswordHash = await argon2.hash(password, { type: argon2.argon2id });
+      const user = await UserModel.create({
+        email: resetEmail,
+        passwordHash: oldPasswordHash,
+        fullName: 'Intégration Reset',
+      });
+      await MembershipModel.create({
+        tenantId: 'auth-integration-tenant',
+        userId: user._id,
+        role: 'waiter',
+      });
+
+      const app = createApp();
+      // Session active avant reset, pour vérifier qu'elle est bien révoquée après.
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: resetEmail, password });
+      expect(loginResponse.status).toBe(200);
+
+      const rawResetToken = generatePasswordResetToken();
+      await PasswordResetTokenModel.create({
+        userId: user._id,
+        tokenHash: hashPasswordResetToken(rawResetToken),
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      });
+
+      const newPassword = 'un-nouveau-mot-de-passe-solide';
+      const resetResponse = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawResetToken, newPassword });
+
+      expect(resetResponse.status).toBe(200);
+      expect(resetResponse.body).toEqual({ success: true, data: null });
+
+      // L'ancien mot de passe ne fonctionne plus, le nouveau si.
+      const loginWithOldPassword = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: resetEmail, password });
+      expect(loginWithOldPassword.status).toBe(401);
+
+      const loginWithNewPassword = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: resetEmail, password: newPassword });
+      expect(loginWithNewPassword.status).toBe(200);
+
+      const usedToken = await PasswordResetTokenModel.findOne({
+        tokenHash: hashPasswordResetToken(rawResetToken),
+      });
+      expect(usedToken?.usedAt).not.toBeNull();
+
+      const activeSessions = await RefreshTokenModel.countDocuments({
+        userId: user._id,
+        revokedAt: null,
+      });
+      // Toutes les sessions d'avant le reset sont révoquées ; seule la
+      // nouvelle session issue de `loginWithNewPassword` ci-dessus reste active.
+      expect(activeSessions).toBe(1);
+    });
+
+    it('rejette un token inconnu (401 AUTH_RESET_TOKEN_INVALID)', async () => {
+      const response = await request(createApp())
+        .post('/api/v1/auth/reset-password')
+        .send({ token: 'token-jamais-emis', newPassword: 'un-nouveau-mdp-solide' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_RESET_TOKEN_INVALID');
+    });
+
+    it('rejette le rejeu du même token de reset déjà utilisé (usage unique)', async () => {
+      const reuseEmail = `auth-integration-reset-reuse-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      const user = await UserModel.create({
+        email: reuseEmail,
+        passwordHash,
+        fullName: 'Intégration Reset Reuse',
+      });
+      const rawResetToken = generatePasswordResetToken();
+      await PasswordResetTokenModel.create({
+        userId: user._id,
+        tokenHash: hashPasswordResetToken(rawResetToken),
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+      });
+
+      const app = createApp();
+      const firstReset = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawResetToken, newPassword: 'un-premier-nouveau-mdp' });
+      expect(firstReset.status).toBe(200);
+
+      const secondReset = await request(app)
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawResetToken, newPassword: 'un-second-nouveau-mdp' });
+      const body = secondReset.body as ErrorBody;
+
+      expect(secondReset.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_RESET_TOKEN_INVALID');
+    });
+
+    it('rejette un payload invalide (mot de passe trop court) en 400 AUTH_INVALID_PAYLOAD', async () => {
+      const response = await request(createApp())
+        .post('/api/v1/auth/reset-password')
+        .send({ token: 'peu-importe', newPassword: 'court' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(400);
+      expect(body.error.code).toBe('AUTH_INVALID_PAYLOAD');
     });
   });
 });
