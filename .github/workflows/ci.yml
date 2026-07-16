@@ -53,6 +53,7 @@ jobs:
       SMTP_PORT: '587'
       SMTP_USER: ci-placeholder
       SMTP_PASS: ci-placeholder
+      SMTP_FROM: 'Quick Table <ci-placeholder@example.com>'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

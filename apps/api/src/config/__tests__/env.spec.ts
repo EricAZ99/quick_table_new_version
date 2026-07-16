@@ -10,6 +10,7 @@ const validSource = {
   SMTP_PORT: '587',
   SMTP_USER: 'smtp-user',
   SMTP_PASS: 'smtp-pass',
+  SMTP_FROM: 'Quick Table <test@example.com>',
 };
 
 describe('parseEnv', () => {
@@ -36,6 +37,7 @@ describe('parseEnv', () => {
     'SMTP_PORT',
     'SMTP_USER',
     'SMTP_PASS',
+    'SMTP_FROM',
   ])('refuse de démarrer si %s est absent', (key) => {
     const source = { ...validSource };
     delete (source as Record<string, string>)[key];

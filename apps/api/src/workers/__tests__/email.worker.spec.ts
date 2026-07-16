@@ -23,7 +23,13 @@ vi.mock('../../modules/notifications/email-sender.service.js', () => ({
 import { EMAIL_QUEUE_NAME } from '../../jobs/queues.js';
 import { createEmailWorker } from '../email.worker.js';
 
-const SMTP_CONFIG = { host: 'smtp-relay.brevo.com', port: 587, user: 'u', pass: 'p' };
+const SMTP_CONFIG = {
+  host: 'smtp-relay.brevo.com',
+  port: 587,
+  user: 'u',
+  pass: 'p',
+  from: 'Quick Table <verified-sender@example.com>',
+};
 
 describe('createEmailWorker', () => {
   beforeEach(() => {

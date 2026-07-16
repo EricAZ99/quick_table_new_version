@@ -13,6 +13,8 @@ vi.mock('nodemailer', () => ({
 
 import { EmailSenderService } from '../email-sender.service.js';
 
+const FROM = 'Quick Table <verified-sender@example.com>';
+
 describe('EmailSenderService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -20,7 +22,13 @@ describe('EmailSenderService', () => {
   });
 
   it('construit le transport Nodemailer avec la config SMTP fournie (secure=false sur 587)', () => {
-    new EmailSenderService({ host: 'smtp-relay.brevo.com', port: 587, user: 'u', pass: 'p' });
+    new EmailSenderService({
+      host: 'smtp-relay.brevo.com',
+      port: 587,
+      user: 'u',
+      pass: 'p',
+      from: FROM,
+    });
 
     expect(createTransportMock).toHaveBeenCalledWith({
       host: 'smtp-relay.brevo.com',
@@ -31,19 +39,26 @@ describe('EmailSenderService', () => {
   });
 
   it('active secure=true sur le port 465 (SMTPS)', () => {
-    new EmailSenderService({ host: 'smtp-relay.brevo.com', port: 465, user: 'u', pass: 'p' });
+    new EmailSenderService({
+      host: 'smtp-relay.brevo.com',
+      port: 465,
+      user: 'u',
+      pass: 'p',
+      from: FROM,
+    });
 
     expect(createTransportMock).toHaveBeenCalledWith(
       expect.objectContaining({ secure: true, port: 465 }),
     );
   });
 
-  it("envoie l'email via le transport avec l'adresse d'expédition QuickTable", async () => {
+  it("envoie l'email via le transport avec l'adresse d'expédition configurée (doit correspondre à un sender vérifié dans Brevo)", async () => {
     const service = new EmailSenderService({
       host: 'smtp-relay.brevo.com',
       port: 587,
       user: 'u',
       pass: 'p',
+      from: FROM,
     });
 
     await service.send({
@@ -54,7 +69,7 @@ describe('EmailSenderService', () => {
     });
 
     expect(sendMailMock).toHaveBeenCalledWith({
-      from: 'QuickTable <no-reply@quicktable.io>',
+      from: FROM,
       to: 'chef@quicktable.io',
       subject: 'Sujet',
       html: '<p>Corps</p>',
@@ -69,6 +84,7 @@ describe('EmailSenderService', () => {
       port: 587,
       user: 'u',
       pass: 'p',
+      from: FROM,
     });
 
     await expect(

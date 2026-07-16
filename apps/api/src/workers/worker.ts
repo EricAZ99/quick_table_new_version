@@ -21,6 +21,7 @@ createEmailWorker(env.REDIS_URL, {
   port: env.SMTP_PORT,
   user: env.SMTP_USER,
   pass: env.SMTP_PASS,
+  from: env.SMTP_FROM,
 });
 
 logger.info('quicktable-worker démarré');

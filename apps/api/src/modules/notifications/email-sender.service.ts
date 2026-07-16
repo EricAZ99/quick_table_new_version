@@ -5,6 +5,12 @@ export interface SmtpConfig {
   port: number;
   user: string;
   pass: string;
+  // Adresse d'expédition (doc 04 §4.1) — configurable plutôt que codée en
+  // dur : Brevo rejette l'envoi si l'adresse "from" ne correspond pas à un
+  // expéditeur vérifié sur le compte (Settings > Senders), ce qui exclut
+  // `no-reply@quicktable.io` tant que le domaine n'est pas authentifié
+  // (SPF/DKIM/DMARC, ticket séparé de cette Feature).
+  from: string;
 }
 
 export interface SendEmailInput {
@@ -13,8 +19,6 @@ export interface SendEmailInput {
   html: string;
   text: string;
 }
-
-const FROM_ADDRESS = 'QuickTable <no-reply@quicktable.io>';
 
 /**
  * Encapsule Nodemailer (doc 04 §4.1) — **seul point du code qui importe
@@ -31,8 +35,10 @@ const FROM_ADDRESS = 'QuickTable <no-reply@quicktable.io>';
  */
 export class EmailSenderService {
   private readonly transporter: Transporter;
+  private readonly from: string;
 
   constructor(config: SmtpConfig) {
+    this.from = config.from;
     this.transporter = nodemailer.createTransport({
       host: config.host,
       port: config.port,
@@ -43,7 +49,7 @@ export class EmailSenderService {
 
   async send(input: SendEmailInput): Promise<void> {
     await this.transporter.sendMail({
-      from: FROM_ADDRESS,
+      from: this.from,
       to: input.to,
       subject: input.subject,
       html: input.html,

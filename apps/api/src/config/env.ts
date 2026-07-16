@@ -41,6 +41,11 @@ const envSchema = z.object({
   SMTP_PORT: z.coerce.number().int().positive(),
   SMTP_USER: z.string().min(1, 'SMTP_USER est requis'),
   SMTP_PASS: z.string().min(1, 'SMTP_PASS est requis'),
+  // Adresse d'expédition (doc 04 §4.1) — doit correspondre à un expéditeur
+  // vérifié sur le compte Brevo (Settings > Senders), sous peine de rejet
+  // silencieux de l'envoi ; configurable car `no-reply@quicktable.io` ne
+  // pourra être utilisé qu'une fois le domaine authentifié (ticket séparé).
+  SMTP_FROM: z.string().min(1, 'SMTP_FROM est requis'),
 });
 
 export type Env = z.infer<typeof envSchema>;
