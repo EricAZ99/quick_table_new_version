@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import argon2 from 'argon2';
+import jwt from 'jsonwebtoken';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -188,7 +189,16 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
 
       expect(refreshResponse.status).toBe(200);
       expect(refreshBody.data.accessToken).toEqual(expect.any(String));
-      expect(refreshBody.data.accessToken).not.toBe(loginBody.data.accessToken);
+      // Le contexte tenant doit être repris tel quel (doc 06 §6.3) — on
+      // compare les claims décodés, pas la chaîne du token : les deux
+      // tokens peuvent être byte-identiques si login et refresh tombent
+      // dans la même seconde (`iat`/`exp` ont une granularité à la
+      // seconde), ce qui n'est ni un bug ni un problème de sécurité (seule
+      // la rotation du refresh token, vérifiée ci-dessous, importe).
+      expect(jwt.decode(refreshBody.data.accessToken)).toMatchObject({
+        tenantId: 'auth-integration-tenant',
+        role: 'manager',
+      });
 
       const newRefreshTokenCookie = extractRefreshTokenCookie(
         refreshResponse.headers['set-cookie'] as unknown as string[],
