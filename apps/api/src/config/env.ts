@@ -46,6 +46,17 @@ const envSchema = z.object({
   // silencieux de l'envoi ; configurable car `no-reply@quicktable.io` ne
   // pourra être utilisé qu'une fois le domaine authentifié (ticket séparé).
   SMTP_FROM: z.string().min(1, 'SMTP_FROM est requis'),
+  // Clé de chiffrement applicative AES-256-GCM de `users.twoFactorSecret`
+  // (doc 07 §7.6, doc 13 §13.6) — stockée hors base, jamais dérivée du
+  // secret JWT (deux fonctions cryptographiques distinctes ne doivent
+  // jamais partager une même clé). 64 caractères hex = 32 octets = AES-256.
+  TWO_FACTOR_ENCRYPTION_KEY: z
+    .string()
+    .length(
+      64,
+      'TWO_FACTOR_ENCRYPTION_KEY doit contenir exactement 64 caractères hexadécimaux (32 octets)',
+    )
+    .regex(/^[0-9a-f]+$/i, 'TWO_FACTOR_ENCRYPTION_KEY doit être hexadécimal'),
 });
 
 export type Env = z.infer<typeof envSchema>;

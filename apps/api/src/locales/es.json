@@ -7,5 +7,11 @@
   "AUTH_REFRESH_TOKEN_INVALID": "Sesión inválida, vuelve a iniciar sesión.",
   "AUTH_REFRESH_TOKEN_REUSED": "Sesión inválida, vuelve a iniciar sesión.",
   "AUTH_FORGOT_PASSWORD_RATE_LIMITED": "Demasiadas solicitudes de restablecimiento, inténtalo más tarde.",
-  "AUTH_RESET_TOKEN_INVALID": "Enlace de restablecimiento inválido o caducado."
+  "AUTH_RESET_TOKEN_INVALID": "Enlace de restablecimiento inválido o caducado.",
+  "AUTH_TOKEN_MISSING": "Autenticación requerida.",
+  "AUTH_TOKEN_INVALID": "Sesión inválida o caducada.",
+  "AUTH_2FA_ALREADY_ENABLED": "La autenticación de dos factores ya está activada.",
+  "AUTH_2FA_NOT_ENABLED": "La autenticación de dos factores no está activada.",
+  "AUTH_2FA_INVALID_CODE": "Código de verificación incorrecto.",
+  "AUTH_2FA_CHALLENGE_INVALID": "Sesión de inicio de sesión inválida o caducada, vuelve a iniciar sesión."
 }

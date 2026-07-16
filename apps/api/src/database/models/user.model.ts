@@ -9,13 +9,22 @@ import type { SupportedLocale } from '../../middlewares/i18n.middleware.js';
  * dans plusieurs restaurants (doc 05 §"memberships"). Le rattachement à un
  * tenant se fait exclusivement via `memberships`, jamais ici.
  *
- * Hors périmètre de ce ticket (Feature 1.1 — juste le schéma) : le hachage
- * Argon2id de `passwordHash` (doc 07 §7.8, arrive avec l'endpoint
- * d'inscription de Feature 1.2) et le chiffrement AES-256 de
- * `twoFactorSecret` (Feature 1.2+ 2FA) — les deux champs sont déclarés en
- * `string` simple, la logique de hachage/chiffrement n'est pas anticipée
- * (doc 14 §14.5 KISS).
+ * `passwordHash` (Argon2id, doc 07 §7.8) et `twoFactorSecret` (chiffré
+ * AES-256-GCM, doc 07 §7.6) sont déclarés en `string` simple — le
+ * hachage/chiffrement est à la charge de l'appelant (`AuthService`),
+ * jamais de ce fichier.
  */
+
+/**
+ * Code de récupération 2FA à usage unique (doc 07 §7.6) — 10 générés à
+ * l'activation, hashés (SHA-256, `recoveryCode.util.ts`) ; `usedAt` marque
+ * la consommation plutôt qu'une suppression, pour garder une trace (audit).
+ */
+export interface TwoFactorRecoveryCode {
+  codeHash: string;
+  usedAt: Date | null;
+}
+
 export interface UserDocument {
   email: string;
   passwordHash: string;
@@ -25,6 +34,7 @@ export interface UserDocument {
   isSuperAdmin: boolean;
   twoFactorEnabled: boolean;
   twoFactorSecret?: string;
+  twoFactorRecoveryCodes: TwoFactorRecoveryCode[];
   preferredLocale: SupportedLocale | null;
   status: 'active' | 'suspended';
   lastLoginAt?: Date;
@@ -56,6 +66,17 @@ const userSchema = new Schema<UserDocument>(
     isSuperAdmin: { type: Boolean, required: true, default: false },
     twoFactorEnabled: { type: Boolean, required: true, default: false },
     twoFactorSecret: { type: String, select: false },
+    twoFactorRecoveryCodes: {
+      type: [
+        {
+          codeHash: { type: String, required: true },
+          usedAt: { type: Date, default: null },
+        },
+      ],
+      select: false,
+      default: [],
+      _id: false,
+    },
     preferredLocale: { type: String, enum: SUPPORTED_LOCALES, default: null },
     status: { type: String, required: true, enum: ['active', 'suspended'], default: 'active' },
     lastLoginAt: { type: Date },
@@ -66,12 +87,12 @@ const userSchema = new Schema<UserDocument>(
 
 userSchema.index({ status: 1 });
 
-function stripSecrets<T extends { passwordHash?: unknown; twoFactorSecret?: unknown }>(
-  _doc: unknown,
-  ret: T,
-): Omit<T, 'passwordHash' | 'twoFactorSecret'> {
+function stripSecrets<
+  T extends { passwordHash?: unknown; twoFactorSecret?: unknown; twoFactorRecoveryCodes?: unknown },
+>(_doc: unknown, ret: T): Omit<T, 'passwordHash' | 'twoFactorSecret' | 'twoFactorRecoveryCodes'> {
   delete ret.passwordHash;
   delete ret.twoFactorSecret;
+  delete ret.twoFactorRecoveryCodes;
   return ret;
 }
 userSchema.set('toJSON', { transform: stripSecrets });

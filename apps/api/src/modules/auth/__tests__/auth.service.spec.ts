@@ -5,23 +5,41 @@ vi.mock('argon2', () => ({
   default: { verify: vi.fn(), hash: vi.fn().mockResolvedValue('new-hashed-password'), argon2id: 2 },
 }));
 
+const { verifyTotpCodeMock } = vi.hoisted(() => ({ verifyTotpCodeMock: vi.fn() }));
+vi.mock('../totp.util.js', () => ({
+  generateTotpSecret: vi.fn().mockReturnValue('GENERATED-TOTP-SECRET'),
+  generateTotpQrCodeDataUrl: vi.fn().mockResolvedValue('data:image/png;base64,fake-qr'),
+  verifyTotpCode: verifyTotpCodeMock,
+}));
+
 import argon2 from 'argon2';
 
 import type { EmailJobData } from '../../../jobs/queues.js';
 import type { AuthRepository } from '../auth.repository.js';
-import { AuthService } from '../auth.service.js';
+import { AuthService, type LoginOutcome, type LoginSessionResult } from '../auth.service.js';
 import type { AccessTokenPayload } from '../jwt.js';
 import { verifyAccessToken } from '../jwt.js';
+import { hashRecoveryCode } from '../recoveryCode.util.js';
+import { encryptTwoFactorSecret } from '../twoFactorSecret.util.js';
+import { signTwoFactorChallengeToken } from '../twoFactorChallengeToken.js';
 import type { UsersRepository } from '../../users/users.repository.js';
 
 const SECRET = 's'.repeat(32);
+const TWO_FACTOR_KEY = 'a'.repeat(64);
 
 function createService(
   usersRepository: UsersRepository,
   authRepository: AuthRepository,
   enqueueEmailJob: (data: EmailJobData) => Promise<void> = vi.fn().mockResolvedValue(undefined),
 ) {
-  return new AuthService(usersRepository, authRepository, SECRET, enqueueEmailJob);
+  return new AuthService(usersRepository, authRepository, SECRET, enqueueEmailJob, TWO_FACTOR_KEY);
+}
+
+/** Narrowing pour les tests de login sans 2FA — échoue bruyamment si le résultat est un challenge inattendu. */
+function assertSession(result: LoginOutcome): asserts result is LoginSessionResult {
+  if (result.requires2FA) {
+    throw new Error('Résultat inattendu : challenge 2FA au lieu d’une session complète.');
+  }
 }
 
 function createUserDoc(overrides: Partial<Record<string, unknown>> = {}) {
@@ -30,6 +48,7 @@ function createUserDoc(overrides: Partial<Record<string, unknown>> = {}) {
     email: 'chef@quicktable.io',
     passwordHash: 'stored-hash',
     isSuperAdmin: false,
+    twoFactorEnabled: false,
     lastLoginAt: undefined,
     save: vi.fn().mockResolvedValue(undefined),
     toJSON: vi.fn().mockReturnValue({ email: 'chef@quicktable.io' }),
@@ -66,6 +85,12 @@ function createUsersRepositoryMock(overrides: Partial<Record<string, unknown>> =
     findByEmail: vi.fn().mockResolvedValue(null),
     findById: vi.fn().mockResolvedValue(null),
     updatePasswordHash: vi.fn().mockResolvedValue(undefined),
+    findByIdWithTwoFactorSecret: vi.fn().mockResolvedValue(null),
+    findByIdWithPasswordAndTwoFactorSecret: vi.fn().mockResolvedValue(null),
+    setPendingTwoFactorSecret: vi.fn().mockResolvedValue(undefined),
+    confirmTwoFactor: vi.fn().mockResolvedValue(undefined),
+    disableTwoFactor: vi.fn().mockResolvedValue(undefined),
+    markRecoveryCodeUsed: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   } as unknown as UsersRepository;
 }
@@ -124,6 +149,7 @@ describe('AuthService#login', () => {
       { email: 'chef@quicktable.io', password: 'le-bon-mdp' },
       { ip: '203.0.113.42', userAgent: 'test-agent' },
     );
+    assertSession(result);
 
     const decoded = verifyAccessToken(result.accessToken, SECRET);
     expect(decoded).toMatchObject({
@@ -176,6 +202,7 @@ describe('AuthService#login', () => {
     const service = createService(usersRepository, authRepository);
 
     const result = await service.login({ email: 'chef@quicktable.io', password: 'x' }, {});
+    assertSession(result);
 
     const decoded = verifyAccessToken(result.accessToken, SECRET);
     expect(decoded).toMatchObject({
@@ -200,10 +227,25 @@ describe('AuthService#login', () => {
     const service = createService(usersRepository, authRepository);
 
     const result = await service.login({ email: 'chef@quicktable.io', password: 'x' }, {});
+    assertSession(result);
 
     const decoded = verifyAccessToken(result.accessToken, SECRET);
     expect(decoded).toMatchObject({ tenantId: null, role: null, membershipId: null });
     expect(result.tenants).toHaveLength(2);
+  });
+
+  it("renvoie un challengeToken sans émettre de session si l'utilisateur a la 2FA activée (doc 07 §7.3)", async () => {
+    vi.mocked(argon2.verify).mockResolvedValue(true);
+    const userDoc = createUserDoc({ twoFactorEnabled: true });
+    const { usersRepository, authRepository } = createServices(userDoc, []);
+    const service = createService(usersRepository, authRepository);
+
+    const result = await service.login({ email: 'chef@quicktable.io', password: 'x' }, {});
+
+    expect(result.requires2FA).toBe(true);
+    expect((result as { challengeToken: string }).challengeToken).toEqual(expect.any(String));
+    expect(authRepository.createRefreshToken).not.toHaveBeenCalled();
+    expect(userDoc.save).not.toHaveBeenCalled();
   });
 });
 
@@ -476,5 +518,287 @@ describe('AuthService#resetPassword', () => {
     await expect(
       service.resetPassword('raw-reset-token', 'un-nouveau-mdp-solide'),
     ).rejects.toMatchObject({ code: 'AUTH_RESET_TOKEN_INVALID', httpStatus: 401 });
+  });
+});
+
+const RECOVERY_CODE_RAW = 'AB12-CD34-EF56';
+
+function createTwoFactorUserDoc(overrides: Partial<Record<string, unknown>> = {}) {
+  return createUserDoc({
+    twoFactorEnabled: true,
+    twoFactorSecret: encryptTwoFactorSecret('BASE32SECRET', TWO_FACTOR_KEY),
+    twoFactorRecoveryCodes: [{ codeHash: hashRecoveryCode(RECOVERY_CODE_RAW), usedAt: null }],
+    ...overrides,
+  });
+}
+
+describe('AuthService#verifyTwoFactor', () => {
+  it('émet une session valide quand le code TOTP est correct', async () => {
+    verifyTotpCodeMock.mockResolvedValue(true);
+    const userDoc = createTwoFactorUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const authRepository = createAuthRepositoryMock({
+      findMembershipsByUserId: vi.fn().mockResolvedValue([createMembership()]),
+    });
+    const service = createService(usersRepository, authRepository);
+    const challengeToken = signTwoFactorChallengeToken('user-a', SECRET);
+
+    const result = await service.verifyTwoFactor(challengeToken, '123456', {});
+
+    expect(result.accessToken).toEqual(expect.any(String));
+    expect(usersRepository.markRecoveryCodeUsed).not.toHaveBeenCalled();
+  });
+
+  it('accepte un code de récupération non utilisé si le code TOTP est incorrect, et le marque consommé', async () => {
+    verifyTotpCodeMock.mockResolvedValue(false);
+    const userDoc = createTwoFactorUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const authRepository = createAuthRepositoryMock({
+      findMembershipsByUserId: vi.fn().mockResolvedValue([createMembership()]),
+    });
+    const service = createService(usersRepository, authRepository);
+    const challengeToken = signTwoFactorChallengeToken('user-a', SECRET);
+
+    const result = await service.verifyTwoFactor(challengeToken, RECOVERY_CODE_RAW, {});
+
+    expect(result.accessToken).toEqual(expect.any(String));
+    expect(usersRepository.markRecoveryCodeUsed).toHaveBeenCalledWith(
+      'user-a',
+      hashRecoveryCode(RECOVERY_CODE_RAW),
+    );
+  });
+
+  it('rejette si ni le code TOTP ni un code de récupération non utilisé ne correspondent', async () => {
+    verifyTotpCodeMock.mockResolvedValue(false);
+    const userDoc = createTwoFactorUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+    const challengeToken = signTwoFactorChallengeToken('user-a', SECRET);
+
+    await expect(service.verifyTwoFactor(challengeToken, '000000', {})).rejects.toMatchObject({
+      code: 'AUTH_2FA_INVALID_CODE',
+      httpStatus: 401,
+    });
+  });
+
+  it('rejette un code de récupération déjà utilisé', async () => {
+    verifyTotpCodeMock.mockResolvedValue(false);
+    const userDoc = createTwoFactorUserDoc({
+      twoFactorRecoveryCodes: [
+        { codeHash: hashRecoveryCode(RECOVERY_CODE_RAW), usedAt: new Date() },
+      ],
+    });
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+    const challengeToken = signTwoFactorChallengeToken('user-a', SECRET);
+
+    await expect(
+      service.verifyTwoFactor(challengeToken, RECOVERY_CODE_RAW, {}),
+    ).rejects.toMatchObject({ code: 'AUTH_2FA_INVALID_CODE', httpStatus: 401 });
+  });
+
+  it('rejette un challengeToken invalide (signature/expiration)', async () => {
+    const service = createService(createUsersRepositoryMock(), createAuthRepositoryMock());
+
+    await expect(service.verifyTwoFactor('token-invalide', '123456', {})).rejects.toMatchObject({
+      code: 'AUTH_2FA_CHALLENGE_INVALID',
+      httpStatus: 401,
+    });
+  });
+
+  it("rejette si l'utilisateur n'a plus la 2FA activée (désactivée entre le login et le verify)", async () => {
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi
+        .fn()
+        .mockResolvedValue(createUserDoc({ twoFactorEnabled: false })),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+    const challengeToken = signTwoFactorChallengeToken('user-a', SECRET);
+
+    await expect(service.verifyTwoFactor(challengeToken, '123456', {})).rejects.toMatchObject({
+      code: 'AUTH_2FA_CHALLENGE_INVALID',
+      httpStatus: 401,
+    });
+  });
+});
+
+describe('AuthService#enableTwoFactor', () => {
+  it('génère un secret, le stocke chiffré, génère 10 codes de récupération, retourne le QR Code + les codes en clair', async () => {
+    const userDoc = createUserDoc({ twoFactorEnabled: false });
+    const usersRepository = createUsersRepositoryMock({
+      findById: vi.fn().mockResolvedValue(userDoc),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    const result = await service.enableTwoFactor('user-a');
+
+    expect(result.qrCodeDataUrl).toMatch(/^data:image\/png;base64,/);
+    expect(result.secret).toBe('GENERATED-TOTP-SECRET');
+    expect(result.recoveryCodes).toHaveLength(10);
+    expect(usersRepository.setPendingTwoFactorSecret).toHaveBeenCalledWith(
+      'user-a',
+      expect.any(String),
+      expect.arrayContaining([expect.any(String)]),
+    );
+  });
+
+  it('rejette si la 2FA est déjà activée', async () => {
+    const usersRepository = createUsersRepositoryMock({
+      findById: vi.fn().mockResolvedValue(createUserDoc({ twoFactorEnabled: true })),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    await expect(service.enableTwoFactor('user-a')).rejects.toMatchObject({
+      code: 'AUTH_2FA_ALREADY_ENABLED',
+      httpStatus: 409,
+    });
+  });
+});
+
+describe('AuthService#confirmTwoFactor', () => {
+  it('active la 2FA si le code TOTP est correct, révoque toutes les sessions, notifie par email', async () => {
+    verifyTotpCodeMock.mockResolvedValue(true);
+    const userDoc = createTwoFactorUserDoc({ twoFactorEnabled: false });
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const authRepository = createAuthRepositoryMock();
+    const enqueueEmailJob = vi.fn().mockResolvedValue(undefined);
+    const service = createService(usersRepository, authRepository, enqueueEmailJob);
+
+    await service.confirmTwoFactor('user-a', '123456');
+
+    expect(usersRepository.confirmTwoFactor).toHaveBeenCalledWith('user-a');
+    expect(authRepository.revokeAllUserRefreshTokens).toHaveBeenCalledWith('user-a');
+    expect(enqueueEmailJob).toHaveBeenCalledOnce();
+  });
+
+  it('rejette un code TOTP incorrect sans activer la 2FA', async () => {
+    verifyTotpCodeMock.mockResolvedValue(false);
+    const userDoc = createTwoFactorUserDoc({ twoFactorEnabled: false });
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    await expect(service.confirmTwoFactor('user-a', '000000')).rejects.toMatchObject({
+      code: 'AUTH_2FA_INVALID_CODE',
+      httpStatus: 401,
+    });
+    expect(usersRepository.confirmTwoFactor).not.toHaveBeenCalled();
+  });
+
+  it("rejette si enableTwoFactor n'a jamais été appelé (pas de secret en attente)", async () => {
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi
+        .fn()
+        .mockResolvedValue(createUserDoc({ twoFactorSecret: undefined })),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    await expect(service.confirmTwoFactor('user-a', '123456')).rejects.toMatchObject({
+      code: 'AUTH_2FA_NOT_ENABLED',
+      httpStatus: 401,
+    });
+  });
+
+  it('rejette si la 2FA est déjà activée (confirm rejoué)', async () => {
+    const userDoc = createTwoFactorUserDoc({ twoFactorEnabled: true });
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    await expect(service.confirmTwoFactor('user-a', '123456')).rejects.toMatchObject({
+      code: 'AUTH_2FA_ALREADY_ENABLED',
+      httpStatus: 409,
+    });
+  });
+});
+
+describe('AuthService#disableTwoFactor', () => {
+  it('désactive la 2FA si le mot de passe et le code TOTP sont corrects, révoque les sessions, notifie par email', async () => {
+    vi.mocked(argon2.verify).mockResolvedValue(true);
+    verifyTotpCodeMock.mockResolvedValue(true);
+    const userDoc = createTwoFactorUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithPasswordAndTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const authRepository = createAuthRepositoryMock();
+    const enqueueEmailJob = vi.fn().mockResolvedValue(undefined);
+    const service = createService(usersRepository, authRepository, enqueueEmailJob);
+
+    await service.disableTwoFactor('user-a', 'le-bon-mdp', '123456');
+
+    expect(usersRepository.disableTwoFactor).toHaveBeenCalledWith('user-a');
+    expect(authRepository.revokeAllUserRefreshTokens).toHaveBeenCalledWith('user-a');
+    expect(enqueueEmailJob).toHaveBeenCalledOnce();
+  });
+
+  it('accepte un code de récupération valide à la place du code TOTP', async () => {
+    vi.mocked(argon2.verify).mockResolvedValue(true);
+    verifyTotpCodeMock.mockResolvedValue(false);
+    const userDoc = createTwoFactorUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithPasswordAndTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    await expect(
+      service.disableTwoFactor('user-a', 'le-bon-mdp', RECOVERY_CODE_RAW),
+    ).resolves.toBeUndefined();
+    expect(usersRepository.disableTwoFactor).toHaveBeenCalledWith('user-a');
+  });
+
+  it('rejette si le mot de passe est incorrect (même avec un code TOTP valide)', async () => {
+    vi.mocked(argon2.verify).mockResolvedValue(false);
+    verifyTotpCodeMock.mockResolvedValue(true);
+    const userDoc = createTwoFactorUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithPasswordAndTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    await expect(service.disableTwoFactor('user-a', 'mauvais-mdp', '123456')).rejects.toMatchObject(
+      { code: 'AUTH_INVALID_CREDENTIALS', httpStatus: 401 },
+    );
+    expect(usersRepository.disableTwoFactor).not.toHaveBeenCalled();
+  });
+
+  it('rejette si le code (TOTP et récupération) est incorrect, même avec le bon mot de passe', async () => {
+    vi.mocked(argon2.verify).mockResolvedValue(true);
+    verifyTotpCodeMock.mockResolvedValue(false);
+    const userDoc = createTwoFactorUserDoc();
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithPasswordAndTwoFactorSecret: vi.fn().mockResolvedValue(userDoc),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    await expect(service.disableTwoFactor('user-a', 'le-bon-mdp', '000000')).rejects.toMatchObject({
+      code: 'AUTH_2FA_INVALID_CODE',
+      httpStatus: 401,
+    });
+  });
+
+  it("rejette si la 2FA n'est pas activée", async () => {
+    const usersRepository = createUsersRepositoryMock({
+      findByIdWithPasswordAndTwoFactorSecret: vi
+        .fn()
+        .mockResolvedValue(createUserDoc({ twoFactorEnabled: false })),
+    });
+    const service = createService(usersRepository, createAuthRepositoryMock());
+
+    await expect(service.disableTwoFactor('user-a', 'le-bon-mdp', '123456')).rejects.toMatchObject({
+      code: 'AUTH_2FA_NOT_ENABLED',
+      httpStatus: 401,
+    });
   });
 });

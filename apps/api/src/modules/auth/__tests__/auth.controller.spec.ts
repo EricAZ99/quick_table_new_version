@@ -93,6 +93,156 @@ describe('AuthController#login', () => {
     await expect(controller.login(req, res)).rejects.toBeInstanceOf(ValidationError);
     expect(service.login).not.toHaveBeenCalled();
   });
+
+  it('répond 200 { requires2FA: true } sans poser de cookie quand la 2FA est activée (doc 07 §7.3)', async () => {
+    const service = {
+      login: vi.fn().mockResolvedValue({ requires2FA: true, challengeToken: 'challenge-token' }),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { body: { email: 'chef@quicktable.io', password: 'x' }, headers: {} } as Request;
+    const res = createMockRes();
+
+    await controller.login(req, res);
+
+    expect(res.cookie).not.toHaveBeenCalled();
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { requires2FA: true, challengeToken: 'challenge-token' },
+    });
+  });
+});
+
+describe('AuthController#verifyTwoFactor', () => {
+  it('pose le cookie refreshToken et renvoie la session quand challengeToken/code sont valides', async () => {
+    const service = {
+      verifyTwoFactor: vi.fn().mockResolvedValue(LOGIN_RESULT),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = {
+      body: { challengeToken: 'challenge-token', code: '123456' },
+      headers: {},
+    } as Request;
+    const res = createMockRes();
+
+    await controller.verifyTwoFactor(req, res);
+
+    expect(service.verifyTwoFactor).toHaveBeenCalledWith('challenge-token', '123456', {
+      ip: undefined,
+      userAgent: undefined,
+    });
+    expect(res.cookie).toHaveBeenCalledWith(
+      'refreshToken',
+      'raw-refresh-token',
+      expect.objectContaining({ httpOnly: true }),
+    );
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: { accessToken: 'access-token', user: LOGIN_RESULT.user, tenants: LOGIN_RESULT.tenants },
+    });
+  });
+
+  it('lève une ValidationError si challengeToken ou code manque', async () => {
+    const service = { verifyTwoFactor: vi.fn() } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { body: { code: '123456' }, headers: {} } as Request;
+    const res = createMockRes();
+
+    await expect(controller.verifyTwoFactor(req, res)).rejects.toBeInstanceOf(ValidationError);
+    expect(service.verifyTwoFactor).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthController#enableTwoFactor', () => {
+  it("appelle le service avec l'userId de req.auth, renvoie le QR Code et les codes de récupération", async () => {
+    const service = {
+      enableTwoFactor: vi.fn().mockResolvedValue({
+        qrCodeDataUrl: 'data:image/png;base64,xxx',
+        secret: 'JBSWY3DPEHPK3PXP',
+        recoveryCodes: ['AB12-CD34-EF56'],
+      }),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { auth: { sub: 'user-a' } } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.enableTwoFactor(req, res);
+
+    expect(service.enableTwoFactor).toHaveBeenCalledWith('user-a');
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      data: {
+        qrCodeDataUrl: 'data:image/png;base64,xxx',
+        secret: 'JBSWY3DPEHPK3PXP',
+        recoveryCodes: ['AB12-CD34-EF56'],
+      },
+    });
+  });
+
+  it('rejette avec AUTH_TOKEN_MISSING si req.auth est absent (bug de câblage de route)', async () => {
+    const service = { enableTwoFactor: vi.fn() } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = {} as Request;
+    const res = createMockRes();
+
+    await expect(controller.enableTwoFactor(req, res)).rejects.toMatchObject({
+      code: 'AUTH_TOKEN_MISSING',
+    });
+    expect(service.enableTwoFactor).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthController#confirmTwoFactor', () => {
+  it('appelle le service avec userId/code, répond 200 data:null', async () => {
+    const service = {
+      confirmTwoFactor: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { auth: { sub: 'user-a' }, body: { code: '123456' } } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.confirmTwoFactor(req, res);
+
+    expect(service.confirmTwoFactor).toHaveBeenCalledWith('user-a', '123456');
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: null });
+  });
+
+  it('lève une ValidationError si code manque', async () => {
+    const service = { confirmTwoFactor: vi.fn() } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { auth: { sub: 'user-a' }, body: {} } as unknown as Request;
+    const res = createMockRes();
+
+    await expect(controller.confirmTwoFactor(req, res)).rejects.toBeInstanceOf(ValidationError);
+  });
+});
+
+describe('AuthController#disableTwoFactor', () => {
+  it('appelle le service avec userId/password/code, répond 200 data:null', async () => {
+    const service = {
+      disableTwoFactor: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = {
+      auth: { sub: 'user-a' },
+      body: { password: 'le-bon-mdp', code: '123456' },
+    } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.disableTwoFactor(req, res);
+
+    expect(service.disableTwoFactor).toHaveBeenCalledWith('user-a', 'le-bon-mdp', '123456');
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: null });
+  });
+
+  it('lève une ValidationError si password ou code manque', async () => {
+    const service = { disableTwoFactor: vi.fn() } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { auth: { sub: 'user-a' }, body: { password: 'x' } } as unknown as Request;
+    const res = createMockRes();
+
+    await expect(controller.disableTwoFactor(req, res)).rejects.toBeInstanceOf(ValidationError);
+  });
 });
 
 const REFRESH_RESULT = {

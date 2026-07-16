@@ -7,5 +7,11 @@
   "AUTH_REFRESH_TOKEN_INVALID": "Sessione non valida, effettua di nuovo l'accesso.",
   "AUTH_REFRESH_TOKEN_REUSED": "Sessione non valida, effettua di nuovo l'accesso.",
   "AUTH_FORGOT_PASSWORD_RATE_LIMITED": "Troppe richieste di reimpostazione, riprova più tardi.",
-  "AUTH_RESET_TOKEN_INVALID": "Link di reimpostazione non valido o scaduto."
+  "AUTH_RESET_TOKEN_INVALID": "Link di reimpostazione non valido o scaduto.",
+  "AUTH_TOKEN_MISSING": "Autenticazione richiesta.",
+  "AUTH_TOKEN_INVALID": "Sessione non valida o scaduta.",
+  "AUTH_2FA_ALREADY_ENABLED": "L'autenticazione a due fattori è già attiva.",
+  "AUTH_2FA_NOT_ENABLED": "L'autenticazione a due fattori non è attiva.",
+  "AUTH_2FA_INVALID_CODE": "Codice di verifica errato.",
+  "AUTH_2FA_CHALLENGE_INVALID": "Sessione di accesso non valida o scaduta, effettua di nuovo l'accesso."
 }

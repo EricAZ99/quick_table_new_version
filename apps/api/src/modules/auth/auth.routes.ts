@@ -2,6 +2,7 @@ import { Router, type Request, type Response } from 'express';
 
 import { getEnv } from '../../config/env.js';
 import { enqueueEmailJob } from '../../jobs/queues.js';
+import { requireAuth } from '../../middlewares/auth.middleware.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { UsersRepository } from '../users/index.js';
 import { AuthController } from './auth.controller.js';
@@ -9,6 +10,7 @@ import { AuthRepository } from './auth.repository.js';
 import { AuthService } from './auth.service.js';
 import { forgotPasswordRateLimiter } from './forgot-password-rate-limit.js';
 import { loginRateLimiter } from './login-rate-limit.js';
+import { twoFactorVerifyRateLimiter } from './two-factor-verify-rate-limit.js';
 
 /**
  * Construction paresseuse, mémoïsée : `getEnv()` (fail-fast sur `.env`
@@ -26,6 +28,7 @@ function getController(): AuthController {
       new AuthRepository(),
       env.JWT_SECRET,
       enqueueEmailJob,
+      env.TWO_FACTOR_ENCRYPTION_KEY,
     );
     cachedController = new AuthController(service, env.NODE_ENV === 'production');
   }
@@ -63,4 +66,28 @@ authRouter.post(
 authRouter.post(
   '/reset-password',
   asyncHandler((req: Request, res: Response) => getController().resetPassword(req, res)),
+);
+
+authRouter.post(
+  '/2fa/verify',
+  twoFactorVerifyRateLimiter,
+  asyncHandler((req: Request, res: Response) => getController().verifyTwoFactor(req, res)),
+);
+
+authRouter.post(
+  '/2fa/enable',
+  requireAuth,
+  asyncHandler((req: Request, res: Response) => getController().enableTwoFactor(req, res)),
+);
+
+authRouter.post(
+  '/2fa/confirm',
+  requireAuth,
+  asyncHandler((req: Request, res: Response) => getController().confirmTwoFactor(req, res)),
+);
+
+authRouter.post(
+  '/2fa/disable',
+  requireAuth,
+  asyncHandler((req: Request, res: Response) => getController().disableTwoFactor(req, res)),
 );

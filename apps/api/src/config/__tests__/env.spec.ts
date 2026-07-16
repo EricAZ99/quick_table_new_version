@@ -11,6 +11,7 @@ const validSource = {
   SMTP_USER: 'smtp-user',
   SMTP_PASS: 'smtp-pass',
   SMTP_FROM: 'Quick Table <test@example.com>',
+  TWO_FACTOR_ENCRYPTION_KEY: 'a'.repeat(64),
 };
 
 describe('parseEnv', () => {
@@ -38,6 +39,7 @@ describe('parseEnv', () => {
     'SMTP_USER',
     'SMTP_PASS',
     'SMTP_FROM',
+    'TWO_FACTOR_ENCRYPTION_KEY',
   ])('refuse de démarrer si %s est absent', (key) => {
     const source = { ...validSource };
     delete (source as Record<string, string>)[key];
@@ -65,5 +67,17 @@ describe('parseEnv', () => {
     const env = parseEnv(validSource);
 
     expect(env.SMTP_PORT).toBe(587);
+  });
+
+  it("refuse une TWO_FACTOR_ENCRYPTION_KEY qui n'a pas exactement 64 caractères hex (doc 07 §7.6)", () => {
+    expect(() => parseEnv({ ...validSource, TWO_FACTOR_ENCRYPTION_KEY: 'a'.repeat(63) })).toThrow(
+      /Configuration invalide/,
+    );
+  });
+
+  it('refuse une TWO_FACTOR_ENCRYPTION_KEY non hexadécimale', () => {
+    expect(() => parseEnv({ ...validSource, TWO_FACTOR_ENCRYPTION_KEY: 'z'.repeat(64) })).toThrow(
+      /Configuration invalide/,
+    );
   });
 });

@@ -44,6 +44,10 @@ jobs:
       # mais reste un secret de signature — jamais committé en clair même
       # pour un usage CI/test.
       JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      # Clé de chiffrement AES-256-GCM de `users.twoFactorSecret` (doc 07
+      # §7.6) — même statut que JWT_SECRET : ne pointe vers aucune infra
+      # tierce, mais reste un vrai secret cryptographique, jamais en clair.
+      TWO_FACTOR_ENCRYPTION_KEY: ${{ secrets.TWO_FACTOR_ENCRYPTION_KEY }}
       # Relais SMTP Brevo (doc 04 §4.1) : requis par `config/env.ts`
       # (fail-fast) dès qu'une route /auth/* est exercée, mais aucun test
       # CI n'envoie réellement d'email (le worker qui consomme la queue

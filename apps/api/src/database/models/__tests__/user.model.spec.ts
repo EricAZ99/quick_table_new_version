@@ -56,21 +56,38 @@ describe('UserModel — validation de schéma (doc 05 §"users")', () => {
     expect((error as { errors: Record<string, unknown> }).errors.preferredLocale).toBeDefined();
   });
 
-  it('applique les défauts : isSuperAdmin=false, twoFactorEnabled=false, status=active, preferredLocale=null, deletedAt=null', () => {
+  it('applique les défauts : isSuperAdmin=false, twoFactorEnabled=false, status=active, preferredLocale=null, deletedAt=null, twoFactorRecoveryCodes=[]', () => {
     const doc = build();
     expect(doc.isSuperAdmin).toBe(false);
     expect(doc.twoFactorEnabled).toBe(false);
     expect(doc.status).toBe('active');
     expect(doc.preferredLocale).toBeNull();
     expect(doc.deletedAt).toBeNull();
+    expect(doc.twoFactorRecoveryCodes).toEqual([]);
   });
 
-  it("exclut passwordHash et twoFactorSecret de la sérialisation JSON (jamais retournés par l'API, doc 05)", () => {
-    const doc = build({ twoFactorSecret: 'secret-totp' });
+  it("exclut passwordHash, twoFactorSecret et twoFactorRecoveryCodes de la sérialisation JSON (jamais retournés par l'API, doc 05)", () => {
+    const doc = build({
+      twoFactorSecret: 'secret-totp',
+      twoFactorRecoveryCodes: [{ codeHash: 'hash', usedAt: null }],
+    });
     const json = doc.toJSON() as unknown as Record<string, unknown>;
 
     expect(json).not.toHaveProperty('passwordHash');
     expect(json).not.toHaveProperty('twoFactorSecret');
+    expect(json).not.toHaveProperty('twoFactorRecoveryCodes');
     expect(json.email).toBe('chef@quicktable.io');
+  });
+
+  it('accepte des codes de récupération (codeHash + usedAt)', async () => {
+    const doc = build({
+      twoFactorRecoveryCodes: [
+        { codeHash: 'a'.repeat(64), usedAt: null },
+        { codeHash: 'b'.repeat(64), usedAt: new Date() },
+      ],
+    });
+
+    await expect(doc.validate()).resolves.toBeUndefined();
+    expect(doc.twoFactorRecoveryCodes).toHaveLength(2);
   });
 });

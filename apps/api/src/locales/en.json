@@ -7,5 +7,11 @@
   "AUTH_REFRESH_TOKEN_INVALID": "Invalid session, please log in again.",
   "AUTH_REFRESH_TOKEN_REUSED": "Invalid session, please log in again.",
   "AUTH_FORGOT_PASSWORD_RATE_LIMITED": "Too many password reset requests, please try again later.",
-  "AUTH_RESET_TOKEN_INVALID": "Invalid or expired reset link."
+  "AUTH_RESET_TOKEN_INVALID": "Invalid or expired reset link.",
+  "AUTH_TOKEN_MISSING": "Authentication required.",
+  "AUTH_TOKEN_INVALID": "Invalid or expired session.",
+  "AUTH_2FA_ALREADY_ENABLED": "Two-factor authentication is already enabled.",
+  "AUTH_2FA_NOT_ENABLED": "Two-factor authentication is not enabled.",
+  "AUTH_2FA_INVALID_CODE": "Incorrect verification code.",
+  "AUTH_2FA_CHALLENGE_INVALID": "Invalid or expired login session, please log in again."
 }

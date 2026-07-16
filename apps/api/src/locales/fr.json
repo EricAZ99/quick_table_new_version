@@ -7,5 +7,11 @@
   "AUTH_REFRESH_TOKEN_INVALID": "Session invalide, veuillez vous reconnecter.",
   "AUTH_REFRESH_TOKEN_REUSED": "Session invalide, veuillez vous reconnecter.",
   "AUTH_FORGOT_PASSWORD_RATE_LIMITED": "Trop de demandes de réinitialisation, réessayez plus tard.",
-  "AUTH_RESET_TOKEN_INVALID": "Lien de réinitialisation invalide ou expiré."
+  "AUTH_RESET_TOKEN_INVALID": "Lien de réinitialisation invalide ou expiré.",
+  "AUTH_TOKEN_MISSING": "Authentification requise.",
+  "AUTH_TOKEN_INVALID": "Session invalide ou expirée.",
+  "AUTH_2FA_ALREADY_ENABLED": "La double authentification est déjà activée.",
+  "AUTH_2FA_NOT_ENABLED": "La double authentification n'est pas activée.",
+  "AUTH_2FA_INVALID_CODE": "Code de vérification incorrect.",
+  "AUTH_2FA_CHALLENGE_INVALID": "Session de connexion invalide ou expirée, veuillez vous reconnecter."
 }

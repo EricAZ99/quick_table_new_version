@@ -32,3 +32,30 @@ export const resetPasswordSchema = z.object({
 });
 
 export type ResetPasswordDto = z.infer<typeof resetPasswordSchema>;
+
+/** `POST /auth/2fa/confirm` (doc 07 §7.6) — code TOTP à 6 chiffres. */
+export const twoFactorConfirmSchema = z.object({
+  code: z.string().trim().min(1, 'code est requis'),
+});
+
+export type TwoFactorConfirmDto = z.infer<typeof twoFactorConfirmSchema>;
+
+/**
+ * `POST /auth/2fa/verify` (doc 07 §7.3) — `code` accepte aussi bien un code
+ * TOTP qu'un code de récupération (`AuthService#verifyTwoFactor` essaie les
+ * deux), d'où l'absence de contrainte de longueur/format stricte ici.
+ */
+export const twoFactorVerifySchema = z.object({
+  challengeToken: z.string().min(1, 'challengeToken est requis'),
+  code: z.string().trim().min(1, 'code est requis'),
+});
+
+export type TwoFactorVerifyDto = z.infer<typeof twoFactorVerifySchema>;
+
+/** `POST /auth/2fa/disable` (doc 07 §7.6) — exige le mot de passe en plus du code (défense en profondeur). */
+export const twoFactorDisableSchema = z.object({
+  password: z.string().min(1, 'password est requis'),
+  code: z.string().trim().min(1, 'code est requis'),
+});
+
+export type TwoFactorDisableDto = z.infer<typeof twoFactorDisableSchema>;

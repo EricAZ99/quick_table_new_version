@@ -1,10 +1,13 @@
 import argon2 from 'argon2';
+import type { HydratedDocument } from 'mongoose';
 
+import type { UserDocument } from '../../database/models/user.model.js';
 import type { EmailJobData } from '../../jobs/queues.js';
 import { DEFAULT_LOCALE } from '../../middlewares/i18n.middleware.js';
-import { UnauthorizedError } from '../../shared/errors/index.js';
+import { ConflictError, UnauthorizedError } from '../../shared/errors/index.js';
 import { passwordChangedEmailTemplate } from '../notifications/email-templates/passwordChanged.template.js';
 import { passwordResetEmailTemplate } from '../notifications/email-templates/passwordReset.template.js';
+import { twoFactorStatusChangedEmailTemplate } from '../notifications/email-templates/twoFactorStatusChanged.template.js';
 import type { UsersRepository } from '../users/users.repository.js';
 import type { AuthRepository } from './auth.repository.js';
 import type { ForgotPasswordDto, LoginDto } from './auth.validators.js';
@@ -14,11 +17,18 @@ import {
   hashPasswordResetToken,
   PASSWORD_RESET_TOKEN_TTL_MS,
 } from './passwordResetToken.util.js';
+import { generateRecoveryCodes, hashRecoveryCode } from './recoveryCode.util.js';
 import {
   generateRefreshToken,
   hashRefreshToken,
   REFRESH_TOKEN_TTL_MS,
 } from './refreshToken.util.js';
+import { generateTotpQrCodeDataUrl, generateTotpSecret, verifyTotpCode } from './totp.util.js';
+import { decryptTwoFactorSecret, encryptTwoFactorSecret } from './twoFactorSecret.util.js';
+import {
+  signTwoFactorChallengeToken,
+  verifyTwoFactorChallengeToken,
+} from './twoFactorChallengeToken.js';
 
 /** Partagé par `login()` et `refresh()` — même besoin (traçabilité de session, doc 05 §"refreshTokens"). */
 export interface RequestMeta {
@@ -26,7 +36,8 @@ export interface RequestMeta {
   userAgent?: string;
 }
 
-export interface LoginResult {
+export interface LoginSessionResult {
+  requires2FA?: false;
   accessToken: string;
   refreshToken: string;
   refreshTokenExpiresAt: Date;
@@ -34,10 +45,28 @@ export interface LoginResult {
   tenants: { tenantId: string; role: string; membershipId: string }[];
 }
 
+/** doc 07 §7.3 : réponse intermédiaire quand `users.twoFactorEnabled` est vrai — pas de session émise avant `verifyTwoFactor`. */
+export interface LoginChallengeResult {
+  requires2FA: true;
+  challengeToken: string;
+}
+
+export type LoginOutcome = LoginSessionResult | LoginChallengeResult;
+
 export interface RefreshResult {
   accessToken: string;
   refreshToken: string;
   refreshTokenExpiresAt: Date;
+}
+
+export interface EnableTwoFactorResult {
+  qrCodeDataUrl: string;
+  // Saisie manuelle (UX standard des apps d'authentification : "impossible
+  // de scanner ? entrez ce code") — pas explicitement listé au doc 07 §7.6,
+  // mais une omission aurait rendu l'activation impossible sans scanner
+  // physiquement un QR Code (donc aussi non testable de bout en bout).
+  secret: string;
+  recoveryCodes: string[];
 }
 
 /**
@@ -52,12 +81,7 @@ const DUMMY_PASSWORD_HASH =
   '$argon2id$v=19$m=65536,t=3,p=4$HT4hh0D0S/DMU/vlPRSoiA$Ch1RTnF3b0dwS23SaaB/gMbHyH2X+XozTWd8Aayy2xQ';
 
 /**
- * Login (doc 07 §7.3). La branche 2FA du diagramme de séquence
- * (`requires2FA: true, challengeToken`) n'est volontairement pas
- * implémentée ici : `users.twoFactorEnabled` vaut toujours `false`
- * aujourd'hui (aucun endpoint `/auth/2fa/enable` n'existe encore, Feature
- * 1.2 ticket séparé) — la brancher maintenant serait construire un chemin
- * mort, pas testable de bout en bout (doc 14 §14.5 KISS).
+ * Login (doc 07 §7.3).
  *
  * `permissionsVersion` fixé à `0` : le suivi réel du compteur (doc 07 §7.2,
  * doc 08) arrive avec RBAC (Feature 1.4), pas anticipé ici.
@@ -72,9 +96,12 @@ export class AuthService {
     // réelle — même logique que `jwtSecret` en paramètre plutôt que
     // `getEnv()` interne.
     private readonly enqueueEmailJob: (data: EmailJobData) => Promise<void>,
+    // Clé AES-256-GCM de `users.twoFactorSecret` (doc 07 §7.6, doc 13
+    // §13.6) — même convention d'injection que `jwtSecret`.
+    private readonly twoFactorEncryptionKey: string,
   ) {}
 
-  async login(dto: LoginDto, meta: RequestMeta): Promise<LoginResult> {
+  async login(dto: LoginDto, meta: RequestMeta): Promise<LoginOutcome> {
     const user = await this.usersRepository.findByEmailWithPasswordHash(dto.email);
 
     const passwordValid = await argon2.verify(
@@ -85,6 +112,180 @@ export class AuthService {
       throw new UnauthorizedError('AUTH_INVALID_CREDENTIALS', 'Email ou mot de passe incorrect.');
     }
 
+    // 2FA activée (doc 07 §7.3, §7.6) : pas de session émise tout de suite —
+    // le client doit d'abord présenter un code TOTP/récupération valide via
+    // `POST /auth/2fa/verify` avec ce `challengeToken` de courte durée.
+    if (user.twoFactorEnabled) {
+      const challengeToken = signTwoFactorChallengeToken(user._id.toString(), this.jwtSecret);
+      return { requires2FA: true, challengeToken };
+    }
+
+    return this.issueSession(user, meta);
+  }
+
+  /**
+   * `POST /auth/2fa/verify` (doc 07 §7.3) : seconde étape du login quand la
+   * 2FA est activée. Accepte soit un code TOTP courant, soit l'un des 10
+   * codes de récupération non consommés (doc 07 §7.6) — dans ce dernier
+   * cas, le code est marqué utilisé (jamais réutilisable).
+   */
+  async verifyTwoFactor(
+    challengeToken: string,
+    code: string,
+    meta: RequestMeta,
+  ): Promise<LoginSessionResult> {
+    let userId: string;
+    try {
+      ({ userId } = verifyTwoFactorChallengeToken(challengeToken, this.jwtSecret));
+    } catch {
+      throw new UnauthorizedError(
+        'AUTH_2FA_CHALLENGE_INVALID',
+        'Session de connexion invalide ou expirée.',
+      );
+    }
+
+    const user = await this.usersRepository.findByIdWithTwoFactorSecret(userId);
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+      throw new UnauthorizedError(
+        'AUTH_2FA_CHALLENGE_INVALID',
+        'Session de connexion invalide ou expirée.',
+      );
+    }
+
+    const secret = decryptTwoFactorSecret(user.twoFactorSecret, this.twoFactorEncryptionKey);
+    if (!(await verifyTotpCode(code, secret))) {
+      const codeHash = hashRecoveryCode(code);
+      const matchingRecoveryCode = user.twoFactorRecoveryCodes.find(
+        (recoveryCode) => recoveryCode.codeHash === codeHash && recoveryCode.usedAt === null,
+      );
+      if (!matchingRecoveryCode) {
+        throw new UnauthorizedError('AUTH_2FA_INVALID_CODE', 'Code de vérification incorrect.');
+      }
+      await this.usersRepository.markRecoveryCodeUsed(userId, codeHash);
+    }
+
+    return this.issueSession(user, meta);
+  }
+
+  /**
+   * `POST /auth/2fa/enable` (doc 07 §7.6) : génère un secret TOTP + 10 codes
+   * de récupération, les stocke (secret chiffré, codes hashés), mais
+   * n'active **pas** encore la 2FA — `confirmTwoFactor` doit valider un
+   * premier code avant que `twoFactorEnabled` ne passe à `true`, pour ne
+   * jamais activer un secret que l'utilisateur n'a pas fini de configurer.
+   */
+  async enableTwoFactor(userId: string): Promise<EnableTwoFactorResult> {
+    const user = await this.usersRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedError('AUTH_TOKEN_INVALID', 'Session invalide.');
+    }
+    if (user.twoFactorEnabled) {
+      throw new ConflictError(
+        'AUTH_2FA_ALREADY_ENABLED',
+        'La double authentification est déjà activée.',
+      );
+    }
+
+    const secret = generateTotpSecret();
+    const recoveryCodes = generateRecoveryCodes();
+
+    await this.usersRepository.setPendingTwoFactorSecret(
+      userId,
+      encryptTwoFactorSecret(secret, this.twoFactorEncryptionKey),
+      recoveryCodes.map(hashRecoveryCode),
+    );
+
+    const qrCodeDataUrl = await generateTotpQrCodeDataUrl(user.email, secret);
+
+    return { qrCodeDataUrl, secret, recoveryCodes };
+  }
+
+  /**
+   * `POST /auth/2fa/confirm` (doc 07 §7.6) : vérifie un premier code TOTP
+   * contre le secret généré par `enableTwoFactor`, puis active
+   * effectivement la 2FA. Révoque toutes les sessions actives et notifie
+   * par email (doc 07 §7.7 : toute activation/désactivation 2FA déclenche
+   * une révocation globale + notification de sécurité).
+   */
+  async confirmTwoFactor(userId: string, code: string): Promise<void> {
+    const user = await this.usersRepository.findByIdWithTwoFactorSecret(userId);
+    if (!user || !user.twoFactorSecret) {
+      throw new UnauthorizedError(
+        'AUTH_2FA_NOT_ENABLED',
+        "La double authentification n'a pas été initialisée.",
+      );
+    }
+    if (user.twoFactorEnabled) {
+      throw new ConflictError(
+        'AUTH_2FA_ALREADY_ENABLED',
+        'La double authentification est déjà activée.',
+      );
+    }
+
+    const secret = decryptTwoFactorSecret(user.twoFactorSecret, this.twoFactorEncryptionKey);
+    if (!(await verifyTotpCode(code, secret))) {
+      throw new UnauthorizedError('AUTH_2FA_INVALID_CODE', 'Code de vérification incorrect.');
+    }
+
+    await this.usersRepository.confirmTwoFactor(userId);
+    await this.authRepository.revokeAllUserRefreshTokens(userId);
+    await this.sendTwoFactorStatusEmail(user, true);
+  }
+
+  /**
+   * `POST /auth/2fa/disable` (doc 07 §7.6) : exige le mot de passe **et**
+   * un code valide (défense en profondeur — un Access Token volé seul ne
+   * suffit pas à désactiver la 2FA). Efface le secret et les codes de
+   * récupération, révoque toutes les sessions actives, notifie par email.
+   */
+  async disableTwoFactor(userId: string, password: string, code: string): Promise<void> {
+    const user = await this.usersRepository.findByIdWithPasswordAndTwoFactorSecret(userId);
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+      throw new UnauthorizedError(
+        'AUTH_2FA_NOT_ENABLED',
+        "La double authentification n'est pas activée.",
+      );
+    }
+
+    const passwordValid = await argon2.verify(user.passwordHash, password);
+    if (!passwordValid) {
+      throw new UnauthorizedError('AUTH_INVALID_CREDENTIALS', 'Mot de passe incorrect.');
+    }
+
+    const secret = decryptTwoFactorSecret(user.twoFactorSecret, this.twoFactorEncryptionKey);
+    const isValidTotp = await verifyTotpCode(code, secret);
+    const codeHash = hashRecoveryCode(code);
+    const isValidRecoveryCode = user.twoFactorRecoveryCodes.some(
+      (recoveryCode) => recoveryCode.codeHash === codeHash && recoveryCode.usedAt === null,
+    );
+    if (!isValidTotp && !isValidRecoveryCode) {
+      throw new UnauthorizedError('AUTH_2FA_INVALID_CODE', 'Code de vérification incorrect.');
+    }
+
+    await this.usersRepository.disableTwoFactor(userId);
+    await this.authRepository.revokeAllUserRefreshTokens(userId);
+    await this.sendTwoFactorStatusEmail(user, false);
+  }
+
+  private async sendTwoFactorStatusEmail(
+    user: HydratedDocument<UserDocument>,
+    enabled: boolean,
+  ): Promise<void> {
+    const locale = user.preferredLocale ?? DEFAULT_LOCALE;
+    const { subject, html, text } = twoFactorStatusChangedEmailTemplate(locale, enabled);
+    await this.enqueueEmailJob({ to: user.email, subject, html, text });
+  }
+
+  /**
+   * Résolution du contexte tenant + émission de la session (doc 07 §7.3) —
+   * partagée par `login` (pas de 2FA) et `verifyTwoFactor` (2FA validée),
+   * pour ne jamais dupliquer la logique de résolution des memberships/
+   * émission des tokens entre les deux chemins.
+   */
+  private async issueSession(
+    user: HydratedDocument<UserDocument>,
+    meta: RequestMeta,
+  ): Promise<LoginSessionResult> {
     const memberships = await this.authRepository.findMembershipsByUserId(user._id.toString());
 
     // Un seul tenant -> contexte immédiatement résolu dans le token ; 0 ou

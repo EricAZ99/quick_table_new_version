@@ -1,8 +1,15 @@
 import type { Request, Response } from 'express';
 
-import { ValidationError } from '../../shared/errors/index.js';
-import type { AuthService } from './auth.service.js';
-import { forgotPasswordSchema, loginSchema, resetPasswordSchema } from './auth.validators.js';
+import { UnauthorizedError, ValidationError } from '../../shared/errors/index.js';
+import type { AuthService, LoginSessionResult } from './auth.service.js';
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  resetPasswordSchema,
+  twoFactorConfirmSchema,
+  twoFactorDisableSchema,
+  twoFactorVerifySchema,
+} from './auth.validators.js';
 import { resetLoginRateLimit } from './login-rate-limit.js';
 
 const REFRESH_TOKEN_COOKIE_NAME = 'refreshToken';
@@ -31,16 +38,97 @@ export class AuthController {
     });
 
     // Reset le verrouillage progressif (doc 07 §7.3) avant d'écrire la
-    // réponse : un login réussi ne doit pas laisser le compteur d'échecs
-    // entamé par de précédentes tentatives infructueuses du même (email, IP).
+    // réponse : un login réussi (y compris "en attente du code 2FA") ne
+    // doit pas laisser le compteur d'échecs entamé par de précédentes
+    // tentatives infructueuses du même (email, IP).
     await resetLoginRateLimit(req);
 
-    this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
+    // 2FA activée (doc 07 §7.3) : pas de session/cookie encore — le client
+    // doit d'abord appeler `/2fa/verify` avec ce `challengeToken`.
+    if (result.requires2FA) {
+      res
+        .status(200)
+        .json({
+          success: true,
+          data: { requires2FA: true, challengeToken: result.challengeToken },
+        });
+      return;
+    }
+
+    this.respondWithSession(res, result);
+  };
+
+  /** `POST /auth/2fa/verify` (doc 07 §7.3) — seconde étape du login quand la 2FA est activée. */
+  verifyTwoFactor = async (req: Request, res: Response): Promise<void> => {
+    const parsed = twoFactorVerifySchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ValidationError(
+        'AUTH_INVALID_PAYLOAD',
+        'challengeToken ou code manquant ou invalide.',
+        parsed.error.issues,
+      );
+    }
+
+    const result = await this.service.verifyTwoFactor(
+      parsed.data.challengeToken,
+      parsed.data.code,
+      {
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+    );
+
+    this.respondWithSession(res, result);
+  };
+
+  /** `POST /auth/2fa/enable` (doc 07 §7.6) — nécessite `requireAuth` (route protégée). */
+  enableTwoFactor = async (req: Request, res: Response): Promise<void> => {
+    const result = await this.service.enableTwoFactor(this.requireUserId(req));
 
     res.status(200).json({
       success: true,
-      data: { accessToken: result.accessToken, user: result.user, tenants: result.tenants },
+      data: {
+        qrCodeDataUrl: result.qrCodeDataUrl,
+        secret: result.secret,
+        recoveryCodes: result.recoveryCodes,
+      },
     });
+  };
+
+  /** `POST /auth/2fa/confirm` (doc 07 §7.6) — nécessite `requireAuth`. */
+  confirmTwoFactor = async (req: Request, res: Response): Promise<void> => {
+    const parsed = twoFactorConfirmSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ValidationError(
+        'AUTH_INVALID_PAYLOAD',
+        'code manquant ou invalide.',
+        parsed.error.issues,
+      );
+    }
+
+    await this.service.confirmTwoFactor(this.requireUserId(req), parsed.data.code);
+
+    res.status(200).json({ success: true, data: null });
+  };
+
+  /** `POST /auth/2fa/disable` (doc 07 §7.6) — nécessite `requireAuth`. */
+  disableTwoFactor = async (req: Request, res: Response): Promise<void> => {
+    const parsed = twoFactorDisableSchema.safeParse(req.body);
+    if (!parsed.success) {
+      throw new ValidationError(
+        'AUTH_INVALID_PAYLOAD',
+        'password ou code manquant ou invalide.',
+        parsed.error.issues,
+      );
+    }
+
+    await this.service.disableTwoFactor(
+      this.requireUserId(req),
+      parsed.data.password,
+      parsed.data.code,
+    );
+
+    res.status(200).json({ success: true, data: null });
   };
 
   /**
@@ -113,6 +201,28 @@ export class AuthController {
 
     res.status(200).json({ success: true, data: null });
   };
+
+  /** Réponse commune `login` (sans 2FA) / `2fa/verify` — pose le cookie et renvoie la session. */
+  private respondWithSession(res: Response, result: LoginSessionResult): void {
+    this.setRefreshTokenCookie(res, result.refreshToken, result.refreshTokenExpiresAt);
+
+    res.status(200).json({
+      success: true,
+      data: { accessToken: result.accessToken, user: result.user, tenants: result.tenants },
+    });
+  }
+
+  /**
+   * `req.auth` est posé par `requireAuth` (`middlewares/auth.middleware.ts`)
+   * sur les routes 2FA `enable`/`confirm`/`disable` — absent uniquement si
+   * la route a été mal câblée (bug de câblage, pas un cas utilisateur).
+   */
+  private requireUserId(req: Request): string {
+    if (!req.auth) {
+      throw new UnauthorizedError('AUTH_TOKEN_MISSING', 'Authentification requise.');
+    }
+    return req.auth.sub;
+  }
 
   private getRefreshTokenCookie(req: Request): string | undefined {
     const cookies = req.cookies as Record<string, unknown> | undefined;

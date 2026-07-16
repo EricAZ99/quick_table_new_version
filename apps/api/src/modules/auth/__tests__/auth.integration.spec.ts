@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
+import { generate } from 'otplib';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
@@ -489,6 +490,201 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
 
       expect(response.status).toBe(400);
       expect(body.error.code).toBe('AUTH_INVALID_PAYLOAD');
+    });
+  });
+
+  describe('POST /api/v1/auth/2fa/* — activation, login avec 2FA, désactivation', () => {
+    interface EnableBody {
+      success: true;
+      data: { qrCodeDataUrl: string; secret: string; recoveryCodes: string[] };
+    }
+    interface TwoFactorLoginBody {
+      success: true;
+      data: { requires2FA?: true; accessToken?: string; challengeToken?: string };
+    }
+
+    async function createUserAndLogin(app: ReturnType<typeof createApp>) {
+      const twoFactorEmail = `auth-integration-2fa-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      await UserModel.create({
+        email: twoFactorEmail,
+        passwordHash,
+        fullName: 'Intégration 2FA',
+      });
+
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: twoFactorEmail, password });
+      const loginBody = loginResponse.body as SuccessBody;
+
+      return { twoFactorEmail, accessToken: loginBody.data.accessToken };
+    }
+
+    it('active réellement la 2FA (enable + confirm), puis exige un challenge au login suivant, vérifiable par un vrai code TOTP', async () => {
+      const app = createApp();
+      const { twoFactorEmail, accessToken } = await createUserAndLogin(app);
+
+      const enableResponse = await request(app)
+        .post('/api/v1/auth/2fa/enable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send();
+      const enableBody = enableResponse.body as EnableBody;
+
+      expect(enableResponse.status).toBe(200);
+      expect(enableBody.data.qrCodeDataUrl).toMatch(/^data:image\/png;base64,/);
+      expect(enableBody.data.recoveryCodes).toHaveLength(10);
+
+      const totpCode = await generate({ secret: enableBody.data.secret });
+      const confirmResponse = await request(app)
+        .post('/api/v1/auth/2fa/confirm')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ code: totpCode });
+      expect(confirmResponse.status).toBe(200);
+
+      const userAfterConfirm = await UserModel.findOne({ email: twoFactorEmail });
+      expect(userAfterConfirm?.twoFactorEnabled).toBe(true);
+
+      // doc 07 §7.7 : confirmer la 2FA révoque toutes les sessions actives
+      // — l'Access Token émis au login initial reste valide 15 minutes
+      // (JWT stateless), mais le refresh token de cette session est révoqué.
+      const activeSessions = await RefreshTokenModel.countDocuments({
+        userId: userAfterConfirm?._id,
+        revokedAt: null,
+      });
+      expect(activeSessions).toBe(0);
+
+      const secondLoginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: twoFactorEmail, password });
+      const secondLoginBody = secondLoginResponse.body as TwoFactorLoginBody;
+
+      expect(secondLoginResponse.status).toBe(200);
+      expect(secondLoginBody.data.requires2FA).toBe(true);
+      expect(secondLoginBody.data.accessToken).toBeUndefined();
+      expect(secondLoginResponse.headers['set-cookie']).toBeUndefined();
+
+      const verifyCode = await generate({ secret: enableBody.data.secret });
+      const verifyResponse = await request(app)
+        .post('/api/v1/auth/2fa/verify')
+        .send({ challengeToken: secondLoginBody.data.challengeToken, code: verifyCode });
+      const verifyBody = verifyResponse.body as SuccessBody;
+
+      expect(verifyResponse.status).toBe(200);
+      expect(verifyBody.data.accessToken).toEqual(expect.any(String));
+      const setCookie = verifyResponse.headers['set-cookie'] as unknown as string[];
+      expect(setCookie.some((cookie) => cookie.startsWith('refreshToken='))).toBe(true);
+
+      const jobs = await getEmailQueue().getJobs(['waiting', 'delayed']);
+      expect(jobs.some((job) => job.data.to === twoFactorEmail)).toBe(true);
+    });
+
+    it('rejette /2fa/verify avec un code incorrect (401 AUTH_2FA_INVALID_CODE)', async () => {
+      const app = createApp();
+      const { twoFactorEmail, accessToken } = await createUserAndLogin(app);
+      const enableResponse = await request(app)
+        .post('/api/v1/auth/2fa/enable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send();
+      const enableBody = enableResponse.body as EnableBody;
+      const totpCode = await generate({ secret: enableBody.data.secret });
+      await request(app)
+        .post('/api/v1/auth/2fa/confirm')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ code: totpCode });
+
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: twoFactorEmail, password });
+      const loginBody = loginResponse.body as TwoFactorLoginBody;
+
+      const verifyResponse = await request(app)
+        .post('/api/v1/auth/2fa/verify')
+        .send({ challengeToken: loginBody.data.challengeToken, code: '000000' });
+      const verifyBody = verifyResponse.body as ErrorBody;
+
+      expect(verifyResponse.status).toBe(401);
+      expect(verifyBody.error.code).toBe('AUTH_2FA_INVALID_CODE');
+    });
+
+    it('accepte un code de récupération à la place du TOTP, et le rend inutilisable une seconde fois', async () => {
+      const app = createApp();
+      const { twoFactorEmail, accessToken } = await createUserAndLogin(app);
+      const enableResponse = await request(app)
+        .post('/api/v1/auth/2fa/enable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send();
+      const enableBody = enableResponse.body as EnableBody;
+      const totpCode = await generate({ secret: enableBody.data.secret });
+      await request(app)
+        .post('/api/v1/auth/2fa/confirm')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ code: totpCode });
+
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: twoFactorEmail, password });
+      const loginBody = loginResponse.body as TwoFactorLoginBody;
+      const recoveryCode = enableBody.data.recoveryCodes[0] as string;
+
+      const firstVerify = await request(app)
+        .post('/api/v1/auth/2fa/verify')
+        .send({ challengeToken: loginBody.data.challengeToken, code: recoveryCode });
+      expect(firstVerify.status).toBe(200);
+
+      // Un second challenge (nouveau login) tente de réutiliser le même code de récupération.
+      const secondLoginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: twoFactorEmail, password });
+      const secondLoginBody = secondLoginResponse.body as TwoFactorLoginBody;
+
+      const secondVerify = await request(app)
+        .post('/api/v1/auth/2fa/verify')
+        .send({ challengeToken: secondLoginBody.data.challengeToken, code: recoveryCode });
+      const secondVerifyBody = secondVerify.body as ErrorBody;
+
+      expect(secondVerify.status).toBe(401);
+      expect(secondVerifyBody.error.code).toBe('AUTH_2FA_INVALID_CODE');
+    });
+
+    it('désactive réellement la 2FA (password + code), un login suivant redevient direct', async () => {
+      const app = createApp();
+      const { twoFactorEmail, accessToken } = await createUserAndLogin(app);
+      const enableResponse = await request(app)
+        .post('/api/v1/auth/2fa/enable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send();
+      const enableBody = enableResponse.body as EnableBody;
+      const confirmCode = await generate({ secret: enableBody.data.secret });
+      await request(app)
+        .post('/api/v1/auth/2fa/confirm')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ code: confirmCode });
+
+      const disableCode = await generate({ secret: enableBody.data.secret });
+      const disableResponse = await request(app)
+        .post('/api/v1/auth/2fa/disable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password, code: disableCode });
+      expect(disableResponse.status).toBe(200);
+
+      const userAfterDisable = await UserModel.findOne({ email: twoFactorEmail });
+      expect(userAfterDisable?.twoFactorEnabled).toBe(false);
+
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: twoFactorEmail, password });
+      const loginBody = loginResponse.body as TwoFactorLoginBody;
+
+      expect(loginBody.data.requires2FA).toBeUndefined();
+      expect(loginBody.data.accessToken).toEqual(expect.any(String));
+    });
+
+    it('rejette /2fa/enable sans Access Token (401 AUTH_TOKEN_MISSING)', async () => {
+      const response = await request(createApp()).post('/api/v1/auth/2fa/enable').send();
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_TOKEN_MISSING');
     });
   });
 });

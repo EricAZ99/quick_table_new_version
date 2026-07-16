@@ -6,7 +6,7 @@ vi.mock('../../../database/models/user.model.js', () => ({
   UserModel: {
     create: vi.fn(),
     findOne: vi.fn().mockReturnValue({ select: selectMock }),
-    findById: vi.fn(),
+    findById: vi.fn().mockReturnValue({ select: selectMock }),
     updateOne: vi.fn(),
   },
 }));
@@ -58,5 +58,78 @@ describe('UsersRepository', () => {
       { _id: '507f1f77bcf86cd799439011' },
       { passwordHash: 'nouveau-hash' },
     );
+  });
+
+  it('findByIdWithTwoFactorSecret() force la sélection du secret et des codes de récupération (select:false par défaut)', () => {
+    const repository = new UsersRepository();
+
+    repository.findByIdWithTwoFactorSecret('user-a');
+
+    expect(UserModel.findById).toHaveBeenCalledWith('user-a');
+    expect(selectMock).toHaveBeenCalledWith('+twoFactorSecret +twoFactorRecoveryCodes');
+  });
+
+  it('findByIdWithPasswordAndTwoFactorSecret() force la sélection de passwordHash + secret + codes (doc 07 §7.6, disable exige le mot de passe)', () => {
+    const repository = new UsersRepository();
+
+    repository.findByIdWithPasswordAndTwoFactorSecret('user-a');
+
+    expect(UserModel.findById).toHaveBeenCalledWith('user-a');
+    expect(selectMock).toHaveBeenCalledWith(
+      '+passwordHash +twoFactorSecret +twoFactorRecoveryCodes',
+    );
+  });
+
+  it('setPendingTwoFactorSecret() stocke le secret chiffré et les codes hashés (usedAt:null), sans activer la 2FA', async () => {
+    const repository = new UsersRepository();
+
+    await repository.setPendingTwoFactorSecret('user-a', 'secret-chiffre', ['hash1', 'hash2']);
+
+    expect(UserModel.updateOne).toHaveBeenCalledWith(
+      { _id: 'user-a' },
+      {
+        twoFactorSecret: 'secret-chiffre',
+        twoFactorRecoveryCodes: [
+          { codeHash: 'hash1', usedAt: null },
+          { codeHash: 'hash2', usedAt: null },
+        ],
+      },
+    );
+  });
+
+  it('confirmTwoFactor() active twoFactorEnabled pour le userId ciblé', async () => {
+    const repository = new UsersRepository();
+
+    await repository.confirmTwoFactor('user-a');
+
+    expect(UserModel.updateOne).toHaveBeenCalledWith({ _id: 'user-a' }, { twoFactorEnabled: true });
+  });
+
+  it('disableTwoFactor() désactive la 2FA et efface secret + codes de récupération', async () => {
+    const repository = new UsersRepository();
+
+    await repository.disableTwoFactor('user-a');
+
+    expect(UserModel.updateOne).toHaveBeenCalledWith(
+      { _id: 'user-a' },
+      {
+        twoFactorEnabled: false,
+        $unset: { twoFactorSecret: '' },
+        twoFactorRecoveryCodes: [],
+      },
+    );
+  });
+
+  it('markRecoveryCodeUsed() marque le code correspondant comme utilisé via le positional operator', async () => {
+    const repository = new UsersRepository();
+
+    await repository.markRecoveryCodeUsed('user-a', 'code-hash');
+
+    const [filter, update] = vi.mocked(UserModel.updateOne).mock.calls.at(-1) as unknown as [
+      Record<string, unknown>,
+      { $set: Record<string, unknown> },
+    ];
+    expect(filter).toEqual({ _id: 'user-a', 'twoFactorRecoveryCodes.codeHash': 'code-hash' });
+    expect(update.$set['twoFactorRecoveryCodes.$.usedAt']).toBeInstanceOf(Date);
   });
 });
