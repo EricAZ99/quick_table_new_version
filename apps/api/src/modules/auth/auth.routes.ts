@@ -57,6 +57,24 @@ authRouter.post(
   asyncHandler((req: Request, res: Response) => getController().logout(req, res)),
 );
 
+authRouter.get(
+  '/sessions',
+  requireAuth,
+  asyncHandler((req: Request, res: Response) => getController().listSessions(req, res)),
+);
+
+authRouter.delete(
+  '/sessions/:id',
+  requireAuth,
+  asyncHandler((req: Request, res: Response) => getController().revokeSession(req, res)),
+);
+
+authRouter.delete(
+  '/sessions',
+  requireAuth,
+  asyncHandler((req: Request, res: Response) => getController().revokeOtherSessions(req, res)),
+);
+
 authRouter.post(
   '/forgot-password',
   forgotPasswordRateLimiter,

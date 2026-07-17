@@ -4,7 +4,7 @@ import type { HydratedDocument } from 'mongoose';
 import type { UserDocument } from '../../database/models/user.model.js';
 import type { EmailJobData } from '../../jobs/queues.js';
 import { DEFAULT_LOCALE } from '../../middlewares/i18n.middleware.js';
-import { ConflictError, UnauthorizedError } from '../../shared/errors/index.js';
+import { ConflictError, NotFoundError, UnauthorizedError } from '../../shared/errors/index.js';
 import { passwordChangedEmailTemplate } from '../notifications/email-templates/passwordChanged.template.js';
 import { passwordResetEmailTemplate } from '../notifications/email-templates/passwordReset.template.js';
 import { twoFactorStatusChangedEmailTemplate } from '../notifications/email-templates/twoFactorStatusChanged.template.js';
@@ -67,6 +67,15 @@ export interface EnableTwoFactorResult {
   // physiquement un QR Code (donc aussi non testable de bout en bout).
   secret: string;
   recoveryCodes: string[];
+}
+
+/** `GET /auth/sessions` (doc 07 §7.7) — jamais `tokenHash` (doc 05 : opaque côté client). */
+export interface SessionSummary {
+  id: string;
+  deviceInfo: { userAgent?: string; ip?: string; deviceLabel?: string };
+  createdAt: Date;
+  expiresAt: Date;
+  isCurrent: boolean;
 }
 
 /**
@@ -417,6 +426,64 @@ export class AuthService {
     if (storedToken && storedToken.revokedAt === null) {
       await this.authRepository.revokeRefreshToken(storedToken.id);
     }
+  }
+
+  /**
+   * `GET /auth/sessions` (doc 07 §7.7) : sessions actives de l'utilisateur.
+   * `isCurrent` compare au refresh token de la requête courante (cookie) —
+   * `tokenHash` lui-même n'est jamais exposé (doc 05 : opaque côté client).
+   */
+  async listSessions(
+    userId: string,
+    currentRawRefreshToken: string | undefined,
+  ): Promise<SessionSummary[]> {
+    const currentTokenHash = currentRawRefreshToken
+      ? hashRefreshToken(currentRawRefreshToken)
+      : undefined;
+    const sessions = await this.authRepository.findActiveRefreshTokensByUserId(userId);
+
+    return sessions.map((session) => ({
+      id: session.id,
+      deviceInfo: session.deviceInfo ?? {},
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+      isCurrent: currentTokenHash !== undefined && session.tokenHash === currentTokenHash,
+    }));
+  }
+
+  /**
+   * `DELETE /auth/sessions/:id` (doc 07 §7.7) : révoque une session
+   * spécifique — 404 générique si elle n'existe pas **ou** appartient à un
+   * autre utilisateur (anti-IDOR, doc 06 : jamais de distinction entre
+   * "introuvable" et "pas à vous").
+   */
+  async revokeSession(userId: string, sessionId: string): Promise<void> {
+    const session = await this.authRepository.findRefreshTokenById(sessionId);
+    if (!session || session.userId.toString() !== userId || session.revokedAt !== null) {
+      throw new NotFoundError('AUTH_SESSION_NOT_FOUND', 'Session introuvable.');
+    }
+
+    await this.authRepository.revokeRefreshToken(session.id);
+  }
+
+  /**
+   * `DELETE /auth/sessions` (doc 07 §7.7 : "déconnecter tous les autres
+   * appareils") — révoque toutes les sessions actives sauf celle de la
+   * requête courante (identifiée par le cookie `refreshToken`, si présent).
+   */
+  async revokeOtherSessions(
+    userId: string,
+    currentRawRefreshToken: string | undefined,
+  ): Promise<void> {
+    let currentSessionId: string | undefined;
+    if (currentRawRefreshToken) {
+      const currentSession = await this.authRepository.findRefreshTokenByHash(
+        hashRefreshToken(currentRawRefreshToken),
+      );
+      currentSessionId = currentSession?.id;
+    }
+
+    await this.authRepository.revokeAllUserRefreshTokensExcept(userId, currentSessionId);
   }
 
   /**

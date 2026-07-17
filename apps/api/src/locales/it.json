@@ -13,5 +13,6 @@
   "AUTH_2FA_ALREADY_ENABLED": "L'autenticazione a due fattori è già attiva.",
   "AUTH_2FA_NOT_ENABLED": "L'autenticazione a due fattori non è attiva.",
   "AUTH_2FA_INVALID_CODE": "Codice di verifica errato.",
-  "AUTH_2FA_CHALLENGE_INVALID": "Sessione di accesso non valida o scaduta, effettua di nuovo l'accesso."
+  "AUTH_2FA_CHALLENGE_INVALID": "Sessione di accesso non valida o scaduta, effettua di nuovo l'accesso.",
+  "AUTH_SESSION_NOT_FOUND": "Sessione non trovata."
 }

@@ -347,6 +347,80 @@ describe('AuthController#logout', () => {
   });
 });
 
+describe('AuthController#listSessions', () => {
+  it("appelle le service avec l'userId (req.auth) et le cookie refreshToken courant, renvoie la liste", async () => {
+    const sessions = [
+      {
+        id: 'session-a',
+        deviceInfo: { userAgent: 'test-agent' },
+        createdAt: new Date('2026-07-01'),
+        expiresAt: new Date('2026-08-01'),
+        isCurrent: true,
+      },
+    ];
+    const service = { listSessions: vi.fn().mockResolvedValue(sessions) } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = {
+      auth: { sub: 'user-a' },
+      cookies: { refreshToken: 'raw-refresh-token' },
+    } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.listSessions(req, res);
+
+    expect(service.listSessions).toHaveBeenCalledWith('user-a', 'raw-refresh-token');
+    expect(res.json).toHaveBeenCalledWith({ success: true, data: { sessions } });
+  });
+
+  it('rejette avec AUTH_TOKEN_MISSING si req.auth est absent', async () => {
+    const service = { listSessions: vi.fn() } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { cookies: {} } as unknown as Request;
+    const res = createMockRes();
+
+    await expect(controller.listSessions(req, res)).rejects.toMatchObject({
+      code: 'AUTH_TOKEN_MISSING',
+    });
+    expect(service.listSessions).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthController#revokeSession', () => {
+  it("appelle le service avec l'userId et l'id du paramètre de route, répond 204", async () => {
+    const service = {
+      revokeSession: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = { auth: { sub: 'user-a' }, params: { id: 'session-a' } } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.revokeSession(req, res);
+
+    expect(service.revokeSession).toHaveBeenCalledWith('user-a', 'session-a');
+    expect(res.status).toHaveBeenCalledWith(204);
+    expect(res.send).toHaveBeenCalledWith();
+  });
+});
+
+describe('AuthController#revokeOtherSessions', () => {
+  it("appelle le service avec l'userId et le cookie refreshToken courant, répond 204", async () => {
+    const service = {
+      revokeOtherSessions: vi.fn().mockResolvedValue(undefined),
+    } as unknown as AuthService;
+    const controller = new AuthController(service, true);
+    const req = {
+      auth: { sub: 'user-a' },
+      cookies: { refreshToken: 'raw-refresh-token' },
+    } as unknown as Request;
+    const res = createMockRes();
+
+    await controller.revokeOtherSessions(req, res);
+
+    expect(service.revokeOtherSessions).toHaveBeenCalledWith('user-a', 'raw-refresh-token');
+    expect(res.status).toHaveBeenCalledWith(204);
+  });
+});
+
 describe('AuthController#forgotPassword', () => {
   it('répond 200 avec data:null même quand le service ne fait rien (anti-énumération, doc 07 §7.5)', async () => {
     const service = {

@@ -13,5 +13,6 @@
   "AUTH_2FA_ALREADY_ENABLED": "La autenticación de dos factores ya está activada.",
   "AUTH_2FA_NOT_ENABLED": "La autenticación de dos factores no está activada.",
   "AUTH_2FA_INVALID_CODE": "Código de verificación incorrecto.",
-  "AUTH_2FA_CHALLENGE_INVALID": "Sesión de inicio de sesión inválida o caducada, vuelve a iniciar sesión."
+  "AUTH_2FA_CHALLENGE_INVALID": "Sesión de inicio de sesión inválida o caducada, vuelve a iniciar sesión.",
+  "AUTH_SESSION_NOT_FOUND": "Sesión no encontrada."
 }

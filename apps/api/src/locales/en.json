@@ -13,5 +13,6 @@
   "AUTH_2FA_ALREADY_ENABLED": "Two-factor authentication is already enabled.",
   "AUTH_2FA_NOT_ENABLED": "Two-factor authentication is not enabled.",
   "AUTH_2FA_INVALID_CODE": "Incorrect verification code.",
-  "AUTH_2FA_CHALLENGE_INVALID": "Invalid or expired login session, please log in again."
+  "AUTH_2FA_CHALLENGE_INVALID": "Invalid or expired login session, please log in again.",
+  "AUTH_SESSION_NOT_FOUND": "Session not found."
 }

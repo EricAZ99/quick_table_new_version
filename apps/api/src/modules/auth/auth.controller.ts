@@ -46,12 +46,10 @@ export class AuthController {
     // 2FA activée (doc 07 §7.3) : pas de session/cookie encore — le client
     // doit d'abord appeler `/2fa/verify` avec ce `challengeToken`.
     if (result.requires2FA) {
-      res
-        .status(200)
-        .json({
-          success: true,
-          data: { requires2FA: true, challengeToken: result.challengeToken },
-        });
+      res.status(200).json({
+        success: true,
+        data: { requires2FA: true, challengeToken: result.challengeToken },
+      });
       return;
     }
 
@@ -162,6 +160,37 @@ export class AuthController {
     await this.service.logout(this.getRefreshTokenCookie(req));
 
     res.clearCookie(REFRESH_TOKEN_COOKIE_NAME, { path: '/' });
+    res.status(204).send();
+  };
+
+  /** `GET /auth/sessions` (doc 07 §7.7) — nécessite `requireAuth`. */
+  listSessions = async (req: Request, res: Response): Promise<void> => {
+    const sessions = await this.service.listSessions(
+      this.requireUserId(req),
+      this.getRefreshTokenCookie(req),
+    );
+
+    res.status(200).json({ success: true, data: { sessions } });
+  };
+
+  /** `DELETE /auth/sessions/:id` (doc 07 §7.7) — révoque une session spécifique, nécessite `requireAuth`. */
+  revokeSession = async (req: Request, res: Response): Promise<void> => {
+    await this.service.revokeSession(this.requireUserId(req), req.params.id ?? '');
+
+    res.status(204).send();
+  };
+
+  /**
+   * `DELETE /auth/sessions` (doc 07 §7.7 : "déconnecter tous les autres
+   * appareils") — révoque toutes les sessions sauf la courante, nécessite
+   * `requireAuth`.
+   */
+  revokeOtherSessions = async (req: Request, res: Response): Promise<void> => {
+    await this.service.revokeOtherSessions(
+      this.requireUserId(req),
+      this.getRefreshTokenCookie(req),
+    );
+
     res.status(204).send();
   };
 

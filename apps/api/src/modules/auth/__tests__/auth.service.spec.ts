@@ -20,6 +20,7 @@ import { AuthService, type LoginOutcome, type LoginSessionResult } from '../auth
 import type { AccessTokenPayload } from '../jwt.js';
 import { verifyAccessToken } from '../jwt.js';
 import { hashRecoveryCode } from '../recoveryCode.util.js';
+import { hashRefreshToken } from '../refreshToken.util.js';
 import { encryptTwoFactorSecret } from '../twoFactorSecret.util.js';
 import { signTwoFactorChallengeToken } from '../twoFactorChallengeToken.js';
 import type { UsersRepository } from '../../users/users.repository.js';
@@ -75,6 +76,9 @@ function createAuthRepositoryMock(overrides: Partial<Record<string, unknown>> = 
     createPasswordResetToken: vi.fn().mockResolvedValue(undefined),
     findPasswordResetTokenByHash: vi.fn().mockResolvedValue(null),
     markPasswordResetTokenUsed: vi.fn().mockResolvedValue(undefined),
+    findActiveRefreshTokensByUserId: vi.fn().mockResolvedValue([]),
+    findRefreshTokenById: vi.fn().mockResolvedValue(null),
+    revokeAllUserRefreshTokensExcept: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   } as unknown as AuthRepository;
 }
@@ -800,5 +804,143 @@ describe('AuthService#disableTwoFactor', () => {
       code: 'AUTH_2FA_NOT_ENABLED',
       httpStatus: 401,
     });
+  });
+});
+
+function createStoredSession(overrides: Partial<Record<string, unknown>> = {}) {
+  return {
+    id: 'session-id-a',
+    userId: { toString: () => 'user-a' },
+    tokenHash: 'a'.repeat(64),
+    deviceInfo: { userAgent: 'test-agent', ip: '203.0.113.42' },
+    createdAt: new Date('2026-07-01'),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    revokedAt: null,
+    ...overrides,
+  };
+}
+
+describe('AuthService#listSessions', () => {
+  it('liste les sessions actives, marque isCurrent sur celle correspondant au cookie fourni', async () => {
+    const currentSession = createStoredSession({
+      id: 'session-current',
+      tokenHash: hashRefreshToken('raw-current'),
+    });
+    const otherSession = createStoredSession({ id: 'session-other', tokenHash: 'b'.repeat(64) });
+    const authRepository = createAuthRepositoryMock({
+      findActiveRefreshTokensByUserId: vi.fn().mockResolvedValue([currentSession, otherSession]),
+    });
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    const sessions = await service.listSessions('user-a', 'raw-current');
+
+    expect(sessions).toHaveLength(2);
+    expect(sessions.find((s) => s.id === 'session-current')?.isCurrent).toBe(true);
+    expect(sessions.find((s) => s.id === 'session-other')?.isCurrent).toBe(false);
+    expect(authRepository.findActiveRefreshTokensByUserId).toHaveBeenCalledWith('user-a');
+  });
+
+  it('ne marque jamais isCurrent quand aucun cookie de session courante ne correspond', async () => {
+    const authRepository = createAuthRepositoryMock({
+      findActiveRefreshTokensByUserId: vi.fn().mockResolvedValue([createStoredSession()]),
+    });
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    const sessions = await service.listSessions('user-a', undefined);
+
+    expect(sessions[0]?.isCurrent).toBe(false);
+  });
+
+  it('ne retourne jamais tokenHash (doc 05 : opaque côté client)', async () => {
+    const authRepository = createAuthRepositoryMock({
+      findActiveRefreshTokensByUserId: vi.fn().mockResolvedValue([createStoredSession()]),
+    });
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    const sessions = await service.listSessions('user-a', undefined);
+
+    expect(sessions[0]).not.toHaveProperty('tokenHash');
+  });
+});
+
+describe('AuthService#revokeSession', () => {
+  it('révoque une session appartenant bien au userId fourni', async () => {
+    const session = createStoredSession();
+    const authRepository = createAuthRepositoryMock({
+      findRefreshTokenById: vi.fn().mockResolvedValue(session),
+    });
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    await service.revokeSession('user-a', 'session-id-a');
+
+    expect(authRepository.revokeRefreshToken).toHaveBeenCalledWith('session-id-a');
+  });
+
+  it('rejette (404 générique, anti-IDOR) si la session appartient à un autre utilisateur', async () => {
+    const session = createStoredSession({ userId: { toString: () => 'un-autre-user' } });
+    const authRepository = createAuthRepositoryMock({
+      findRefreshTokenById: vi.fn().mockResolvedValue(session),
+    });
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    await expect(service.revokeSession('user-a', 'session-id-a')).rejects.toMatchObject({
+      code: 'AUTH_SESSION_NOT_FOUND',
+      httpStatus: 404,
+    });
+    expect(authRepository.revokeRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it('rejette (404) si la session n’existe pas', async () => {
+    const authRepository = createAuthRepositoryMock({
+      findRefreshTokenById: vi.fn().mockResolvedValue(null),
+    });
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    await expect(service.revokeSession('user-a', 'inconnu')).rejects.toMatchObject({
+      code: 'AUTH_SESSION_NOT_FOUND',
+      httpStatus: 404,
+    });
+  });
+
+  it('rejette (404) si la session est déjà révoquée', async () => {
+    const session = createStoredSession({ revokedAt: new Date() });
+    const authRepository = createAuthRepositoryMock({
+      findRefreshTokenById: vi.fn().mockResolvedValue(session),
+    });
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    await expect(service.revokeSession('user-a', 'session-id-a')).rejects.toMatchObject({
+      code: 'AUTH_SESSION_NOT_FOUND',
+      httpStatus: 404,
+    });
+  });
+});
+
+describe('AuthService#revokeOtherSessions', () => {
+  it('révoque toutes les sessions sauf celle identifiée par le cookie courant', async () => {
+    const currentSession = createStoredSession({ id: 'session-current' });
+    const authRepository = createAuthRepositoryMock({
+      findRefreshTokenByHash: vi.fn().mockResolvedValue(currentSession),
+    });
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    await service.revokeOtherSessions('user-a', 'raw-current');
+
+    expect(authRepository.revokeAllUserRefreshTokensExcept).toHaveBeenCalledWith(
+      'user-a',
+      'session-current',
+    );
+  });
+
+  it("révoque toutes les sessions sans exclusion si aucun cookie n'est fourni", async () => {
+    const authRepository = createAuthRepositoryMock();
+    const service = createService(createUsersRepositoryMock(), authRepository);
+
+    await service.revokeOtherSessions('user-a', undefined);
+
+    expect(authRepository.revokeAllUserRefreshTokensExcept).toHaveBeenCalledWith(
+      'user-a',
+      undefined,
+    );
   });
 });

@@ -4,7 +4,14 @@ vi.mock('../../../database/models/membership.model.js', () => ({
   MembershipModel: { find: vi.fn() },
 }));
 vi.mock('../../../database/models/refreshToken.model.js', () => ({
-  RefreshTokenModel: { create: vi.fn(), findOne: vi.fn(), updateOne: vi.fn(), updateMany: vi.fn() },
+  RefreshTokenModel: {
+    create: vi.fn(),
+    findOne: vi.fn(),
+    findById: vi.fn(),
+    find: vi.fn(),
+    updateOne: vi.fn(),
+    updateMany: vi.fn(),
+  },
 }));
 vi.mock('../../../database/models/passwordResetToken.model.js', () => ({
   PasswordResetTokenModel: { create: vi.fn(), findOne: vi.fn(), updateOne: vi.fn() },
@@ -67,6 +74,57 @@ describe('AuthRepository', () => {
     const [filter, update] = vi.mocked(RefreshTokenModel.updateMany).mock.calls[0] ?? [];
     expect(filter).toEqual({ userId: 'user-a', revokedAt: null });
     expect((update as { revokedAt: Date }).revokedAt).toBeInstanceOf(Date);
+  });
+
+  it('findActiveRefreshTokensByUserId() interroge les sessions non révoquées et non expirées, triées récent en premier', () => {
+    const sort = vi.fn();
+    vi.mocked(RefreshTokenModel.find).mockReturnValue({ sort } as never);
+    const repository = new AuthRepository();
+
+    repository.findActiveRefreshTokensByUserId('user-a');
+
+    const [filter] = vi.mocked(RefreshTokenModel.find).mock.calls[0] as unknown as [
+      { userId: string; revokedAt: null; expiresAt: { $gt: Date } },
+    ];
+    expect(filter.userId).toBe('user-a');
+    expect(filter.revokedAt).toBeNull();
+    expect(filter.expiresAt.$gt).toBeInstanceOf(Date);
+    expect(sort).toHaveBeenCalledWith({ createdAt: -1 });
+  });
+
+  it('findRefreshTokenById() délègue directement à RefreshTokenModel.findById', async () => {
+    const repository = new AuthRepository();
+
+    await repository.findRefreshTokenById('token-id-a');
+
+    expect(RefreshTokenModel.findById).toHaveBeenCalledWith('token-id-a');
+  });
+
+  it("revokeAllUserRefreshTokensExcept() exclut l'id fourni du filtre de révocation", async () => {
+    const repository = new AuthRepository();
+
+    await repository.revokeAllUserRefreshTokensExcept('user-a', 'current-session-id');
+
+    const [filter, update] = vi
+      .mocked(RefreshTokenModel.updateMany)
+      .mock.calls.at(-1) as unknown as [Record<string, unknown>, { revokedAt: Date }];
+    expect(filter).toEqual({
+      userId: 'user-a',
+      revokedAt: null,
+      _id: { $ne: 'current-session-id' },
+    });
+    expect(update.revokedAt).toBeInstanceOf(Date);
+  });
+
+  it("revokeAllUserRefreshTokensExcept() n'exclut rien si exceptId est undefined (aucune session courante connue)", async () => {
+    const repository = new AuthRepository();
+
+    await repository.revokeAllUserRefreshTokensExcept('user-a', undefined);
+
+    const [filter] = vi.mocked(RefreshTokenModel.updateMany).mock.calls.at(-1) as unknown as [
+      Record<string, unknown>,
+    ];
+    expect(filter).toEqual({ userId: 'user-a', revokedAt: null });
   });
 
   it('createPasswordResetToken() délègue directement à PasswordResetTokenModel.create', async () => {

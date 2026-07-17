@@ -13,5 +13,6 @@
   "AUTH_2FA_ALREADY_ENABLED": "La double authentification est déjà activée.",
   "AUTH_2FA_NOT_ENABLED": "La double authentification n'est pas activée.",
   "AUTH_2FA_INVALID_CODE": "Code de vérification incorrect.",
-  "AUTH_2FA_CHALLENGE_INVALID": "Session de connexion invalide ou expirée, veuillez vous reconnecter."
+  "AUTH_2FA_CHALLENGE_INVALID": "Session de connexion invalide ou expirée, veuillez vous reconnecter.",
+  "AUTH_SESSION_NOT_FOUND": "Session introuvable."
 }

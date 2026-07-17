@@ -55,6 +55,31 @@ export class AuthRepository {
     return RefreshTokenModel.updateMany({ userId, revokedAt: null }, { revokedAt: new Date() });
   }
 
+  /** `GET /auth/sessions` (doc 07 §7.7) : sessions actives, plus récentes en premier. */
+  findActiveRefreshTokensByUserId(userId: string) {
+    return RefreshTokenModel.find({
+      userId,
+      revokedAt: null,
+      expiresAt: { $gt: new Date() },
+    }).sort({ createdAt: -1 });
+  }
+
+  findRefreshTokenById(id: string) {
+    return RefreshTokenModel.findById(id);
+  }
+
+  /**
+   * `DELETE /auth/sessions` (doc 07 §7.7 : "déconnecter tous les autres
+   * appareils") — révoque toutes les sessions actives **sauf** celle
+   * identifiée par `exceptId` (la session courante, si connue).
+   */
+  revokeAllUserRefreshTokensExcept(userId: string, exceptId: string | undefined) {
+    return RefreshTokenModel.updateMany(
+      { userId, revokedAt: null, ...(exceptId ? { _id: { $ne: exceptId } } : {}) },
+      { revokedAt: new Date() },
+    );
+  }
+
   createPasswordResetToken(input: CreatePasswordResetTokenInput) {
     return PasswordResetTokenModel.create(input);
   }

@@ -5,7 +5,7 @@ import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { generate } from 'otplib';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { createApp } from '../../../app.js';
 import { connectDatabase, disconnectDatabase } from '../../../config/database.js';
@@ -27,6 +27,13 @@ const mongodbUri = process.env.MONGODB_URI;
 const redisUrl = process.env.REDIS_URL;
 const jwtSecret = process.env.JWT_SECRET;
 const hasRealCredentials = Boolean(mongodbUri && redisUrl && jwtSecret);
+
+// Ce fichier grandit à chaque nouveau ticket auth (login, 2FA, sessions...)
+// et chaque test enchaîne plusieurs aller-retours HTTP réels contre
+// MongoDB Atlas/Redis Upstash — le défaut vitest (5s) devenait trop court
+// au fur et à mesure, faisant échouer un test différent à chaque run selon
+// la latence réseau du moment plutôt qu'un vrai bug applicatif.
+vi.setConfig({ testTimeout: 15000 });
 
 interface SuccessBody {
   success: true;
@@ -51,6 +58,25 @@ function extractRefreshTokenCookie(setCookieHeader: string[]): string {
     throw new Error('Aucun cookie refreshToken trouvé dans la réponse — bug dans le test lui-même');
   }
   return cookie.split(';')[0] ?? '';
+}
+
+/**
+ * `queue.add()` est attendu par `AuthService` avant que la réponse HTTP ne
+ * parte (donc le job est déjà écrit quand le test lit la réponse), mais
+ * cette suite tourne contre un vrai Redis managé (Upstash) partagé avec
+ * beaucoup d'autres commandes concurrentes (rate limiting, autres tests) —
+ * un court polling absorbe une éventuelle latence de visibilité plutôt que
+ * de supposer un bug applicatif sur un simple flake d'infra.
+ */
+async function waitForEmailJobTo(recipient: string): Promise<boolean> {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const jobs = await getEmailQueue().getJobs(['waiting', 'delayed', 'active', 'completed']);
+    if (jobs.some((job) => job.data.to === recipient)) {
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  return false;
 }
 
 /**
@@ -358,10 +384,8 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       expect(storedTokens[0]?.usedAt).toBeNull();
 
       // Vérifie que l'email de réinitialisation a bien été enfilé sur la
-      // vraie queue BullMQ/Redis (pas juste que le token a été stocké) —
-      // aucun worker ne tourne pendant ce test, le job reste `waiting`.
-      const jobs = await getEmailQueue().getJobs(['waiting', 'delayed']);
-      expect(jobs.some((job) => job.data.to === forgotEmail)).toBe(true);
+      // vraie queue BullMQ/Redis (pas juste que le token a été stocké).
+      expect(await waitForEmailJobTo(forgotEmail)).toBe(true);
     });
 
     it('répond de façon identique (200, data:null) pour un email inconnu — anti-énumération, aucun token créé', async () => {
@@ -438,8 +462,7 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       // nouvelle session issue de `loginWithNewPassword` ci-dessus reste active.
       expect(activeSessions).toBe(1);
 
-      const jobs = await getEmailQueue().getJobs(['waiting', 'delayed']);
-      expect(jobs.some((job) => job.data.to === resetEmail)).toBe(true);
+      expect(await waitForEmailJobTo(resetEmail)).toBe(true);
     });
 
     it('rejette un token inconnu (401 AUTH_RESET_TOKEN_INVALID)', async () => {
@@ -574,8 +597,7 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       const setCookie = verifyResponse.headers['set-cookie'] as unknown as string[];
       expect(setCookie.some((cookie) => cookie.startsWith('refreshToken='))).toBe(true);
 
-      const jobs = await getEmailQueue().getJobs(['waiting', 'delayed']);
-      expect(jobs.some((job) => job.data.to === twoFactorEmail)).toBe(true);
+      expect(await waitForEmailJobTo(twoFactorEmail)).toBe(true);
     });
 
     it('rejette /2fa/verify avec un code incorrect (401 AUTH_2FA_INVALID_CODE)', async () => {
@@ -681,6 +703,163 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
 
     it('rejette /2fa/enable sans Access Token (401 AUTH_TOKEN_MISSING)', async () => {
       const response = await request(createApp()).post('/api/v1/auth/2fa/enable').send();
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_TOKEN_MISSING');
+    });
+  });
+
+  describe('GET/DELETE /api/v1/auth/sessions — gestion des sessions', () => {
+    interface SessionsBody {
+      success: true;
+      data: {
+        sessions: {
+          id: string;
+          deviceInfo: { userAgent?: string; ip?: string };
+          isCurrent: boolean;
+        }[];
+      };
+    }
+
+    async function loginAs(
+      app: ReturnType<typeof createApp>,
+      sessionEmail: string,
+      userAgent: string,
+    ) {
+      const response = await request(app)
+        .post('/api/v1/auth/login')
+        .set('User-Agent', userAgent)
+        .send({ email: sessionEmail, password });
+      const body = response.body as SuccessBody;
+      const setCookie = response.headers['set-cookie'] as unknown as string[];
+      return {
+        accessToken: body.data.accessToken,
+        refreshTokenCookie: extractRefreshTokenCookie(setCookie),
+      };
+    }
+
+    it('liste les sessions actives avec deviceInfo, marque isCurrent sur celle de la requête courante', async () => {
+      const app = createApp();
+      const sessionsEmail = `auth-integration-sessions-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      await UserModel.create({
+        email: sessionsEmail,
+        passwordHash,
+        fullName: 'Intégration Sessions',
+      });
+
+      const deviceA = await loginAs(app, sessionsEmail, 'device-A-agent');
+      await loginAs(app, sessionsEmail, 'device-B-agent');
+
+      const response = await request(app)
+        .get('/api/v1/auth/sessions')
+        .set('Authorization', `Bearer ${deviceA.accessToken}`)
+        .set('Cookie', deviceA.refreshTokenCookie);
+      const body = response.body as SessionsBody;
+
+      expect(response.status).toBe(200);
+      expect(body.data.sessions).toHaveLength(2);
+      const current = body.data.sessions.find((s) => s.isCurrent);
+      expect(current?.deviceInfo.userAgent).toBe('device-A-agent');
+      expect(body.data.sessions.filter((s) => !s.isCurrent)).toHaveLength(1);
+    });
+
+    it('révoque une session spécifique par id, qui disparaît ensuite de la liste', async () => {
+      const app = createApp();
+      const sessionsEmail = `auth-integration-sessions-revoke-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      await UserModel.create({
+        email: sessionsEmail,
+        passwordHash,
+        fullName: 'Intégration Sessions Revoke',
+      });
+
+      const deviceA = await loginAs(app, sessionsEmail, 'device-A-agent');
+      await loginAs(app, sessionsEmail, 'device-B-agent');
+
+      const listBefore = await request(app)
+        .get('/api/v1/auth/sessions')
+        .set('Authorization', `Bearer ${deviceA.accessToken}`)
+        .set('Cookie', deviceA.refreshTokenCookie);
+      const bodyBefore = listBefore.body as SessionsBody;
+      const deviceBSession = bodyBefore.data.sessions.find((s) => !s.isCurrent);
+
+      const deleteResponse = await request(app)
+        .delete(`/api/v1/auth/sessions/${deviceBSession?.id}`)
+        .set('Authorization', `Bearer ${deviceA.accessToken}`)
+        .set('Cookie', deviceA.refreshTokenCookie);
+      expect(deleteResponse.status).toBe(204);
+
+      const listAfter = await request(app)
+        .get('/api/v1/auth/sessions')
+        .set('Authorization', `Bearer ${deviceA.accessToken}`)
+        .set('Cookie', deviceA.refreshTokenCookie);
+      const bodyAfter = listAfter.body as SessionsBody;
+
+      expect(bodyAfter.data.sessions).toHaveLength(1);
+      expect(bodyAfter.data.sessions[0]?.isCurrent).toBe(true);
+    });
+
+    it("rejette (404 anti-IDOR) la révocation d'une session appartenant à un autre utilisateur", async () => {
+      const app = createApp();
+      const userAEmail = `auth-integration-sessions-idor-a-${Date.now()}@quicktable.io`;
+      const userBEmail = `auth-integration-sessions-idor-b-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      await UserModel.create({ email: userAEmail, passwordHash, fullName: 'Intégration IDOR A' });
+      await UserModel.create({ email: userBEmail, passwordHash, fullName: 'Intégration IDOR B' });
+
+      const userA = await loginAs(app, userAEmail, 'device-A-agent');
+      const userB = await loginAs(app, userBEmail, 'device-B-agent');
+
+      const userBSessions = await request(app)
+        .get('/api/v1/auth/sessions')
+        .set('Authorization', `Bearer ${userB.accessToken}`)
+        .set('Cookie', userB.refreshTokenCookie);
+      const userBSessionId = (userBSessions.body as SessionsBody).data.sessions[0]?.id;
+
+      const response = await request(app)
+        .delete(`/api/v1/auth/sessions/${userBSessionId}`)
+        .set('Authorization', `Bearer ${userA.accessToken}`)
+        .set('Cookie', userA.refreshTokenCookie);
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(404);
+      expect(body.error.code).toBe('AUTH_SESSION_NOT_FOUND');
+    });
+
+    it('révoque toutes les autres sessions (garde uniquement la session courante)', async () => {
+      const app = createApp();
+      const sessionsEmail = `auth-integration-sessions-others-${Date.now()}@quicktable.io`;
+      const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+      await UserModel.create({
+        email: sessionsEmail,
+        passwordHash,
+        fullName: 'Intégration Sessions Others',
+      });
+
+      const deviceA = await loginAs(app, sessionsEmail, 'device-A-agent');
+      await loginAs(app, sessionsEmail, 'device-B-agent');
+      await loginAs(app, sessionsEmail, 'device-C-agent');
+
+      const deleteResponse = await request(app)
+        .delete('/api/v1/auth/sessions')
+        .set('Authorization', `Bearer ${deviceA.accessToken}`)
+        .set('Cookie', deviceA.refreshTokenCookie);
+      expect(deleteResponse.status).toBe(204);
+
+      const listAfter = await request(app)
+        .get('/api/v1/auth/sessions')
+        .set('Authorization', `Bearer ${deviceA.accessToken}`)
+        .set('Cookie', deviceA.refreshTokenCookie);
+      const bodyAfter = listAfter.body as SessionsBody;
+
+      expect(bodyAfter.data.sessions).toHaveLength(1);
+      expect(bodyAfter.data.sessions[0]?.isCurrent).toBe(true);
+    });
+
+    it('rejette GET /sessions sans Access Token (401 AUTH_TOKEN_MISSING)', async () => {
+      const response = await request(createApp()).get('/api/v1/auth/sessions');
       const body = response.body as ErrorBody;
 
       expect(response.status).toBe(401);
