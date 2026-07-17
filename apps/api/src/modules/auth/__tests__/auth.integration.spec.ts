@@ -399,6 +399,44 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       expect(response.body).toEqual({ success: true, data: null });
       expect(await PasswordResetTokenModel.countDocuments({})).toBe(countBefore);
     });
+
+    it('rejette un email invalide en 400 AUTH_INVALID_PAYLOAD (doc 31 §31.3)', async () => {
+      const response = await request(createApp())
+        .post('/api/v1/auth/forgot-password')
+        .send({ email: 'pas-un-email' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(400);
+      expect(body.error.code).toBe('AUTH_INVALID_PAYLOAD');
+    });
+
+    it('verrouille après 3 tentatives (doc 13 §13.2 : 3/IP/1h) — 429 AUTH_FORGOT_PASSWORD_RATE_LIMITED', async () => {
+      // Les tests précédents de ce bloc ont déjà consommé une partie du
+      // quota (3/IP/1h, comptabilisé avant même la validation du payload) —
+      // on repart d'un compteur propre pour que ce test ne dépende pas de
+      // l'ordre d'exécution des autres tests du bloc.
+      const staleKeys = await getRedisClient().keys('auth:forgot-password-rl:*');
+      if (staleKeys.length > 0) {
+        await getRedisClient().del(staleKeys);
+      }
+
+      const app = createApp();
+
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const response = await request(app)
+          .post('/api/v1/auth/forgot-password')
+          .send({ email: `auth-integration-forgot-rl-${attempt}-${Date.now()}@quicktable.io` });
+        expect(response.status).toBe(200);
+      }
+
+      const fourthAttempt = await request(app)
+        .post('/api/v1/auth/forgot-password')
+        .send({ email: `auth-integration-forgot-rl-4-${Date.now()}@quicktable.io` });
+      const body = fourthAttempt.body as ErrorBody;
+
+      expect(fourthAttempt.status).toBe(429);
+      expect(body.error.code).toBe('AUTH_FORGOT_PASSWORD_RATE_LIMITED');
+    });
   });
 
   describe('POST /api/v1/auth/reset-password', () => {
@@ -708,6 +746,211 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
       expect(response.status).toBe(401);
       expect(body.error.code).toBe('AUTH_TOKEN_MISSING');
     });
+
+    async function enableTwoFactor(app: ReturnType<typeof createApp>, accessToken: string) {
+      const enableResponse = await request(app)
+        .post('/api/v1/auth/2fa/enable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send();
+      return enableResponse.body as EnableBody;
+    }
+
+    async function confirmTwoFactor(
+      app: ReturnType<typeof createApp>,
+      accessToken: string,
+      secret: string,
+    ) {
+      const code = await generate({ secret });
+      return request(app)
+        .post('/api/v1/auth/2fa/confirm')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ code });
+    }
+
+    it('rejette /2fa/enable en 409 AUTH_2FA_ALREADY_ENABLED si la 2FA est déjà activée', async () => {
+      const app = createApp();
+      const { accessToken } = await createUserAndLogin(app);
+      const enableBody = await enableTwoFactor(app, accessToken);
+      await confirmTwoFactor(app, accessToken, enableBody.data.secret);
+
+      const response = await request(app)
+        .post('/api/v1/auth/2fa/enable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send();
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(409);
+      expect(body.error.code).toBe('AUTH_2FA_ALREADY_ENABLED');
+    });
+
+    it('rejette /2fa/confirm sans Access Token (401 AUTH_TOKEN_MISSING)', async () => {
+      const response = await request(createApp())
+        .post('/api/v1/auth/2fa/confirm')
+        .send({ code: '123456' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_TOKEN_MISSING');
+    });
+
+    it('rejette /2fa/confirm sans code en 400 AUTH_INVALID_PAYLOAD', async () => {
+      const app = createApp();
+      const { accessToken } = await createUserAndLogin(app);
+
+      const response = await request(app)
+        .post('/api/v1/auth/2fa/confirm')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({});
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(400);
+      expect(body.error.code).toBe('AUTH_INVALID_PAYLOAD');
+    });
+
+    it('rejette /2fa/confirm avec un code TOTP incorrect (401 AUTH_2FA_INVALID_CODE)', async () => {
+      const app = createApp();
+      const { accessToken } = await createUserAndLogin(app);
+      await enableTwoFactor(app, accessToken);
+
+      const response = await request(app)
+        .post('/api/v1/auth/2fa/confirm')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ code: '000000' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_2FA_INVALID_CODE');
+    });
+
+    it('rejette /2fa/confirm en 409 AUTH_2FA_ALREADY_ENABLED si rejoué après une première confirmation réussie', async () => {
+      const app = createApp();
+      const { accessToken } = await createUserAndLogin(app);
+      const enableBody = await enableTwoFactor(app, accessToken);
+      const firstConfirm = await confirmTwoFactor(app, accessToken, enableBody.data.secret);
+      expect(firstConfirm.status).toBe(200);
+
+      const secondConfirm = await confirmTwoFactor(app, accessToken, enableBody.data.secret);
+      const body = secondConfirm.body as ErrorBody;
+
+      expect(secondConfirm.status).toBe(409);
+      expect(body.error.code).toBe('AUTH_2FA_ALREADY_ENABLED');
+    });
+
+    it('rejette /2fa/verify sans challengeToken ni code en 400 AUTH_INVALID_PAYLOAD', async () => {
+      const response = await request(createApp()).post('/api/v1/auth/2fa/verify').send({});
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(400);
+      expect(body.error.code).toBe('AUTH_INVALID_PAYLOAD');
+    });
+
+    it('rejette /2fa/verify avec un challengeToken invalide (401 AUTH_2FA_CHALLENGE_INVALID)', async () => {
+      const response = await request(createApp())
+        .post('/api/v1/auth/2fa/verify')
+        .send({ challengeToken: 'jamais-emis-ou-corrompu', code: '123456' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_2FA_CHALLENGE_INVALID');
+    });
+
+    it('verrouille /2fa/verify après 5 tentatives (doc 13 §13.1 A07, 5/(challengeToken,IP)/5min) — 429 AUTH_LOGIN_RATE_LIMITED', async () => {
+      const app = createApp();
+      const { twoFactorEmail, accessToken } = await createUserAndLogin(app);
+      const enableBody = await enableTwoFactor(app, accessToken);
+      await confirmTwoFactor(app, accessToken, enableBody.data.secret);
+
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: twoFactorEmail, password });
+      const challengeToken = (loginResponse.body as TwoFactorLoginBody).data.challengeToken;
+
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const response = await request(app)
+          .post('/api/v1/auth/2fa/verify')
+          .send({ challengeToken, code: '000000' });
+        expect(response.status).toBe(401);
+      }
+
+      const sixthAttempt = await request(app)
+        .post('/api/v1/auth/2fa/verify')
+        .send({ challengeToken, code: '000000' });
+      const body = sixthAttempt.body as ErrorBody;
+
+      expect(sixthAttempt.status).toBe(429);
+      expect(body.error.code).toBe('AUTH_LOGIN_RATE_LIMITED');
+    }, 20000);
+
+    it('rejette /2fa/disable sans Access Token (401 AUTH_TOKEN_MISSING)', async () => {
+      const response = await request(createApp())
+        .post('/api/v1/auth/2fa/disable')
+        .send({ password: 'x', code: '123456' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_TOKEN_MISSING');
+    });
+
+    it('rejette /2fa/disable sans password ni code en 400 AUTH_INVALID_PAYLOAD', async () => {
+      const app = createApp();
+      const { accessToken } = await createUserAndLogin(app);
+
+      const response = await request(app)
+        .post('/api/v1/auth/2fa/disable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({});
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(400);
+      expect(body.error.code).toBe('AUTH_INVALID_PAYLOAD');
+    });
+
+    it("rejette /2fa/disable en 401 AUTH_2FA_NOT_ENABLED si la 2FA n'est pas activée", async () => {
+      const app = createApp();
+      const { accessToken } = await createUserAndLogin(app);
+
+      const response = await request(app)
+        .post('/api/v1/auth/2fa/disable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password, code: '123456' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_2FA_NOT_ENABLED');
+    });
+
+    it('rejette /2fa/disable avec un mauvais mot de passe (401 AUTH_INVALID_CREDENTIALS), même avec un code TOTP valide', async () => {
+      const app = createApp();
+      const { accessToken } = await createUserAndLogin(app);
+      const enableBody = await enableTwoFactor(app, accessToken);
+      await confirmTwoFactor(app, accessToken, enableBody.data.secret);
+
+      const code = await generate({ secret: enableBody.data.secret });
+      const response = await request(app)
+        .post('/api/v1/auth/2fa/disable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'mauvais-mot-de-passe', code });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_INVALID_CREDENTIALS');
+    });
+
+    it('rejette /2fa/disable avec un code incorrect (401 AUTH_2FA_INVALID_CODE), même avec le bon mot de passe', async () => {
+      const app = createApp();
+      const { accessToken } = await createUserAndLogin(app);
+      const enableBody = await enableTwoFactor(app, accessToken);
+      await confirmTwoFactor(app, accessToken, enableBody.data.secret);
+
+      const response = await request(app)
+        .post('/api/v1/auth/2fa/disable')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password, code: '000000' });
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_2FA_INVALID_CODE');
+    });
   });
 
   describe('GET/DELETE /api/v1/auth/sessions — gestion des sessions', () => {
@@ -860,6 +1103,24 @@ describe.skipIf(!hasRealCredentials)('POST /api/v1/auth/login — intégration r
 
     it('rejette GET /sessions sans Access Token (401 AUTH_TOKEN_MISSING)', async () => {
       const response = await request(createApp()).get('/api/v1/auth/sessions');
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_TOKEN_MISSING');
+    });
+
+    it('rejette DELETE /sessions/:id sans Access Token (401 AUTH_TOKEN_MISSING)', async () => {
+      const response = await request(createApp()).delete(
+        '/api/v1/auth/sessions/000000000000000000000000',
+      );
+      const body = response.body as ErrorBody;
+
+      expect(response.status).toBe(401);
+      expect(body.error.code).toBe('AUTH_TOKEN_MISSING');
+    });
+
+    it('rejette DELETE /sessions sans Access Token (401 AUTH_TOKEN_MISSING)', async () => {
+      const response = await request(createApp()).delete('/api/v1/auth/sessions');
       const body = response.body as ErrorBody;
 
       expect(response.status).toBe(401);
