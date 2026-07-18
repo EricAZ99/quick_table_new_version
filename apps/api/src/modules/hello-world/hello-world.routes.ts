@@ -1,5 +1,7 @@
 import { Router } from 'express';
 
+import { requireAuth } from '../../middlewares/auth.middleware.js';
+import { resolveTenant } from '../../middlewares/tenant.middleware.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
 import { HelloWorldController } from './hello-world.controller.js';
 import { HelloWorldRepository } from './hello-world.repository.js';
@@ -11,5 +13,5 @@ const controller = new HelloWorldController(service);
 
 export const helloWorldRouter = Router();
 
-helloWorldRouter.post('/', asyncHandler(controller.create));
-helloWorldRouter.get('/', asyncHandler(controller.list));
+helloWorldRouter.post('/', requireAuth, resolveTenant, asyncHandler(controller.create));
+helloWorldRouter.get('/', requireAuth, resolveTenant, asyncHandler(controller.list));

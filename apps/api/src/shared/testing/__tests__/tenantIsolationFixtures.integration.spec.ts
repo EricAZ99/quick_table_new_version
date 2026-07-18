@@ -30,16 +30,17 @@ const jwtSecret = process.env.JWT_SECRET;
 const hasRealCredentials = Boolean(mongodbUri && jwtSecret);
 
 /**
- * Ce fichier ne teste pas un endpoint métier réel (aucun n'existe encore
- * derrière `requireAuth`/`resolveTenant`, `hello-world` restant le seul
- * modèle tenant-scoped disponible — voir sa propre note sur
- * `DEMO_TENANT_ID`, non branché sur l'auth réelle, hors périmètre de ce
- * ticket). Il démontre que l'infrastructure de fixtures
- * (`tenantIsolationFixtures.ts`) permet bien de faire remonter, à travers
- * la chaîne complète `requireAuth` -> `resolveTenant` -> `BaseRepository`,
- * le comportement attendu par doc 06 §6.4 point 3 : un tenant B ne peut
- * ni lire ni modifier une ressource de tenant A — toujours 404, jamais
- * 403 (anti-IDOR).
+ * Ce fichier ne teste pas un endpoint métier réel — au moment où il a été
+ * écrit, `hello-world` (seul modèle tenant-scoped existant) n'était pas
+ * encore branché sur `requireAuth`/`resolveTenant` (branché depuis, voir
+ * `hello-world.integration.spec.ts`, qui réutilise directement cette même
+ * infrastructure de fixtures). Il démontre que l'infrastructure de
+ * fixtures (`tenantIsolationFixtures.ts`) permet bien de faire remonter,
+ * à travers la chaîne complète `requireAuth` -> `resolveTenant` ->
+ * `BaseRepository`, le comportement attendu par doc 06 §6.4 point 3 : un
+ * tenant B ne peut ni lire ni modifier une ressource de tenant A —
+ * toujours 404, jamais 403 (anti-IDOR), y compris sur une opération
+ * (`DELETE`) que `hello-world` n'expose pas.
  */
 describe.skipIf(!hasRealCredentials)("Infrastructure de tests d'isolation multi-tenant", () => {
   const repository = new HelloWorldRepository();
