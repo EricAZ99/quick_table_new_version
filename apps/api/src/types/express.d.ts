@@ -1,6 +1,7 @@
 import type { Logger } from 'pino';
 
 import type { AccessTokenPayload } from '../modules/auth/jwt.js';
+import type { TenantContext } from '../middlewares/tenant.middleware.js';
 import type { SupportedLocale } from '../middlewares/i18n.middleware.js';
 
 // Types globaux backend (doc 03 §3.3) : augmentation d'Express.Request.
@@ -15,6 +16,8 @@ declare global {
       locale: SupportedLocale;
       /** Attaché par `auth.middleware.ts` (`requireAuth`) — absent si la route ne le monte pas. */
       auth?: AccessTokenPayload;
+      /** Attaché par `tenant.middleware.ts` (`resolveTenant`) — absent si la route ne le monte pas. */
+      context?: TenantContext;
     }
   }
 }
