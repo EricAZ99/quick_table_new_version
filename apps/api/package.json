@@ -13,7 +13,8 @@
     "start:worker": "node dist/workers/worker.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "seed:country-defaults": "tsx src/database/seeders/run-country-defaults.ts"
+    "seed:country-defaults": "tsx src/database/seeders/run-country-defaults.ts",
+    "seed:role-definitions": "tsx src/database/seeders/run-role-definitions.ts"
   },
   "dependencies": {
     "argon2": "^0.44.0",
