@@ -16,5 +16,6 @@
   "AUTH_2FA_CHALLENGE_INVALID": "Sessione di accesso non valida o scaduta, effettua di nuovo l'accesso.",
   "AUTH_SESSION_NOT_FOUND": "Sessione non trovata.",
   "TENANT_CONTEXT_REQUIRED": "Nessun ristorante attivo selezionato — selezionane uno.",
-  "TENANT_MEMBERSHIP_INACTIVE": "Il tuo accesso a questo ristorante non è più attivo."
+  "TENANT_MEMBERSHIP_INACTIVE": "Il tuo accesso a questo ristorante non è più attivo.",
+  "RBAC_PERMISSION_DENIED": "Non hai il permesso richiesto per eseguire questa azione."
 }
