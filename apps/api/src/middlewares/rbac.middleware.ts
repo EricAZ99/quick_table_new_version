@@ -2,6 +2,7 @@ import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
 import { RoleDefinitionModel } from '../database/models/roleDefinition.model.js';
 import { ForbiddenError, UnauthorizedError } from '../shared/errors/index.js';
+import { getCachedPermissions, setCachedPermissions } from './rbacPermissionsCache.js';
 
 const FORBIDDEN_MESSAGE = "Vous n'avez pas la permission requise pour effectuer cette action.";
 
@@ -11,21 +12,22 @@ const FORBIDDEN_MESSAGE = "Vous n'avez pas la permission requise pour effectuer 
  * dans `*.routes.ts` — jamais cachée dans un controller, pour rester
  * visible et grep-able.
  *
- * Version 2/3 de la vérification à trois niveaux de doc 08 §8.1 : "le
- * rôle possède-t-il la permission" (`roleDefinitions`, doc 22 §22.4) **ou**
- * "un override du membership l'accorde-t-il" (`req.context.permissionsOverrides`,
- * déjà résolu par `resolveTenant`/`tenant.middleware.ts` — pas de seconde
- * requête `memberships` ici). Overrides **ajouts uniquement** pour le MVP
- * (décision validée avec toi, voir `tenant.middleware.ts` §TenantContext) :
- * le schéma `permissionsOverrides: string[]` (doc 05) n'a aucune convention
+ * Vérification à trois niveaux de doc 08 §8.1 — niveaux 1 et 3 couverts
+ * ici : "le rôle possède-t-il la permission" (`roleDefinitions`, doc 22
+ * §22.4) **ou** "un override du membership l'accorde-t-il"
+ * (`req.context.permissionsOverrides`, déjà résolu par
+ * `resolveTenant`/`tenant.middleware.ts` — pas de seconde requête
+ * `memberships` ici). Le résultat combiné (`resolvedPermissions`) est mis
+ * en cache par `rbacPermissionsCache.ts` (`rbac:resolved:{membershipId}`,
+ * doc 26 §26.2) pour éviter de relire `roleDefinitions` à chaque requête —
+ * best-effort, une panne Redis retombe silencieusement sur une lecture
+ * directe. Overrides **ajouts uniquement** pour le MVP (décision validée
+ * avec toi, voir `tenant.middleware.ts` §TenantContext) : le schéma
+ * `permissionsOverrides: string[]` (doc 05) n'a aucune convention
  * documentée pour encoder un retrait, alors que doc 08 §8.1 en évoque un —
- * signalé, non implémenté. Le cache Redis `rbac:resolved:{membershipId}`
- * (niveau supplémentaire de performance, pas de vérification) est un
- * ticket séparé de cette Feature 1.4, pas anticipé ici (doc 14 §14.5
- * KISS) : chaque requête relit `roleDefinitions` en base. Le niveau 2
- * (feature gating par abonnement, doc 08 §8.6) reste hors périmètre de
- * toute la Feature 1.4 : `subscriptions` n'existe pas encore (Feature
- * 2.1).
+ * signalé, non implémenté. Le niveau 2 (feature gating par abonnement,
+ * doc 08 §8.6) reste hors périmètre de toute la Feature 1.4 :
+ * `subscriptions` n'existe pas encore (Feature 2.1).
  *
  * **Comportement `super_admin` (décision validée avec toi)** : bypass
  * automatique uniquement pour les permissions `platform:*` (doc 08 §8.4,
@@ -55,29 +57,33 @@ export async function requirePermissionAsync(
     return;
   }
 
-  const { role, isSuperAdmin, permissionsOverrides } = req.context;
+  const { role, isSuperAdmin, permissionsOverrides, membershipId } = req.context;
 
   if (isSuperAdmin && permission.startsWith('platform:')) {
     next();
     return;
   }
 
-  if (permissionsOverrides.includes(permission)) {
-    next();
-    return;
-  }
-
-  if (!role) {
+  if (!role || !membershipId) {
     next(new ForbiddenError('RBAC_PERMISSION_DENIED', FORBIDDEN_MESSAGE));
     return;
   }
 
-  const roleDefinition = await RoleDefinitionModel.findOne({
-    roleCode: role,
-    isCurrent: true,
-  }).lean();
+  let resolvedPermissions = await getCachedPermissions(membershipId);
 
-  if (!roleDefinition || !roleDefinition.permissions.includes(permission)) {
+  if (!resolvedPermissions) {
+    const roleDefinition = await RoleDefinitionModel.findOne({
+      roleCode: role,
+      isCurrent: true,
+    }).lean();
+
+    resolvedPermissions = [
+      ...new Set([...(roleDefinition?.permissions ?? []), ...permissionsOverrides]),
+    ];
+    await setCachedPermissions(membershipId, resolvedPermissions);
+  }
+
+  if (!resolvedPermissions.includes(permission)) {
     next(new ForbiddenError('RBAC_PERMISSION_DENIED', FORBIDDEN_MESSAGE));
     return;
   }

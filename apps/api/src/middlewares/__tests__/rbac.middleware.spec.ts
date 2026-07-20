@@ -4,13 +4,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('../../database/models/roleDefinition.model.js', () => ({
   RoleDefinitionModel: { findOne: vi.fn() },
 }));
+vi.mock('../rbacPermissionsCache.js', () => ({
+  getCachedPermissions: vi.fn(),
+  setCachedPermissions: vi.fn(),
+}));
 
 import { RoleDefinitionModel } from '../../database/models/roleDefinition.model.js';
+import { getCachedPermissions, setCachedPermissions } from '../rbacPermissionsCache.js';
 import { requirePermission, requirePermissionAsync } from '../rbac.middleware.js';
 
 function createRequest(context?: Record<string, unknown>): Request {
   return {
-    context: context && { permissionsOverrides: [], ...context },
+    context: context && { membershipId: 'membership-a', permissionsOverrides: [], ...context },
   } as unknown as Request;
 }
 
@@ -21,6 +26,8 @@ function mockLean(result: unknown) {
 describe('requirePermission', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Cache miss par défaut — chaque test simulant un hit le surcharge explicitement.
+    vi.mocked(getCachedPermissions).mockResolvedValue(null);
   });
 
   it('rejette (401 AUTH_TOKEN_MISSING) si req.context est absent — bug de câblage, resolveTenant doit toujours précéder', async () => {
@@ -31,7 +38,7 @@ describe('requirePermission', () => {
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_TOKEN_MISSING' }));
   });
 
-  it('laisse passer un super_admin sur une permission platform:* sans lire roleDefinitions', async () => {
+  it('laisse passer un super_admin sur une permission platform:* sans lire roleDefinitions ni le cache', async () => {
     const next = vi.fn() as unknown as NextFunction;
     const req = createRequest({ role: null, isSuperAdmin: true });
 
@@ -39,6 +46,7 @@ describe('requirePermission', () => {
 
     expect(next).toHaveBeenCalledWith();
     expect(RoleDefinitionModel.findOne).not.toHaveBeenCalled();
+    expect(getCachedPermissions).not.toHaveBeenCalled();
   });
 
   it('rejette (403 RBAC_PERMISSION_DENIED) un super_admin sur une permission tenant (pas de bypass hors platform:*)', async () => {
@@ -63,9 +71,22 @@ describe('requirePermission', () => {
       expect.objectContaining({ code: 'RBAC_PERMISSION_DENIED', httpStatus: 403 }),
     );
     expect(RoleDefinitionModel.findOne).not.toHaveBeenCalled();
+    expect(getCachedPermissions).not.toHaveBeenCalled();
   });
 
-  it('laisse passer si la permission est présente dans le roleDefinitions courant du rôle', async () => {
+  it('rejette (403 RBAC_PERMISSION_DENIED) si membershipId est absent du contexte (rien à mettre en cache)', async () => {
+    const next = vi.fn() as unknown as NextFunction;
+    const req = createRequest({ role: 'waiter', isSuperAdmin: false, membershipId: null });
+
+    await requirePermissionAsync('orders:read', req, {} as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'RBAC_PERMISSION_DENIED', httpStatus: 403 }),
+    );
+    expect(getCachedPermissions).not.toHaveBeenCalled();
+  });
+
+  it('laisse passer (cache miss) si la permission est présente dans le roleDefinitions courant du rôle, et met le résultat en cache', async () => {
     vi.mocked(RoleDefinitionModel.findOne).mockReturnValue(
       mockLean({ roleCode: 'waiter', permissions: ['orders:read', 'orders:create'] }) as never,
     );
@@ -78,6 +99,10 @@ describe('requirePermission', () => {
       roleCode: 'waiter',
       isCurrent: true,
     });
+    expect(setCachedPermissions).toHaveBeenCalledWith('membership-a', [
+      'orders:read',
+      'orders:create',
+    ]);
     expect(next).toHaveBeenCalledWith();
   });
 
@@ -107,7 +132,10 @@ describe('requirePermission', () => {
     );
   });
 
-  it('laisse passer via permissionsOverrides une permission absente du rôle (doc 08 §8.1, ex. payments:refund pour un cashier), sans lire roleDefinitions', async () => {
+  it('fusionne roleDefinitions et permissionsOverrides (doc 08 §8.1, ex. payments:refund pour un cashier)', async () => {
+    vi.mocked(RoleDefinitionModel.findOne).mockReturnValue(
+      mockLean({ roleCode: 'cashier', permissions: ['orders:read'] }) as never,
+    );
     const next = vi.fn() as unknown as NextFunction;
     const req = createRequest({
       role: 'cashier',
@@ -118,7 +146,10 @@ describe('requirePermission', () => {
     await requirePermissionAsync('payments:refund', req, {} as Response, next);
 
     expect(next).toHaveBeenCalledWith();
-    expect(RoleDefinitionModel.findOne).not.toHaveBeenCalled();
+    expect(setCachedPermissions).toHaveBeenCalledWith('membership-a', [
+      'orders:read',
+      'payments:refund',
+    ]);
   });
 
   it("rejette (403 RBAC_PERMISSION_DENIED) si ni le rôle ni permissionsOverrides n'accordent la permission", async () => {
@@ -137,6 +168,31 @@ describe('requirePermission', () => {
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'RBAC_PERMISSION_DENIED', httpStatus: 403 }),
     );
+  });
+
+  it('laisse passer (cache hit) sans jamais lire roleDefinitions ni réécrire le cache', async () => {
+    vi.mocked(getCachedPermissions).mockResolvedValue(['orders:read', 'payments:refund']);
+    const next = vi.fn() as unknown as NextFunction;
+    const req = createRequest({ role: 'cashier', isSuperAdmin: false });
+
+    await requirePermissionAsync('payments:refund', req, {} as Response, next);
+
+    expect(next).toHaveBeenCalledWith();
+    expect(RoleDefinitionModel.findOne).not.toHaveBeenCalled();
+    expect(setCachedPermissions).not.toHaveBeenCalled();
+  });
+
+  it('rejette (403 RBAC_PERMISSION_DENIED) une permission absente du cache (cache hit, mais refusé)', async () => {
+    vi.mocked(getCachedPermissions).mockResolvedValue(['orders:read']);
+    const next = vi.fn() as unknown as NextFunction;
+    const req = createRequest({ role: 'cashier', isSuperAdmin: false });
+
+    await requirePermissionAsync('billing:read', req, {} as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'RBAC_PERMISSION_DENIED', httpStatus: 403 }),
+    );
+    expect(RoleDefinitionModel.findOne).not.toHaveBeenCalled();
   });
 
   it('transmet à next() toute erreur inattendue de la requête MongoDB — via le wrapper requirePermission', async () => {

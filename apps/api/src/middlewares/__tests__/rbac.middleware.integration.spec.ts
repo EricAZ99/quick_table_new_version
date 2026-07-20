@@ -3,9 +3,10 @@ import { resolve } from 'node:path';
 
 import express from 'express';
 import request from 'supertest';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { connectDatabase, disconnectDatabase } from '../../config/database.js';
+import { connectRedis, disconnectRedis, getRedisClient } from '../../config/redis.js';
 import { MembershipModel } from '../../database/models/membership.model.js';
 import { RoleDefinitionModel } from '../../database/models/roleDefinition.model.js';
 import { UserModel } from '../../database/models/user.model.js';
@@ -28,6 +29,7 @@ if (existsSync(envPath)) {
 
 const mongodbUri = process.env.MONGODB_URI;
 const jwtSecret = process.env.JWT_SECRET;
+const redisUrl = process.env.REDIS_URL;
 const hasRealCredentials = Boolean(mongodbUri && jwtSecret);
 
 const TENANT_ID = 'rbac-middleware-integration';
@@ -36,8 +38,11 @@ const TENANT_ID = 'rbac-middleware-integration';
  * Vérifie `requirePermission` contre une vraie chaîne `requireAuth` ->
  * `resolveTenant` -> `requirePermission` -> handler, un vrai
  * `roleDefinitions` (doc 22 §22.4) et un vrai `membership` — pas de
- * mocks (doc 14 §14.6). Ne dépend pas de Redis (`roleDefinitions` est
- * une collection MongoDB pure).
+ * mocks (doc 14 §14.6). La majorité de ce fichier ne dépend pas de Redis
+ * (`getCachedPermissions`/`setCachedPermissions` sont best-effort, doc 26
+ * §26.6 — une absence de connexion Redis retombe silencieusement sur une
+ * lecture directe de `roleDefinitions`) ; le sous-bloc dédié au cache,
+ * plus bas, connecte un vrai Redis et vérifie explicitement son contenu.
  */
 describe.skipIf(!hasRealCredentials)('requirePermission — intégration réelle', () => {
   const fixtures: TenantFixture[] = [];
@@ -155,5 +160,44 @@ describe.skipIf(!hasRealCredentials)('requirePermission — intégration réelle
 
     expect(response.status).toBe(401);
     expect((response.body as { error: { code: string } }).error.code).toBe('AUTH_TOKEN_MISSING');
+  });
+
+  /**
+   * Bloc séparé (connexion Redis propre, indépendante des autres tests de
+   * ce fichier) : vérifie le contenu réel de `rbac:resolved:{membershipId}`
+   * (doc 26 §26.2) et qu'un second appel ne relit plus `roleDefinitions`.
+   */
+  describe.skipIf(!redisUrl)('cache rbac:resolved (doc 26 §26.2)', () => {
+    beforeAll(async () => {
+      await connectRedis(redisUrl as string);
+    });
+
+    afterAll(async () => {
+      await disconnectRedis();
+    });
+
+    it('met en cache les permissions résolues et évite une seconde lecture de roleDefinitions au second appel', async () => {
+      const waiter = await fixture('waiter');
+      const findOneSpy = vi.spyOn(RoleDefinitionModel, 'findOne');
+      const app = createTestApp();
+
+      const first = await request(app)
+        .get('/orders')
+        .set('Authorization', `Bearer ${waiter.accessToken}`);
+      const second = await request(app)
+        .get('/orders')
+        .set('Authorization', `Bearer ${waiter.accessToken}`);
+
+      expect(first.status).toBe(200);
+      expect(second.status).toBe(200);
+      expect(findOneSpy).toHaveBeenCalledTimes(1);
+
+      const cached = await getRedisClient().get(`rbac:resolved:${waiter.membershipId}`);
+      expect(cached).not.toBeNull();
+      expect(JSON.parse(cached as string)).toContain('orders:read');
+
+      findOneSpy.mockRestore();
+      await getRedisClient().del(`rbac:resolved:${waiter.membershipId}`);
+    });
   });
 });
