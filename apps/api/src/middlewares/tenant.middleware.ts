@@ -15,6 +15,18 @@ export interface TenantContext {
   membershipId: string | null;
   role: MembershipRole | null;
   isSuperAdmin: boolean;
+  /**
+   * Permissions accordées au cas par cas en plus de celles du rôle (doc 05
+   * "memberships", doc 08 §8.1) — lu une seule fois ici, depuis le même
+   * document `membership` déjà chargé pour la vérification
+   * `employmentStatus`, pour éviter une seconde requête dans
+   * `rbac.middleware.ts` (doc 08 §8.7). Ajouts uniquement pour le MVP
+   * (décision validée avec toi) : le schéma `permissionsOverrides:
+   * string[]` (doc 05) ne porte aucune convention documentée pour encoder
+   * un retrait, alors que doc 08 §8.1 en évoque un — signalé, non
+   * implémenté (voir `rbac.middleware.ts`).
+   */
+  permissionsOverrides: string[];
 }
 
 /**
@@ -57,7 +69,14 @@ export async function resolveTenantAsync(
 
   if (tenantId === null) {
     if (isSuperAdmin) {
-      req.context = { tenantId: null, userId, membershipId: null, role: null, isSuperAdmin: true };
+      req.context = {
+        tenantId: null,
+        userId,
+        membershipId: null,
+        role: null,
+        isSuperAdmin: true,
+        permissionsOverrides: [],
+      };
       next();
       return;
     }
@@ -81,7 +100,14 @@ export async function resolveTenantAsync(
     return;
   }
 
-  req.context = { tenantId, userId, membershipId, role, isSuperAdmin };
+  req.context = {
+    tenantId,
+    userId,
+    membershipId,
+    role,
+    isSuperAdmin,
+    permissionsOverrides: membership.permissionsOverrides,
+  };
   next();
 }
 

@@ -39,6 +39,7 @@ describe('resolveTenant', () => {
       membershipId: null,
       role: null,
       isSuperAdmin: true,
+      permissionsOverrides: [],
     });
     expect(next).toHaveBeenCalledWith();
     expect(MembershipModel.findOne).not.toHaveBeenCalled();
@@ -64,6 +65,7 @@ describe('resolveTenant', () => {
   it('résout le contexte tenant et appelle next() quand le membership est actif', async () => {
     vi.mocked(MembershipModel.findOne).mockResolvedValue({
       employmentStatus: 'active',
+      permissionsOverrides: ['payments:refund'],
     } as never);
     const next = vi.fn() as unknown as NextFunction;
     const req = createRequest({
@@ -87,6 +89,7 @@ describe('resolveTenant', () => {
       membershipId: 'membership-a',
       role: 'waiter',
       isSuperAdmin: false,
+      permissionsOverrides: ['payments:refund'],
     });
     expect(next).toHaveBeenCalledWith();
   });

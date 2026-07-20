@@ -134,6 +134,22 @@ describe.skipIf(!hasRealCredentials)('requirePermission — intégration réelle
     expect(response.status).toBe(204);
   });
 
+  it('laisse passer un waiter sur settings:update quand permissionsOverrides le lui accorde explicitement (doc 08 §8.1)', async () => {
+    const waiterWithOverride = await createTenantFixture({
+      tenantId: TENANT_ID,
+      jwtSecret: jwtSecret as string,
+      role: 'waiter',
+      permissionsOverrides: ['settings:update'],
+    });
+    fixtures.push(waiterWithOverride);
+
+    const response = await request(createTestApp())
+      .delete('/settings')
+      .set('Authorization', `Bearer ${waiterWithOverride.accessToken}`);
+
+    expect(response.status).toBe(204);
+  });
+
   it('rejette (401 AUTH_TOKEN_MISSING) une requête sans Authorization', async () => {
     const response = await request(createTestApp()).get('/orders');
 

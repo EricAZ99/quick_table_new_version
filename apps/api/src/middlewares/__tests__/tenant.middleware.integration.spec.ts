@@ -73,6 +73,7 @@ describe.skipIf(!hasRealCredentials)('resolveTenant — intégration réelle', (
       tenantId: 'tenant-middleware-integration',
       userId: '65f000000000000000000001',
       role: 'waiter',
+      permissionsOverrides: ['payments:refund'],
     });
     const token = signToken({
       sub: '65f000000000000000000001',
@@ -94,6 +95,7 @@ describe.skipIf(!hasRealCredentials)('resolveTenant — intégration réelle', (
         membershipId: membership._id.toString(),
         role: 'waiter',
         isSuperAdmin: false,
+        permissionsOverrides: ['payments:refund'],
       },
     });
   });
@@ -156,6 +158,7 @@ describe.skipIf(!hasRealCredentials)('resolveTenant — intégration réelle', (
         membershipId: null,
         role: null,
         isSuperAdmin: true,
+        permissionsOverrides: [],
       },
     });
   });

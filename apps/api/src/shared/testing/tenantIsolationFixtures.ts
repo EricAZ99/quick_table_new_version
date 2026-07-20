@@ -34,6 +34,7 @@ export async function createTenantFixture(params: {
   tenantId: string;
   jwtSecret: string;
   role?: MembershipRole;
+  permissionsOverrides?: string[];
 }): Promise<TenantFixture> {
   const role = params.role ?? 'waiter';
 
@@ -47,6 +48,7 @@ export async function createTenantFixture(params: {
     tenantId: params.tenantId,
     userId: user._id,
     role,
+    permissionsOverrides: params.permissionsOverrides ?? [],
   });
 
   const accessToken = signAccessToken(

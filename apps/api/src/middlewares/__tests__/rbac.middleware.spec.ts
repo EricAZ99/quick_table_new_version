@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../database/models/roleDefinition.model.js', () => ({
   RoleDefinitionModel: { findOne: vi.fn() },
@@ -9,7 +9,9 @@ import { RoleDefinitionModel } from '../../database/models/roleDefinition.model.
 import { requirePermission, requirePermissionAsync } from '../rbac.middleware.js';
 
 function createRequest(context?: Record<string, unknown>): Request {
-  return { context } as unknown as Request;
+  return {
+    context: context && { permissionsOverrides: [], ...context },
+  } as unknown as Request;
 }
 
 function mockLean(result: unknown) {
@@ -17,6 +19,10 @@ function mockLean(result: unknown) {
 }
 
 describe('requirePermission', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('rejette (401 AUTH_TOKEN_MISSING) si req.context est absent — bug de câblage, resolveTenant doit toujours précéder', async () => {
     const next = vi.fn() as unknown as NextFunction;
 
@@ -95,6 +101,38 @@ describe('requirePermission', () => {
     const req = createRequest({ role: 'waiter', isSuperAdmin: false });
 
     await requirePermissionAsync('orders:read', req, {} as Response, next);
+
+    expect(next).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'RBAC_PERMISSION_DENIED', httpStatus: 403 }),
+    );
+  });
+
+  it('laisse passer via permissionsOverrides une permission absente du rôle (doc 08 §8.1, ex. payments:refund pour un cashier), sans lire roleDefinitions', async () => {
+    const next = vi.fn() as unknown as NextFunction;
+    const req = createRequest({
+      role: 'cashier',
+      isSuperAdmin: false,
+      permissionsOverrides: ['payments:refund'],
+    });
+
+    await requirePermissionAsync('payments:refund', req, {} as Response, next);
+
+    expect(next).toHaveBeenCalledWith();
+    expect(RoleDefinitionModel.findOne).not.toHaveBeenCalled();
+  });
+
+  it("rejette (403 RBAC_PERMISSION_DENIED) si ni le rôle ni permissionsOverrides n'accordent la permission", async () => {
+    vi.mocked(RoleDefinitionModel.findOne).mockReturnValue(
+      mockLean({ roleCode: 'cashier', permissions: ['orders:read'] }) as never,
+    );
+    const next = vi.fn() as unknown as NextFunction;
+    const req = createRequest({
+      role: 'cashier',
+      isSuperAdmin: false,
+      permissionsOverrides: ['payments:refund'],
+    });
+
+    await requirePermissionAsync('billing:read', req, {} as Response, next);
 
     expect(next).toHaveBeenCalledWith(
       expect.objectContaining({ code: 'RBAC_PERMISSION_DENIED', httpStatus: 403 }),

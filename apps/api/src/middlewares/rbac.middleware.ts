@@ -11,12 +11,18 @@ const FORBIDDEN_MESSAGE = "Vous n'avez pas la permission requise pour effectuer 
  * dans `*.routes.ts` — jamais cachée dans un controller, pour rester
  * visible et grep-able.
  *
- * Version 1/3 de la vérification à trois niveaux de doc 08 §8.1 :
- * uniquement "le rôle possède-t-il la permission" via `roleDefinitions`
- * (doc 22 §22.4, résolu à chaque requête). La résolution combinée avec
- * `permissionsOverrides` du membership (niveau 3) et le cache Redis
- * `rbac:resolved:{membershipId}` sont des tickets séparés de cette
- * Feature 1.4, pas anticipés ici (doc 14 §14.5 KISS). Le niveau 2
+ * Version 2/3 de la vérification à trois niveaux de doc 08 §8.1 : "le
+ * rôle possède-t-il la permission" (`roleDefinitions`, doc 22 §22.4) **ou**
+ * "un override du membership l'accorde-t-il" (`req.context.permissionsOverrides`,
+ * déjà résolu par `resolveTenant`/`tenant.middleware.ts` — pas de seconde
+ * requête `memberships` ici). Overrides **ajouts uniquement** pour le MVP
+ * (décision validée avec toi, voir `tenant.middleware.ts` §TenantContext) :
+ * le schéma `permissionsOverrides: string[]` (doc 05) n'a aucune convention
+ * documentée pour encoder un retrait, alors que doc 08 §8.1 en évoque un —
+ * signalé, non implémenté. Le cache Redis `rbac:resolved:{membershipId}`
+ * (niveau supplémentaire de performance, pas de vérification) est un
+ * ticket séparé de cette Feature 1.4, pas anticipé ici (doc 14 §14.5
+ * KISS) : chaque requête relit `roleDefinitions` en base. Le niveau 2
  * (feature gating par abonnement, doc 08 §8.6) reste hors périmètre de
  * toute la Feature 1.4 : `subscriptions` n'existe pas encore (Feature
  * 2.1).
@@ -49,9 +55,14 @@ export async function requirePermissionAsync(
     return;
   }
 
-  const { role, isSuperAdmin } = req.context;
+  const { role, isSuperAdmin, permissionsOverrides } = req.context;
 
   if (isSuperAdmin && permission.startsWith('platform:')) {
+    next();
+    return;
+  }
+
+  if (permissionsOverrides.includes(permission)) {
     next();
     return;
   }
