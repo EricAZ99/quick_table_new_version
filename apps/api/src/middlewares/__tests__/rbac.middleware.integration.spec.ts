@@ -10,6 +10,7 @@ import { connectRedis, disconnectRedis, getRedisClient } from '../../config/redi
 import { MembershipModel } from '../../database/models/membership.model.js';
 import { RoleDefinitionModel } from '../../database/models/roleDefinition.model.js';
 import { UserModel } from '../../database/models/user.model.js';
+import { seedRoleDefinitions } from '../../database/seeders/roleDefinitions.seed.js';
 import {
   cleanupTenantFixtures,
   createTenantFixture,
@@ -36,9 +37,18 @@ const TENANT_ID = 'rbac-middleware-integration';
 
 /**
  * Vérifie `requirePermission` contre une vraie chaîne `requireAuth` ->
- * `resolveTenant` -> `requirePermission` -> handler, un vrai
- * `roleDefinitions` (doc 22 §22.4) et un vrai `membership` — pas de
- * mocks (doc 14 §14.6). La majorité de ce fichier ne dépend pas de Redis
+ * `resolveTenant` -> `requirePermission` -> handler, la vraie matrice
+ * `roleDefinitions` (`seedRoleDefinitions()`, doc 22 §22.4, doc 08 §8.4)
+ * et un vrai `membership` — pas de mocks (doc 14 §14.6). Utilise
+ * volontairement le vrai seed plutôt que des `roleDefinitions` fabriqués
+ * à la main : `roleDefinitions` est une collection globale non
+ * tenant-scoped (doc 08 §8.1) partagée avec d'autres fichiers
+ * d'intégration (`roleDefinitions.integration.spec.ts`,
+ * `rbac.permissionMatrix.integration.spec.ts`) qui s'exécutent en
+ * parallèle (comportement Vitest par défaut) — un `deleteMany({})` ou un
+ * jeu de données divergent de la vraie matrice provoquait une collision
+ * réelle entre fichiers (bug découvert et corrigé pendant ce ticket), pas
+ * juste un flake. La majorité de ce fichier ne dépend pas de Redis
  * (`getCachedPermissions`/`setCachedPermissions` sont best-effort, doc 26
  * §26.6 — une absence de connexion Redis retombe silencieusement sur une
  * lecture directe de `roleDefinitions`) ; le sous-bloc dédié au cache,
@@ -78,31 +88,14 @@ describe.skipIf(!hasRealCredentials)('requirePermission — intégration réelle
 
   beforeAll(async () => {
     await connectDatabase(mongodbUri as string);
-    await RoleDefinitionModel.collection.deleteMany({});
-    await RoleDefinitionModel.create([
-      {
-        roleCode: 'waiter',
-        version: 1,
-        permissions: ['orders:read', 'orders:create'],
-        effectiveFrom: new Date(),
-        isCurrent: true,
-      },
-      {
-        roleCode: 'restaurant_owner',
-        version: 1,
-        permissions: ['orders:read', 'settings:update'],
-        effectiveFrom: new Date(),
-        isCurrent: true,
-      },
-    ]);
     await RoleDefinitionModel.createIndexes();
+    await seedRoleDefinitions();
   });
 
   afterAll(async () => {
     await cleanupTenantFixtures(fixtures);
     await MembershipModel.collection.deleteMany({ tenantId: TENANT_ID });
     await UserModel.collection.deleteMany({});
-    await RoleDefinitionModel.collection.deleteMany({});
     await disconnectDatabase();
   });
 

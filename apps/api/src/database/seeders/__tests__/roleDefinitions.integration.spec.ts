@@ -23,11 +23,26 @@ const hasRealCredentials = Boolean(mongodbUri);
  * du seed, et le comportement de versionnement (une nouvelle version
  * insérée + l'ancienne désactivée, jamais modifiée en place) quand la
  * matrice change.
+ *
+ * `roleDefinitions` est une collection globale, **non tenant-scoped**
+ * (doc 08 §8.1) — contrairement à tout le reste testé dans ce projet, où
+ * chaque fichier d'intégration namespace ses données par `tenantId`
+ * unique, il n'existe aucune dimension pour isoler ce fichier des autres
+ * suites qui touchent aussi `roleDefinitions`
+ * (`rbac.middleware.integration.spec.ts`,
+ * `rbac.permissionMatrix.integration.spec.ts`, toutes deux Feature 1.4)
+ * quand elles s'exécutent en parallèle (comportement par défaut de
+ * Vitest entre fichiers). Ce fichier ne fait donc plus de
+ * `deleteMany({})` sur la collection entière (bug réel découvert en
+ * écrivant `rbac.permissionMatrix.integration.spec.ts` : un `deleteMany`
+ * concurrent effaçait la vraie matrice pendant qu'un autre fichier
+ * l'interrogeait) — `seedRoleDefinitions()` est idempotent et
+ * suffisant ; le test de versionnement restaure explicitement l'état
+ * d'origine à la fin plutôt que de compter sur un nettoyage global.
  */
 describe.skipIf(!hasRealCredentials)('roleDefinitions seed — intégration MongoDB réelle', () => {
   beforeAll(async () => {
     await connectDatabase(mongodbUri as string);
-    await RoleDefinitionModel.collection.deleteMany({});
     // Même précaution que countryDefaults.integration.spec.ts : les index
     // sont construits en arrière-plan après compilation du modèle, sans
     // cet await le test d'unicité ci-dessous serait flaky.
@@ -35,7 +50,6 @@ describe.skipIf(!hasRealCredentials)('roleDefinitions seed — intégration Mong
   });
 
   afterAll(async () => {
-    await RoleDefinitionModel.collection.deleteMany({});
     await disconnectDatabase();
   });
 
@@ -43,9 +57,9 @@ describe.skipIf(!hasRealCredentials)('roleDefinitions seed — intégration Mong
     await seedRoleDefinitions();
     await seedRoleDefinitions();
 
-    const docs = await RoleDefinitionModel.find({}).lean();
+    const docs = await RoleDefinitionModel.find({ isCurrent: true }).lean();
     expect(docs).toHaveLength(ROLE_DEFINITIONS_SEED_DATA.length);
-    expect(docs.every((doc) => doc.version === 1 && doc.isCurrent)).toBe(true);
+    expect(docs.every((doc) => doc.version === 1)).toBe(true);
 
     const manager = docs.find((doc) => doc.roleCode === 'manager');
     expect(manager?.permissions).toEqual(
@@ -53,12 +67,17 @@ describe.skipIf(!hasRealCredentials)('roleDefinitions seed — intégration Mong
     );
   });
 
-  it("insère une nouvelle version et désactive l'ancienne quand la matrice change, sans jamais la modifier en place", async () => {
+  it("insère une nouvelle version et désactive l'ancienne quand la matrice change, sans jamais la modifier en place, puis restaure l'état d'origine", async () => {
+    await seedRoleDefinitions();
     const before = await RoleDefinitionModel.findOne({
       roleCode: 'waiter',
       isCurrent: true,
     }).lean();
 
+    // Permission synthétique (jamais une vraie permission métier de la
+    // matrice doc 08 §8.4) : n'entre jamais en collision avec les
+    // assertions d'un autre fichier lu pendant la fenêtre où cette
+    // mutation est active (`rbac.permissionMatrix.integration.spec.ts`).
     await RoleDefinitionModel.updateOne(
       { roleCode: 'waiter', isCurrent: true },
       { $set: { isCurrent: false } },
@@ -66,7 +85,7 @@ describe.skipIf(!hasRealCredentials)('roleDefinitions seed — intégration Mong
     await RoleDefinitionModel.create({
       roleCode: 'waiter',
       version: (before?.version ?? 1) + 1,
-      permissions: [...(before?.permissions ?? []), 'orders:cancel'],
+      permissions: [...(before?.permissions ?? []), 'test:versioning_probe'],
       effectiveFrom: new Date(),
       isCurrent: true,
     });
@@ -81,14 +100,27 @@ describe.skipIf(!hasRealCredentials)('roleDefinitions seed — intégration Mong
       version: (before?.version ?? 1) + 1,
       isCurrent: true,
     });
-    expect(allWaiterVersions[1]?.permissions).toContain('orders:cancel');
+    expect(allWaiterVersions[1]?.permissions).toContain('test:versioning_probe');
+
+    // Restauration : supprime la version de test et redonne la main à la
+    // version d'origine, pour laisser `waiter` conforme à la vraie
+    // matrice pour le reste de la suite (ce fichier ne fait plus de
+    // nettoyage global, voir la note en tête de fichier).
+    await RoleDefinitionModel.deleteOne({
+      roleCode: 'waiter',
+      version: allWaiterVersions[1]?.version,
+    });
+    await RoleDefinitionModel.updateOne(
+      { roleCode: 'waiter', version: before?.version },
+      { $set: { isCurrent: true } },
+    );
   });
 
   it("rejette une seconde version courante pour le même rôle via l'index partiel unique", async () => {
-    // `kitchen` a déjà sa version 1 courante depuis le premier test de ce
-    // fichier (seedRoleDefinitions) — l'index partiel unique
-    // {roleCode:1, isCurrent:true} doit bloquer une seconde version
-    // courante concurrente.
+    await seedRoleDefinitions();
+    // `kitchen` a déjà une version courante à ce stade (`seedRoleDefinitions`
+    // ci-dessus) — l'index partiel unique {roleCode:1, isCurrent:true}
+    // doit bloquer une seconde version courante concurrente.
     await expect(
       RoleDefinitionModel.create({
         roleCode: 'kitchen',
