@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "pinia": "^4.0.2",
     "vue": "^3.5.12",
     "vue-i18n": "^11.4.6"
   },

@@ -23,5 +23,43 @@
     "IT": "Italie",
     "ES": "Espagne",
     "US": "États-Unis"
+  },
+  "auth": {
+    "title": "Bon retour",
+    "subtitle": "Connectez-vous pour reprendre le service.",
+    "emailLabel": "Email professionnel",
+    "passwordLabel": "Mot de passe",
+    "submit": "Se connecter",
+    "loggingIn": "Connexion…",
+    "twoFactorHint": "Saisissez le code de votre application d'authentification.",
+    "twoFactorLabel": "Code de vérification",
+    "twoFactorSubmit": "Vérifier",
+    "unexpectedError": "Une erreur inattendue est survenue."
+  },
+  "restaurantSettings": {
+    "title": "Mon restaurant",
+    "logout": "Se déconnecter",
+    "loading": "Chargement…",
+    "saved": "Modifications enregistrées.",
+    "saving": "Enregistrement…",
+    "save": "Enregistrer",
+    "generalSection": "Général",
+    "nameLabel": "Nom du restaurant",
+    "logoUrlLabel": "URL du logo",
+    "phoneLabel": "Téléphone",
+    "emailLabel": "Email",
+    "addressLabel": "Adresse",
+    "cityLabel": "Ville",
+    "hoursSection": "Horaires d'ouverture",
+    "dayClosed": "Fermé",
+    "days": {
+      "monday": "Lundi",
+      "tuesday": "Mardi",
+      "wednesday": "Mercredi",
+      "thursday": "Jeudi",
+      "friday": "Vendredi",
+      "saturday": "Samedi",
+      "sunday": "Dimanche"
+    }
   }
 }

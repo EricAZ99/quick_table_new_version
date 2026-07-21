@@ -23,5 +23,43 @@
     "IT": "Italy",
     "ES": "Spain",
     "US": "United States"
+  },
+  "auth": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to get back to service.",
+    "emailLabel": "Work email",
+    "passwordLabel": "Password",
+    "submit": "Sign in",
+    "loggingIn": "Signing in…",
+    "twoFactorHint": "Enter the code from your authenticator app.",
+    "twoFactorLabel": "Verification code",
+    "twoFactorSubmit": "Verify",
+    "unexpectedError": "An unexpected error occurred."
+  },
+  "restaurantSettings": {
+    "title": "My restaurant",
+    "logout": "Sign out",
+    "loading": "Loading…",
+    "saved": "Changes saved.",
+    "saving": "Saving…",
+    "save": "Save",
+    "generalSection": "General",
+    "nameLabel": "Restaurant name",
+    "logoUrlLabel": "Logo URL",
+    "phoneLabel": "Phone",
+    "emailLabel": "Email",
+    "addressLabel": "Address",
+    "cityLabel": "City",
+    "hoursSection": "Opening hours",
+    "dayClosed": "Closed",
+    "days": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    }
   }
 }

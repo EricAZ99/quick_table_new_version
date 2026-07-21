@@ -1,12 +1,32 @@
 <script setup lang="ts">
-import CountryDetectionScreen from '@/components/onboarding/CountryDetectionScreen.vue';
+import { onMounted } from 'vue';
 
-// Composant racine (doc 03 §3.2). Monte directement le premier vrai écran
-// (Feature 2.1, "Écran d'inscription") tant que le Router n'existe pas —
-// remplacé par le Router + les layouts (AdminLayout, CustomerLayout) dès
-// qu'un deuxième écran en aura besoin.
+import LoginScreen from '@/components/auth/LoginScreen.vue';
+import RestaurantSettingsScreen from '@/components/restaurant/RestaurantSettingsScreen.vue';
+import { useAuthStore } from '@/stores/auth.store';
+
+/**
+ * Composant racine (doc 03 §3.2). Bascule entre `LoginScreen` et
+ * `RestaurantSettingsScreen` selon `authStore.isAuthenticated` — pas de
+ * Router : ce n'est qu'une porte d'authentification à deux états, pas une
+ * navigation entre plusieurs pages adressables, le Router restant reporté
+ * jusqu'à un vrai besoin de ce type (doc 14 §14.5 KISS).
+ *
+ * `CountryDetectionScreen` (ticket précédent, flux d'inscription) n'est
+ * plus monté ici : les deux écrans ne peuvent pas coexister sans Router, et
+ * ce ticket porte sur le flux de gestion d'un restaurant existant
+ * (connexion → édition), pas sur l'inscription. Le composant reste
+ * entièrement implémenté et testé (`CountryDetectionScreen.spec.ts`),
+ * simplement non atteignable depuis `App.vue` pour l'instant.
+ */
+const auth = useAuthStore();
+
+onMounted(() => {
+  void auth.restoreSession();
+});
 </script>
 
 <template>
-  <CountryDetectionScreen />
+  <LoginScreen v-if="!auth.isAuthenticated" />
+  <RestaurantSettingsScreen v-else />
 </template>
