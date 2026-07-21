@@ -13,6 +13,17 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    // Le backend (`apps/api`, port 3000 par défaut) n'a pas encore de
+    // middleware CORS (doc 12 §12.4, pas construit) : un `fetch` direct
+    // depuis le serveur de dev Vite (port différent) serait bloqué par le
+    // navigateur. Ce proxy évite d'avoir à construire CORS juste pour le
+    // dev local — les deux origines deviennent une seule du point de vue
+    // du navigateur.
+    proxy: {
+      '/api': 'http://localhost:3000',
+    },
+  },
   test: {
     environment: 'jsdom',
   },

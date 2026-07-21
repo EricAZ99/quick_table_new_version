@@ -4,5 +4,24 @@
   },
   "language": {
     "label": "Langue"
+  },
+  "onboarding": {
+    "title": "Créez votre restaurant sur QuickTable",
+    "detecting": "Détection de votre pays…",
+    "detectedQuestion": "Nous pensons que vous êtes situé en {country}.",
+    "confirm": "Oui, c'est exact",
+    "notMyCountry": "Ce n'est pas mon pays",
+    "detectionFailed": "Nous n'avons pas pu détecter votre pays automatiquement.",
+    "manualLabel": "Sélectionnez votre pays",
+    "continue": "Continuer",
+    "change": "Modifier",
+    "confirmedSummary": "Pays sélectionné : {country}"
+  },
+  "countries": {
+    "BJ": "Bénin",
+    "FR": "France",
+    "IT": "Italie",
+    "ES": "Espagne",
+    "US": "États-Unis"
   }
 }
