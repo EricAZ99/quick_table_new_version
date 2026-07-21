@@ -1,12 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('mongoose', () => ({
-  default: { startSession: vi.fn() },
-}));
+// Mock partiel : `restaurants.service.ts` importe aussi `CountryDefaultModel`
+// (`database/models/countryDefault.model.ts`), qui appelle `new Schema(...)`
+// à l'import — un mock complet de `mongoose` casserait ce module. Seul
+// `startSession` (méthode statique du default export) est remplacé.
+vi.mock('mongoose', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('mongoose')>();
+  return { ...actual, default: { ...actual.default, startSession: vi.fn() } };
+});
 
 import mongoose from 'mongoose';
 import { RestaurantsService } from '../restaurants.service.js';
 import type { CreateRestaurantDto } from '../restaurants.validators.js';
+
+vi.mock('../../../database/models/countryDefault.model.js', () => ({
+  CountryDefaultModel: { findOne: vi.fn() },
+}));
+import { CountryDefaultModel } from '../../../database/models/countryDefault.model.js';
 
 const VALID_CREATE_DTO: CreateRestaurantDto = {
   name: 'Chez Amara',
@@ -121,6 +131,98 @@ describe('RestaurantsService', () => {
 
       await expect(service.createRestaurant(VALID_CREATE_DTO)).rejects.toThrow('transaction abort');
       expect(fakeSession.endSession).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('dérivation locale/timezone/currency (doc 09 §9.3, doc 35 §35.3)', () => {
+    it("dérive les 3 champs depuis countryDefaults quand aucun n'est fourni", async () => {
+      const { service, restaurantsRepository, usersRepository } = setup();
+      usersRepository.findById.mockResolvedValue({ _id: 'user-a' });
+      restaurantsRepository.findBySlug.mockResolvedValue(null);
+      restaurantsRepository.create.mockResolvedValue({ _id: 'restaurant-a' });
+      vi.mocked(mongoose.startSession).mockResolvedValue(createFakeSession() as never);
+      vi.mocked(CountryDefaultModel.findOne).mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          countryCode: 'BJ',
+          defaultLocale: 'fr',
+          timezoneDefault: 'Africa/Porto-Novo',
+          currency: 'XOF',
+        }),
+      } as never);
+      const dtoWithoutDerived: Partial<CreateRestaurantDto> = { ...VALID_CREATE_DTO };
+      delete dtoWithoutDerived.locale;
+      delete dtoWithoutDerived.timezone;
+      delete dtoWithoutDerived.currency;
+
+      await service.createRestaurant(dtoWithoutDerived as CreateRestaurantDto);
+
+      expect(CountryDefaultModel.findOne).toHaveBeenCalledWith({ countryCode: 'BJ' });
+      expect(restaurantsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          locale: 'fr',
+          timezone: 'Africa/Porto-Novo',
+          currency: 'XOF',
+        }),
+        expect.anything(),
+      );
+    });
+
+    it('une valeur explicite prime toujours sur countryDefaults (surcharge partielle)', async () => {
+      const { service, restaurantsRepository, usersRepository } = setup();
+      usersRepository.findById.mockResolvedValue({ _id: 'user-a' });
+      restaurantsRepository.findBySlug.mockResolvedValue(null);
+      restaurantsRepository.create.mockResolvedValue({ _id: 'restaurant-a' });
+      vi.mocked(mongoose.startSession).mockResolvedValue(createFakeSession() as never);
+      vi.mocked(CountryDefaultModel.findOne).mockReturnValue({
+        lean: vi.fn().mockResolvedValue({
+          countryCode: 'BJ',
+          defaultLocale: 'fr',
+          timezoneDefault: 'Africa/Porto-Novo',
+          currency: 'XOF',
+        }),
+      } as never);
+      const dtoWithCurrencyOverride: Partial<CreateRestaurantDto> = { ...VALID_CREATE_DTO };
+      delete dtoWithCurrencyOverride.timezone;
+      delete dtoWithCurrencyOverride.currency;
+
+      await service.createRestaurant({
+        ...(dtoWithCurrencyOverride as CreateRestaurantDto),
+        currency: 'EUR',
+      });
+
+      expect(restaurantsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ locale: 'fr', timezone: 'Africa/Porto-Novo', currency: 'EUR' }),
+        expect.anything(),
+      );
+    });
+
+    it('ne consulte jamais countryDefaults si les 3 champs sont déjà fournis', async () => {
+      const { service, restaurantsRepository, usersRepository } = setup();
+      usersRepository.findById.mockResolvedValue({ _id: 'user-a' });
+      restaurantsRepository.findBySlug.mockResolvedValue(null);
+      restaurantsRepository.create.mockResolvedValue({ _id: 'restaurant-a' });
+      vi.mocked(mongoose.startSession).mockResolvedValue(createFakeSession() as never);
+
+      await service.createRestaurant(VALID_CREATE_DTO);
+
+      expect(CountryDefaultModel.findOne).not.toHaveBeenCalled();
+    });
+
+    it("rejette (422 RESTAURANT_COUNTRY_DEFAULTS_MISSING) si countryDefaults n'a rien pour ce pays et qu'un champ manque", async () => {
+      const { service, usersRepository } = setup();
+      usersRepository.findById.mockResolvedValue({ _id: 'user-a' });
+      vi.mocked(CountryDefaultModel.findOne).mockReturnValue({
+        lean: vi.fn().mockResolvedValue(null),
+      } as never);
+      const dtoWithoutLocale: Partial<CreateRestaurantDto> = { ...VALID_CREATE_DTO };
+      delete dtoWithoutLocale.locale;
+
+      await expect(
+        service.createRestaurant(dtoWithoutLocale as CreateRestaurantDto),
+      ).rejects.toMatchObject({
+        code: 'RESTAURANT_COUNTRY_DEFAULTS_MISSING',
+        httpStatus: 422,
+      });
     });
   });
 

@@ -21,11 +21,20 @@ const hasRealCredentials = Boolean(mongodbUri);
  * Vérifie contre un vrai MongoDB Atlas (pas un mock) : l'upsert idempotent,
  * l'index unique sur `countryCode` (doc 05 §"countryDefaults"), et que les 5
  * pays du backlog (doc 34 Feature 0.4) sont bien lisibles après seed.
+ *
+ * `countryDefaults` est une collection globale, **non tenant-scoped** —
+ * pas de `deleteMany({})` ici (même bug de collision inter-fichiers déjà
+ * trouvé et corrigé sur `roleDefinitions`, Feature 1.4 : un autre fichier
+ * d'intégration touchant la même collection en parallèle, comportement
+ * Vitest par défaut, pouvait l'effacer pendant qu'un autre la lisait —
+ * `restaurants.integration.spec.ts`, Feature 2.1, lit désormais aussi
+ * `countryDefaults` pour la dérivation locale/devise/fuseau). Le doublon
+ * de test (`ZZ`) est nettoyé explicitement par son propre test plutôt
+ * que par un `afterAll` global.
  */
 describe.skipIf(!hasRealCredentials)('countryDefaults seed — intégration MongoDB réelle', () => {
   beforeAll(async () => {
     await connectDatabase(mongodbUri as string);
-    await CountryDefaultModel.collection.deleteMany({});
     // Mongoose construit les index en arrière-plan après compilation du
     // modèle (déjà rencontré cette session) : sans cet await explicite, le
     // test d'unicité ci-dessous serait flaky (faux négatif si l'index
@@ -34,7 +43,6 @@ describe.skipIf(!hasRealCredentials)('countryDefaults seed — intégration Mong
   });
 
   afterAll(async () => {
-    await CountryDefaultModel.collection.deleteMany({});
     await disconnectDatabase();
   });
 
@@ -42,7 +50,8 @@ describe.skipIf(!hasRealCredentials)('countryDefaults seed — intégration Mong
     await seedCountryDefaults();
     await seedCountryDefaults();
 
-    const docs = await CountryDefaultModel.find({}).lean();
+    const seededCodes = COUNTRY_DEFAULTS_SEED_DATA.map((entry) => entry.countryCode);
+    const docs = await CountryDefaultModel.find({ countryCode: { $in: seededCodes } }).lean();
     expect(docs).toHaveLength(COUNTRY_DEFAULTS_SEED_DATA.length);
 
     const france = docs.find((doc) => doc.countryCode === 'FR');
@@ -61,13 +70,17 @@ describe.skipIf(!hasRealCredentials)('countryDefaults seed — intégration Mong
       timezoneDefault: 'UTC',
     });
 
-    await expect(
-      CountryDefaultModel.create({
-        countryCode: 'ZZ',
-        currency: 'EUR',
-        defaultLocale: 'fr',
-        timezoneDefault: 'Europe/Paris',
-      }),
-    ).rejects.toThrow();
+    try {
+      await expect(
+        CountryDefaultModel.create({
+          countryCode: 'ZZ',
+          currency: 'EUR',
+          defaultLocale: 'fr',
+          timezoneDefault: 'Europe/Paris',
+        }),
+      ).rejects.toThrow();
+    } finally {
+      await CountryDefaultModel.collection.deleteMany({ countryCode: 'ZZ' });
+    }
   });
 });

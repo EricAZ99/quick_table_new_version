@@ -27,16 +27,21 @@ const taxSettingSchema = z.object({
 
 /**
  * `POST /platform/restaurants` (doc 09 §9.3, super_admin uniquement) —
- * provisioning **réduit** (décision validée avec toi) : `country`,
- * `locale`, `timezone`, `currency` sont ici tous requis explicitement (la
- * dérivation automatique depuis `countryDefaults` est le ticket suivant de
- * cette Feature) ; `ownerId` référence un utilisateur **existant** qui
- * devient `restaurant_owner` — ce ticket ne construit pas de création de
- * compte utilisateur inline (hors périmètre, aucun endpoint public
- * d'inscription self-service n'existe encore, doc 06 §6.7 en évoque le
- * principe sans qu'il soit dans la surface d'API doc 09). L'étape
- * `subscriptions` de doc 06 §6.7 est explicitement absente (Feature 9.1,
- * pas commencée).
+ * provisioning **réduit** (décision validée avec toi, ticket précédent) :
+ * `ownerId` référence un utilisateur **existant** qui devient
+ * `restaurant_owner` — ce ticket ne construit pas de création de compte
+ * utilisateur inline (hors périmètre, aucun endpoint public d'inscription
+ * self-service n'existe encore, doc 06 §6.7 en évoque le principe sans
+ * qu'il soit dans la surface d'API doc 09). L'étape `subscriptions` de
+ * doc 06 §6.7 est explicitement absente (Feature 9.1, pas commencée).
+ *
+ * `locale`/`timezone`/`currency` **optionnels** (doc 09 §9.3 : "dérivés
+ * automatiquement depuis `countryDefaults` sauf surcharge explicite") —
+ * seul `country` reste obligatoire ; la dérivation elle-même vit dans
+ * `restaurants.service.ts` (`RestaurantsService#deriveLocaleTimezoneCurrency`),
+ * pas ici : la validation Zod ne fait que définir la *forme* du payload,
+ * jamais une requête base de données (doc 12 §12.2 — validation vs
+ * logique métier restent des couches séparées).
  */
 export const createRestaurantSchema = z.object({
   name: z.string().trim().min(1, 'name est requis').max(120),
@@ -46,13 +51,14 @@ export const createRestaurantSchema = z.object({
     .regex(/^[A-Za-z]{2}$/, 'country doit être un code ISO 3166-1 alpha-2')
     .transform((value) => value.toUpperCase()),
   countryDetectionMethod: z.enum(COUNTRY_DETECTION_METHODS),
-  locale: z.enum(SUPPORTED_LOCALES),
-  timezone: z.string().trim().min(1, 'timezone est requis'),
+  locale: z.enum(SUPPORTED_LOCALES).optional(),
+  timezone: z.string().trim().min(1, 'timezone est requis').optional(),
   currency: z
     .string()
     .trim()
     .regex(/^[A-Za-z]{3}$/, 'currency doit être un code ISO 4217')
-    .transform((value) => value.toUpperCase()),
+    .transform((value) => value.toUpperCase())
+    .optional(),
   ownerId: z.string().regex(OBJECT_ID_PATTERN, 'ownerId doit être un ObjectId MongoDB valide'),
   logoUrl: z.string().trim().url().optional(),
   description: z.string().trim().max(2000).optional(),

@@ -1,13 +1,29 @@
 import type { ClientSession } from 'mongoose';
 
 import { RestaurantModel } from '../../database/models/restaurant.model.js';
+import type { SupportedLocale } from '../../middlewares/i18n.middleware.js';
 import type {
   CreateRestaurantDto,
   UpdateRestaurantDto,
   UpdateRestaurantSettingsDto,
 } from './restaurants.validators.js';
 
-export type CreateRestaurantInput = Omit<CreateRestaurantDto, 'ownerId'> & { slug: string };
+/**
+ * `locale`/`timezone`/`currency` sont optionnels sur `CreateRestaurantDto`
+ * (doc 09 §9.3, dérivation automatique depuis `countryDefaults`) mais
+ * redeviennent obligatoires ici : par construction, `RestaurantsService`
+ * a déjà résolu les trois avant d'appeler `create` (explicites ou
+ * dérivés) — le schéma Mongoose (`restaurant.model.ts`) les exige.
+ */
+export type CreateRestaurantInput = Omit<
+  CreateRestaurantDto,
+  'ownerId' | 'locale' | 'timezone' | 'currency'
+> & {
+  slug: string;
+  locale: SupportedLocale;
+  timezone: string;
+  currency: string;
+};
 
 /**
  * `restaurants` n'a pas de `tenantId` (il **est** le tenant, `_id` sert de

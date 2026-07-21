@@ -24,19 +24,34 @@ describe('createRestaurantSchema', () => {
     expect(result.success && result.data.currency).toBe('XOF');
   });
 
-  it.each([
-    'name',
-    'country',
-    'countryDetectionMethod',
-    'locale',
-    'timezone',
-    'currency',
-    'ownerId',
-  ])("rejette un payload sans '%s'", (field) => {
-    const payload: Record<string, unknown> = { ...VALID_CREATE };
-    delete payload[field];
-    const result = createRestaurantSchema.safeParse(payload);
-    expect(result.success).toBe(false);
+  it.each(['name', 'country', 'countryDetectionMethod', 'ownerId'])(
+    "rejette un payload sans '%s'",
+    (field) => {
+      const payload: Record<string, unknown> = { ...VALID_CREATE };
+      delete payload[field];
+      const result = createRestaurantSchema.safeParse(payload);
+      expect(result.success).toBe(false);
+    },
+  );
+
+  it.each(['locale', 'timezone', 'currency'])(
+    "accepte un payload sans '%s' (doc 09 §9.3 : dérivé depuis countryDefaults, résolu dans restaurants.service.ts, pas ici)",
+    (field) => {
+      const payload: Record<string, unknown> = { ...VALID_CREATE };
+      delete payload[field];
+      const result = createRestaurantSchema.safeParse(payload);
+      expect(result.success).toBe(true);
+    },
+  );
+
+  it('accepte un payload ne fournissant que country (locale/timezone/currency tous omis)', () => {
+    const result = createRestaurantSchema.safeParse({
+      name: 'Chez Amara',
+      country: 'bj',
+      countryDetectionMethod: 'manual',
+      ownerId: '65f000000000000000000001',
+    });
+    expect(result.success).toBe(true);
   });
 
   it('rejette un ownerId qui ne ressemble pas à un ObjectId', () => {

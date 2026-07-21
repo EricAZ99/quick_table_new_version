@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
 
+import { CountryDefaultModel } from '../../database/models/countryDefault.model.js';
 import type { RestaurantDocument } from '../../database/models/restaurant.model.js';
-import { NotFoundError } from '../../shared/errors/index.js';
+import type { SupportedLocale } from '../../middlewares/i18n.middleware.js';
+import { BusinessRuleError, NotFoundError } from '../../shared/errors/index.js';
 import type { MembershipsRepository } from '../employees/memberships.repository.js';
 import type { UsersRepository } from '../users/index.js';
 import type { RestaurantsRepository } from './restaurants.repository.js';
@@ -53,14 +55,19 @@ export class RestaurantsService {
       );
     }
 
-    const { ownerId, ...restaurantInput } = dto;
+    const { ownerId, locale, timezone, currency, ...restaurantInput } = dto;
+    const derived = await this.deriveLocaleTimezoneCurrency(dto.country, {
+      locale,
+      timezone,
+      currency,
+    });
     const slug = await this.generateUniqueSlug(dto.name);
 
     const session = await mongoose.startSession();
     try {
       return await session.withTransaction(async () => {
         const restaurant = await this.restaurantsRepository.create(
-          { ...restaurantInput, slug },
+          { ...restaurantInput, ...derived, slug },
           session,
         );
         await this.membershipsRepository.create(
@@ -93,6 +100,43 @@ export class RestaurantsService {
       throw new NotFoundError('RESTAURANT_NOT_FOUND', 'Restaurant introuvable.');
     }
     return restaurant;
+  }
+
+  /**
+   * doc 09 §9.3 / doc 35 §35.3 : `locale`/`timezone`/`currency` explicites
+   * dans le payload priment toujours — `countryDefaults` (Feature 0.4)
+   * n'est consulté que pour compléter ce qui manque, jamais pour écraser
+   * une valeur fournie. Une seule requête `countryDefaults`, même si un
+   * seul des trois champs manque (évite trois lectures potentielles).
+   * `422` plutôt que `400` : le payload est syntaxiquement valide (Zod
+   * l'a déjà accepté), c'est la donnée de référence qui manque pour le
+   * traiter — distinction déjà établie ailleurs dans doc 09 §9.1.
+   */
+  private async deriveLocaleTimezoneCurrency(
+    country: string,
+    overrides: {
+      locale: SupportedLocale | undefined;
+      timezone: string | undefined;
+      currency: string | undefined;
+    },
+  ): Promise<{ locale: SupportedLocale; timezone: string; currency: string }> {
+    const needsLookup = !overrides.locale || !overrides.timezone || !overrides.currency;
+    const countryDefault = needsLookup
+      ? await CountryDefaultModel.findOne({ countryCode: country }).lean()
+      : null;
+
+    const locale = overrides.locale ?? countryDefault?.defaultLocale;
+    const timezone = overrides.timezone ?? countryDefault?.timezoneDefault;
+    const currency = overrides.currency ?? countryDefault?.currency;
+
+    if (!locale || !timezone || !currency) {
+      throw new BusinessRuleError(
+        'RESTAURANT_COUNTRY_DEFAULTS_MISSING',
+        `Aucune donnée de référence pour le pays ${country} — fournissez locale/timezone/currency explicitement.`,
+      );
+    }
+
+    return { locale, timezone, currency };
   }
 
   /** Suffixe numérique incrémental en cas de collision (doc 05 : slug unique). */

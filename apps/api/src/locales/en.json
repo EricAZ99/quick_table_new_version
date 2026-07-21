@@ -20,5 +20,6 @@
   "RBAC_PERMISSION_DENIED": "You don't have the required permission to perform this action.",
   "RESTAURANT_INVALID_PAYLOAD": "Invalid payload.",
   "RESTAURANT_NOT_FOUND": "Restaurant not found.",
-  "RESTAURANT_OWNER_NOT_FOUND": "Owner user not found."
+  "RESTAURANT_OWNER_NOT_FOUND": "Owner user not found.",
+  "RESTAURANT_COUNTRY_DEFAULTS_MISSING": "No reference data for this country — please provide locale, timezone and currency manually."
 }

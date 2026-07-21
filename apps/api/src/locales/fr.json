@@ -20,5 +20,6 @@
   "RBAC_PERMISSION_DENIED": "Vous n'avez pas la permission requise pour effectuer cette action.",
   "RESTAURANT_INVALID_PAYLOAD": "Payload invalide.",
   "RESTAURANT_NOT_FOUND": "Restaurant introuvable.",
-  "RESTAURANT_OWNER_NOT_FOUND": "L'utilisateur propriétaire est introuvable."
+  "RESTAURANT_OWNER_NOT_FOUND": "L'utilisateur propriétaire est introuvable.",
+  "RESTAURANT_COUNTRY_DEFAULTS_MISSING": "Aucune donnée de référence pour ce pays — fournissez la langue, le fuseau horaire et la devise manuellement."
 }

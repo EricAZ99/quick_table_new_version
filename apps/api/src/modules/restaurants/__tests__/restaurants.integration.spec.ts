@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { connectDatabase, disconnectDatabase } from '../../../config/database.js';
 import { RestaurantModel } from '../../../database/models/restaurant.model.js';
 import { UserModel } from '../../../database/models/user.model.js';
+import { seedCountryDefaults } from '../../../database/seeders/countryDefaults.seed.js';
 import { seedRoleDefinitions } from '../../../database/seeders/roleDefinitions.seed.js';
 import { signAccessToken } from '../../auth/jwt.js';
 import {
@@ -125,6 +126,7 @@ describe.skipIf(!hasRealCredentials)('restaurants CRUD — intégration réelle'
   beforeAll(async () => {
     await connectDatabase(mongodbUri as string);
     await seedRoleDefinitions();
+    await seedCountryDefaults();
   });
 
   afterAll(async () => {
@@ -232,6 +234,82 @@ describe.skipIf(!hasRealCredentials)('restaurants CRUD — intégration réelle'
 
       expect(response.status).toBe(401);
       expect((response.body as ErrorBody).error.code).toBe('AUTH_TOKEN_MISSING');
+    });
+
+    it('dérive réellement locale/timezone/currency depuis countryDefaults quand ils sont omis (doc 09 §9.3, doc 35 §35.3)', async () => {
+      const ownerId = await createOwnerUser();
+
+      const response = await request(createApp())
+        .post('/api/v1/platform/restaurants')
+        .set('Authorization', `Bearer ${superAdminToken()}`)
+        .send({
+          name: `Restaurant dérivé ${Date.now()}`,
+          country: 'FR',
+          countryDetectionMethod: 'geoip',
+          ownerId,
+        });
+      const body = response.body as SuccessBody;
+      const restaurant = body.data as {
+        _id: string;
+        locale: string;
+        timezone: string;
+        currency: string;
+      };
+      createdRestaurantIds.push(restaurant._id);
+
+      expect(response.status).toBe(201);
+      expect(restaurant.locale).toBe('fr');
+      expect(restaurant.timezone).toBe('Europe/Paris');
+      expect(restaurant.currency).toBe('EUR');
+    });
+
+    it('respecte une surcharge explicite partielle (currency fournie, locale/timezone dérivés)', async () => {
+      const ownerId = await createOwnerUser();
+
+      const response = await request(createApp())
+        .post('/api/v1/platform/restaurants')
+        .set('Authorization', `Bearer ${superAdminToken()}`)
+        .send({
+          name: `Restaurant surcharge ${Date.now()}`,
+          country: 'FR',
+          countryDetectionMethod: 'manual',
+          currency: 'USD',
+          ownerId,
+        });
+      const body = response.body as SuccessBody;
+      const restaurant = body.data as {
+        _id: string;
+        locale: string;
+        timezone: string;
+        currency: string;
+      };
+      createdRestaurantIds.push(restaurant._id);
+
+      expect(response.status).toBe(201);
+      expect(restaurant.locale).toBe('fr');
+      expect(restaurant.timezone).toBe('Europe/Paris');
+      expect(restaurant.currency).toBe('USD');
+    });
+
+    it('rejette (422 RESTAURANT_COUNTRY_DEFAULTS_MISSING) un pays sans countryDefaults et sans surcharge complète', async () => {
+      const ownerId = await createOwnerUser();
+
+      // 'YY' plutôt que 'ZZ' : 'ZZ' est le pays sentinelle utilisé par
+      // `countryDefaults.integration.spec.ts` (test d'unicité) — un autre
+      // code évite toute collision si les deux fichiers tournent en
+      // parallèle (même précédent que la collision `roleDefinitions`).
+      const response = await request(createApp())
+        .post('/api/v1/platform/restaurants')
+        .set('Authorization', `Bearer ${superAdminToken()}`)
+        .send({
+          name: 'Restaurant pays inconnu',
+          country: 'YY',
+          countryDetectionMethod: 'manual',
+          ownerId,
+        });
+
+      expect(response.status).toBe(422);
+      expect((response.body as ErrorBody).error.code).toBe('RESTAURANT_COUNTRY_DEFAULTS_MISSING');
     });
   });
 
