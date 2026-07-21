@@ -9,15 +9,19 @@ import { MembershipsRepository } from '../memberships.repository.js';
 
 describe('MembershipsRepository', () => {
   it("create() injecte tenantId depuis le contexte, jamais depuis l'appelant", async () => {
+    vi.mocked(MembershipModel.create).mockResolvedValue([{ _id: 'membership-a' }] as never);
     const repository = new MembershipsRepository();
 
-    await repository.create({ userId: 'user-a', role: 'waiter' }, { tenantId: 'tenant-a' });
+    const doc = await repository.create(
+      { userId: 'user-a', role: 'waiter' },
+      { tenantId: 'tenant-a' },
+    );
 
-    expect(MembershipModel.create).toHaveBeenCalledWith({
-      userId: 'user-a',
-      role: 'waiter',
-      tenantId: 'tenant-a',
-    });
+    expect(MembershipModel.create).toHaveBeenCalledWith(
+      [{ userId: 'user-a', role: 'waiter', tenantId: 'tenant-a' }],
+      { session: undefined },
+    );
+    expect(doc).toEqual({ _id: 'membership-a' });
   });
 
   it('hérite de BaseRepository : find() fusionne tenantId dans le filtre (doc 06 §6.4)', () => {

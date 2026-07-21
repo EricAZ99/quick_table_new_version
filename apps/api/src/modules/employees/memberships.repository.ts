@@ -1,3 +1,5 @@
+import type { ClientSession } from 'mongoose';
+
 import {
   MembershipModel,
   type MembershipDocument,
@@ -22,13 +24,20 @@ export interface CreateMembershipInput {
  * `create` n'existe pas sur `BaseRepository` (doc 06 §6.4) : injecte
  * `tenantId` depuis le `context`, jamais depuis les données fournies par
  * l'appelant — même patron que `HelloWorldRepository`.
+ *
+ * `session` optionnel (doc 06 §6.7) : nécessaire pour participer à la
+ * transaction multi-documents du provisioning réduit
+ * (`restaurants.service.ts`, Feature 2.1) — forme tableau de `.create()`
+ * requise par Mongoose pour que `{session}` soit interprété comme des
+ * options plutôt que comme un second document.
  */
 export class MembershipsRepository extends BaseRepository<MembershipDocument> {
   constructor() {
     super(MembershipModel);
   }
 
-  create(input: CreateMembershipInput, context: RepositoryContext) {
-    return this.model.create({ ...input, tenantId: context.tenantId });
+  async create(input: CreateMembershipInput, context: RepositoryContext, session?: ClientSession) {
+    const [doc] = await this.model.create([{ ...input, tenantId: context.tenantId }], { session });
+    return doc as NonNullable<typeof doc>;
   }
 }

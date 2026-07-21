@@ -17,5 +17,8 @@
   "AUTH_SESSION_NOT_FOUND": "Session introuvable.",
   "TENANT_CONTEXT_REQUIRED": "Aucun restaurant actif sélectionné — veuillez en choisir un.",
   "TENANT_MEMBERSHIP_INACTIVE": "Votre accès à ce restaurant n'est plus actif.",
-  "RBAC_PERMISSION_DENIED": "Vous n'avez pas la permission requise pour effectuer cette action."
+  "RBAC_PERMISSION_DENIED": "Vous n'avez pas la permission requise pour effectuer cette action.",
+  "RESTAURANT_INVALID_PAYLOAD": "Payload invalide.",
+  "RESTAURANT_NOT_FOUND": "Restaurant introuvable.",
+  "RESTAURANT_OWNER_NOT_FOUND": "L'utilisateur propriétaire est introuvable."
 }

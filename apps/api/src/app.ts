@@ -4,7 +4,7 @@ import express, { type Express } from 'express';
 import { healthRouter } from './health/health.routes.js';
 import { authRouter } from './modules/auth/index.js';
 import { helloWorldRouter } from './modules/hello-world/index.js';
-import { restaurantsRouter } from './modules/restaurants/index.js';
+import { platformRestaurantsRouter, restaurantsRouter } from './modules/restaurants/index.js';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
 import { errorHandlerMiddleware } from './middlewares/error-handler.middleware.js';
 import { i18nMiddleware } from './middlewares/i18n.middleware.js';
@@ -56,6 +56,7 @@ export function createApp(): Express {
   app.use('/health', healthRouter);
   app.use('/api/v1/hello-world', helloWorldRouter);
   app.use('/api/v1/restaurants', restaurantsRouter);
+  app.use('/api/v1/platform/restaurants', platformRestaurantsRouter);
   app.use('/api/v1/auth', authRouter);
 
   app.use(errorHandlerMiddleware);
