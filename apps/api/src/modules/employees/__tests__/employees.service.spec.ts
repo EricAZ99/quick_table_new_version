@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { EmailJobData } from '../../../jobs/queues.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors/index.js';
 import { EmployeesService } from '../employees.service.js';
 
@@ -46,6 +47,8 @@ describe('EmployeesService', () => {
     updateOne: ReturnType<typeof vi.fn>;
   };
   let usersRepository: { findByEmail: ReturnType<typeof vi.fn>; create: ReturnType<typeof vi.fn> };
+  let authRepository: { createPasswordResetToken: ReturnType<typeof vi.fn> };
+  let enqueueEmailJob: ReturnType<typeof vi.fn>;
   let service: EmployeesService;
 
   beforeEach(() => {
@@ -57,7 +60,14 @@ describe('EmployeesService', () => {
       updateOne: vi.fn(),
     };
     usersRepository = { findByEmail: vi.fn(), create: vi.fn() };
-    service = new EmployeesService(membershipsRepository as never, usersRepository as never);
+    authRepository = { createPasswordResetToken: vi.fn().mockResolvedValue(undefined) };
+    enqueueEmailJob = vi.fn().mockResolvedValue(undefined);
+    service = new EmployeesService(
+      membershipsRepository as never,
+      usersRepository as never,
+      authRepository as never,
+      enqueueEmailJob as (data: EmailJobData) => Promise<void>,
+    );
   });
 
   describe('listEmployees', () => {
@@ -123,7 +133,7 @@ describe('EmployeesService', () => {
   });
 
   describe('inviteEmployee', () => {
-    it('réutilise un utilisateur existant plutôt que d’en créer un nouveau', async () => {
+    it('réutilise un utilisateur existant plutôt que d’en créer un nouveau, sans email d’activation', async () => {
       usersRepository.findByEmail.mockResolvedValue({ _id: 'user-existing', email: 'a@b.com' });
       membershipsRepository.create.mockResolvedValue(
         createMembership({ userId: { _id: 'user-existing' } }),
@@ -140,11 +150,18 @@ describe('EmployeesService', () => {
         expect.objectContaining({ userId: 'user-existing', role: 'waiter' }),
         { tenantId: 'tenant-a' },
       );
+      // Compte déjà existant, déjà utilisable — pas d'activation à envoyer.
+      expect(authRepository.createPasswordResetToken).not.toHaveBeenCalled();
+      expect(enqueueEmailJob).not.toHaveBeenCalled();
     });
 
-    it("crée un compte avec un mot de passe aléatoire quand l'email est inconnu (pas d'email envoyé, ticket suivant)", async () => {
+    it("crée un compte avec un mot de passe aléatoire quand l'email est inconnu", async () => {
       usersRepository.findByEmail.mockResolvedValue(null);
-      usersRepository.create.mockResolvedValue({ _id: 'user-new', email: 'new@b.com' });
+      usersRepository.create.mockResolvedValue({
+        _id: 'user-new',
+        email: 'new@b.com',
+        preferredLocale: null,
+      });
       membershipsRepository.create.mockResolvedValue(
         createMembership({ userId: { _id: 'user-new' } }),
       );
@@ -161,6 +178,48 @@ describe('EmployeesService', () => {
       const createCall = usersRepository.create.mock.calls[0]?.[0] as { passwordHash: string };
       expect(createCall.passwordHash).toEqual(expect.any(String));
       expect(createCall.passwordHash.length).toBeGreaterThan(0);
+    });
+
+    it("envoie un email d'activation (même mécanisme que 'mot de passe oublié') pour un compte fraîchement créé", async () => {
+      usersRepository.findByEmail.mockResolvedValue(null);
+      usersRepository.create.mockResolvedValue({
+        _id: 'user-new',
+        email: 'new@b.com',
+        preferredLocale: 'fr',
+      });
+      membershipsRepository.create.mockResolvedValue(
+        createMembership({ userId: { _id: 'user-new' } }),
+      );
+
+      await service.inviteEmployee('tenant-a', {
+        email: 'new@b.com',
+        fullName: 'Nouvel Employé',
+        role: 'cashier',
+      });
+
+      expect(authRepository.createPasswordResetToken).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'user-new' }),
+      );
+      expect(enqueueEmailJob).toHaveBeenCalledWith(expect.objectContaining({ to: 'new@b.com' }));
+      const [emailJob] = vi.mocked(enqueueEmailJob).mock.calls[0] as [{ subject: string }];
+      expect(emailJob.subject.length).toBeGreaterThan(0);
+    });
+
+    it("n'envoie l'email d'activation qu'après la création réussie du membership, jamais avant", async () => {
+      usersRepository.findByEmail.mockResolvedValue(null);
+      usersRepository.create.mockResolvedValue({
+        _id: 'user-new',
+        email: 'new@b.com',
+        preferredLocale: null,
+      });
+      const duplicateKeyError = Object.assign(new Error('E11000 duplicate key'), { code: 11000 });
+      membershipsRepository.create.mockRejectedValue(duplicateKeyError);
+
+      await expect(
+        service.inviteEmployee('tenant-a', { email: 'new@b.com', fullName: 'X', role: 'waiter' }),
+      ).rejects.toBeInstanceOf(ConflictError);
+
+      expect(enqueueEmailJob).not.toHaveBeenCalled();
     });
 
     it('convertit une collision d’index unique (tenantId, userId) en ConflictError EMPLOYEE_ALREADY_MEMBER', async () => {

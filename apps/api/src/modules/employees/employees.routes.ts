@@ -1,15 +1,22 @@
 import { Router } from 'express';
 
+import { enqueueEmailJob } from '../../jobs/queues.js';
 import { requireAuth } from '../../middlewares/auth.middleware.js';
 import { requirePermission } from '../../middlewares/rbac.middleware.js';
 import { resolveTenant } from '../../middlewares/tenant.middleware.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
+import { AuthRepository } from '../auth/index.js';
 import { UsersRepository } from '../users/index.js';
 import { EmployeesController } from './employees.controller.js';
 import { EmployeesService } from './employees.service.js';
 import { MembershipsRepository } from './memberships.repository.js';
 
-const service = new EmployeesService(new MembershipsRepository(), new UsersRepository());
+const service = new EmployeesService(
+  new MembershipsRepository(),
+  new UsersRepository(),
+  new AuthRepository(),
+  enqueueEmailJob,
+);
 const controller = new EmployeesController(service);
 
 export const employeesRouter = Router();

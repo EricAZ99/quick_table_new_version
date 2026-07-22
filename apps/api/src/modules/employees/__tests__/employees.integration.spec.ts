@@ -8,8 +8,10 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../../app.js';
 import { connectDatabase, disconnectDatabase } from '../../../config/database.js';
 import { MembershipModel } from '../../../database/models/membership.model.js';
+import { PasswordResetTokenModel } from '../../../database/models/passwordResetToken.model.js';
 import { UserModel } from '../../../database/models/user.model.js';
 import { seedRoleDefinitions } from '../../../database/seeders/roleDefinitions.seed.js';
+import { connectEmailQueue, disconnectEmailQueue, getEmailQueue } from '../../../jobs/queues.js';
 import {
   cleanupTenantFixtures,
   createTenantFixture,
@@ -33,7 +35,12 @@ if (existsSync(envPath)) {
 
 const mongodbUri = process.env.MONGODB_URI;
 const jwtSecret = process.env.JWT_SECRET;
-const hasRealCredentials = Boolean(mongodbUri && jwtSecret);
+const redisUrl = process.env.REDIS_URL;
+// `redisUrl` est requis dès `POST /employees` avec un email inconnu (pas
+// seulement pour le sous-bloc "flux d'activation" plus bas) : le compte
+// invité déclenche systématiquement un envoi (`enqueueEmailJob`, BullMQ),
+// jamais optionnel dans ce fichier.
+const hasRealCredentials = Boolean(mongodbUri && jwtSecret && redisUrl);
 
 /**
  * `employees` CRUD (doc 09 §9.5, Feature 2.2) contre un vrai MongoDB Atlas
@@ -92,6 +99,7 @@ describe.skipIf(!hasRealCredentials)('employees CRUD — intégration réelle', 
   beforeAll(async () => {
     await connectDatabase(mongodbUri as string);
     await seedRoleDefinitions();
+    connectEmailQueue(redisUrl as string);
   });
 
   afterAll(async () => {
@@ -102,11 +110,21 @@ describe.skipIf(!hasRealCredentials)('employees CRUD — intégration réelle', 
     // jamais tracké) couvre aussi bien les fixtures que les employés
     // invités, sans jamais toucher les tenants d'autres fichiers de test
     // (chaque `tenantId` ici est généré frais, `new Types.ObjectId()`).
+    const invitedUsers = await UserModel.find({ email: { $in: inviteCreatedUserEmails } });
+    await PasswordResetTokenModel.deleteMany({
+      userId: { $in: invitedUsers.map((user) => user._id) },
+    });
     await UserModel.collection.deleteMany({ email: { $in: inviteCreatedUserEmails } });
     const tenantIds = [...new Set(fixtures.map((fixture) => fixture.tenantId))];
     await MembershipModel.collection.deleteMany({ tenantId: { $in: tenantIds } });
     await cleanupTenantFixtures(fixtures);
+    // Aucun worker ne consomme la queue pendant ces tests (le worker est un
+    // process séparé, doc 12 §12.5) — sans ce nettoyage, les jobs
+    // `waiting` s'accumuleraient indéfiniment sur la vraie instance Redis
+    // d'un run à l'autre (même précaution que `auth.integration.spec.ts`).
+    await getEmailQueue().drain(true);
     await disconnectDatabase();
+    await disconnectEmailQueue();
   });
 
   describe('POST /api/v1/employees', () => {
@@ -143,6 +161,14 @@ describe.skipIf(!hasRealCredentials)('employees CRUD — intégration réelle', 
       const createdUser = await UserModel.findOne({ email }).select('+passwordHash');
       expect(createdUser).not.toBeNull();
       expect(createdUser?.passwordHash).toBeTruthy();
+
+      // Token d'activation réellement stocké (doc 07 §7.5, même mécanisme
+      // que "mot de passe oublié") — la boucle complète (email réel +
+      // POST /auth/reset-password) est vérifiée plus bas, dans le bloc
+      // dédié à la connexion Redis/BullMQ.
+      const resetToken = await PasswordResetTokenModel.findOne({ userId: createdUser?._id });
+      expect(resetToken).not.toBeNull();
+      expect(resetToken?.usedAt).toBeNull();
     });
 
     it('réutilise un utilisateur déjà existant (aucun doublon créé)', async () => {
@@ -447,6 +473,55 @@ describe.skipIf(!hasRealCredentials)('employees CRUD — intégration réelle', 
         .set('Authorization', `Bearer ${owner.accessToken}`);
 
       expect(response.status).toBe(404);
+    });
+  });
+
+  /**
+   * Regroupement logique seulement (la connexion BullMQ/Redis vit dans le
+   * `beforeAll`/`afterAll` du bloc englobant, requise dès `POST /employees`
+   * avec un email inconnu, pas seulement ici) : boucle complète invitation
+   * → email réel en file → activation via le `POST /auth/reset-password`
+   * déjà existant (doc 07 §7.5) → connexion avec le mot de passe choisi.
+   * Preuve d'intégration réelle entre ce ticket et le mécanisme de reset
+   * déjà en place, pas juste que l'email a été enfilé.
+   */
+  describe("flux d'activation — email réel + reset-password réel", () => {
+    async function extractActivationToken(recipient: string): Promise<string> {
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const jobs = await getEmailQueue().getJobs(['waiting', 'delayed', 'active', 'completed']);
+        const job = jobs.find((candidate) => candidate.data.to === recipient);
+        if (job) {
+          const match = /token=([^&\s]+)/.exec(job.data.text);
+          if (match?.[1]) return match[1];
+        }
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+      throw new Error(`Aucun email d'activation trouvé pour ${recipient}`);
+    }
+
+    it('un employé fraîchement invité peut activer son compte (POST /auth/reset-password) et se connecter', async () => {
+      const tenantId = freshTenantId();
+      const owner = await ownerFor(tenantId);
+      const email = `activation-${Date.now()}@employees-integration.local`;
+      inviteCreatedUserEmails.push(email);
+
+      const inviteResponse = await request(createApp())
+        .post('/api/v1/employees')
+        .set('Authorization', `Bearer ${owner.accessToken}`)
+        .send({ email, fullName: 'Employé Activation', role: 'waiter' });
+      expect(inviteResponse.status).toBe(201);
+
+      const rawToken = await extractActivationToken(email);
+      const newPassword = 'un-mot-de-passe-choisi-solide';
+      const resetResponse = await request(createApp())
+        .post('/api/v1/auth/reset-password')
+        .send({ token: rawToken, newPassword });
+      expect(resetResponse.status).toBe(200);
+
+      const loginResponse = await request(createApp())
+        .post('/api/v1/auth/login')
+        .send({ email, password: newPassword });
+      expect(loginResponse.status).toBe(200);
     });
   });
 });

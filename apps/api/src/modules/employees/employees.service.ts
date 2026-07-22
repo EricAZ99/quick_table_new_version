@@ -3,7 +3,16 @@ import { randomUUID } from 'node:crypto';
 
 import type { MembershipDocument, MembershipRole } from '../../database/models/membership.model.js';
 import type { UserDocument } from '../../database/models/user.model.js';
+import type { EmailJobData } from '../../jobs/queues.js';
+import { DEFAULT_LOCALE, type SupportedLocale } from '../../middlewares/i18n.middleware.js';
 import { ConflictError, NotFoundError } from '../../shared/errors/index.js';
+import type { AuthRepository } from '../auth/index.js';
+import {
+  generatePasswordResetToken,
+  hashPasswordResetToken,
+  PASSWORD_RESET_TOKEN_TTL_MS,
+} from '../auth/index.js';
+import { employeeInvitationEmailTemplate } from '../notifications/email-templates/employeeInvitation.template.js';
 import type { UsersRepository } from '../users/users.repository.js';
 import type {
   InviteEmployeeDto,
@@ -42,15 +51,20 @@ const USER_POPULATE_FIELDS = 'email fullName phone avatarUrl';
  * `userId` porte déjà `ref: 'User'` au schéma) plutôt que deux requêtes
  * manuelles séparées.
  *
- * La limite `maxEmployees` (409 `EMPLOYEE_LIMIT_REACHED`, doc 09 §9.5) et
- * le véritable envoi d'email d'invitation + activation sont les deux
- * tickets suivants de cette Feature — volontairement pas anticipés ici
- * (doc 14 §14.5 KISS, un ticket à la fois).
+ * La limite `maxEmployees` (409 `EMPLOYEE_LIMIT_REACHED`, doc 09 §9.5)
+ * reste hors périmètre : nécessite de vrais `subscriptionPlans` (Feature
+ * 9.1, pas commencée), aucune limite par défaut n'étant documentée nulle
+ * part pour en improviser une (décision validée avec toi — reportée, pas
+ * juste réduite).
  */
 export class EmployeesService {
   constructor(
     private readonly membershipsRepository: MembershipsRepository,
     private readonly usersRepository: UsersRepository,
+    private readonly authRepository: AuthRepository,
+    // Enfilage injecté, pas un import direct de `jobs/queues.ts` — même
+    // raison que `AuthService` (testable sans BullMQ/Redis réel).
+    private readonly enqueueEmailJob: (data: EmailJobData) => Promise<void>,
   ) {}
 
   async listEmployees(
@@ -93,15 +107,23 @@ export class EmployeesService {
 
   /**
    * Crée le compte `users` si l'email est inconnu (mot de passe aléatoire
-   * inutilisable — aucun moyen de le récupérer tant que le flux
-   * d'activation, ticket suivant, n'existe pas) ou réutilise le compte
-   * existant. `memberships` a un index unique `{tenantId, userId}` — une
-   * tentative d'inviter un email déjà membre de ce restaurant remonte en
-   * 409 `EMPLOYEE_ALREADY_MEMBER` plutôt qu'une erreur Mongo brute.
+   * inutilisable) ou réutilise le compte existant. Pour un compte
+   * fraîchement créé, enfile un email d'invitation dont le lien
+   * d'activation réutilise le mécanisme "mot de passe oublié" (doc 07
+   * §7.5, même token opaque à usage unique, même `POST
+   * /auth/reset-password` pour le consommer) — pas de second mécanisme de
+   * token dupliqué pour la même chose. Un compte déjà existant n'a pas
+   * besoin d'activation (il a déjà un vrai mot de passe utilisable) — pas
+   * d'email dans ce cas. `memberships` a un index unique
+   * `{tenantId, userId}` — une tentative d'inviter un email déjà membre
+   * de ce restaurant remonte en 409 `EMPLOYEE_ALREADY_MEMBER` plutôt
+   * qu'une erreur Mongo brute.
    */
   async inviteEmployee(tenantId: string, dto: InviteEmployeeDto): Promise<EmployeeDto> {
     let user = await this.usersRepository.findByEmail(dto.email);
+    let isNewAccount = false;
     if (!user) {
+      isNewAccount = true;
       const passwordHash = await argon2.hash(randomUUID(), { type: argon2.argon2id });
       user = await this.usersRepository.create({
         email: dto.email,
@@ -110,8 +132,9 @@ export class EmployeesService {
       });
     }
 
+    let membership;
     try {
-      const membership = await this.membershipsRepository.create(
+      membership = await this.membershipsRepository.create(
         {
           userId: user._id.toString(),
           role: dto.role,
@@ -120,10 +143,6 @@ export class EmployeesService {
           hiredAt: dto.hiredAt,
         },
         { tenantId },
-      );
-      return toEmployeeDto(
-        { ...membership.toObject(), userId: user } as unknown as MembershipWithUser,
-        true,
       );
     } catch (error) {
       if (isDuplicateKeyError(error)) {
@@ -134,6 +153,39 @@ export class EmployeesService {
       }
       throw error;
     }
+
+    // Après coup, jamais avant : envoyer l'invitation avant que le
+    // membership existe réellement enverrait un lien d'activation pour un
+    // rattachement qui pourrait ensuite échouer (ex. doublon détecté par
+    // l'index unique ci-dessus).
+    if (isNewAccount) {
+      await this.sendActivationEmail(user);
+    }
+
+    return toEmployeeDto(
+      { ...membership.toObject(), userId: user } as unknown as MembershipWithUser,
+      true,
+    );
+  }
+
+  /** Même flux que `AuthService#forgotPassword` (doc 07 §7.5) — token opaque haute entropie, hashé en base, lien à usage unique valable 30 min. */
+  private async sendActivationEmail(user: {
+    _id: unknown;
+    email: string;
+    preferredLocale: SupportedLocale | null;
+  }): Promise<void> {
+    const rawToken = generatePasswordResetToken();
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+    await this.authRepository.createPasswordResetToken({
+      userId: String(user._id),
+      tokenHash: hashPasswordResetToken(rawToken),
+      expiresAt,
+    });
+
+    const activationLink = `https://app.quicktable.io/activate-account?token=${rawToken}`;
+    const locale = user.preferredLocale ?? DEFAULT_LOCALE;
+    const { subject, html, text } = employeeInvitationEmailTemplate(locale, activationLink);
+    await this.enqueueEmailJob({ to: user.email, subject, html, text });
   }
 
   async updateEmployee(tenantId: string, id: string, dto: UpdateEmployeeDto): Promise<EmployeeDto> {
