@@ -1,10 +1,21 @@
-import rateLimit from 'express-rate-limit';
+import rateLimit, { type Logger } from 'express-rate-limit';
 import type { Request, RequestHandler, Response } from 'express';
 import { RedisStore } from 'rate-limit-redis';
 
 import { getRedisClient } from '../../config/redis.js';
+import { logger } from '../../logger/logger.js';
 import { translateErrorMessage } from '../../locales/index.js';
 import { DEFAULT_LOCALE } from '../../middlewares/i18n.middleware.js';
+
+/**
+ * Adapte notre logger Pino à l'interface `Logger` attendue par
+ * `express-rate-limit` (`(error, message?) => void`, même ordre d'arguments
+ * que `logger.warn(err, message)` — compatible tel quel).
+ */
+const rateLimiterLogger: Logger = {
+  warn: (error, message) => logger.warn({ err: error }, message ?? 'express-rate-limit warning'),
+  error: (error, message) => logger.warn({ err: error }, message ?? 'express-rate-limit error'),
+};
 
 export interface RedisRateLimiterOptions {
   windowMs: number;
@@ -34,6 +45,15 @@ export interface RedisRateLimiterOptions {
  *   démarrage — ici la construction paresseuse est mémoïsée (une seule
  *   fois), pas le bug qu'elle détecte (recréer l'instance à chaque
  *   requête, ce qui repartirait de zéro et annulerait le verrouillage).
+ * - `passOnStoreError: true` : une panne/latence Redis transitoire ne doit
+ *   jamais faire échouer la route qu'elle protège (`/auth/login`,
+ *   `/auth/forgot-password`, ...) — même philosophie best-effort que
+ *   `rbacPermissionsCache.ts` (doc 26 §26.6, "Redis n'est jamais une
+ *   source de vérité"), pas suivie ici avant ce correctif : une erreur du
+ *   store Redis (ex. latence/coupure Upstash) remontait auparavant en 500
+ *   sur la route protégée au lieu de simplement laisser passer la requête
+ *   sans limitation pour ce coup-ci. `resetKey` (appelé après un login
+ *   réussi) suit la même logique — jamais bloquant.
  */
 export function createRedisRateLimiter(options: RedisRateLimiterOptions): {
   middleware: RequestHandler;
@@ -60,6 +80,8 @@ export function createRedisRateLimiter(options: RedisRateLimiterOptions): {
         store: getStore(),
         keyGenerator: options.keyGenerator,
         validate: { creationStack: false },
+        passOnStoreError: true,
+        logger: rateLimiterLogger,
         handler: (req: Request, res: Response) => {
           const locale = req.locale ?? DEFAULT_LOCALE;
           const message = translateErrorMessage(options.errorCode, locale, options.defaultMessage);
@@ -78,7 +100,14 @@ export function createRedisRateLimiter(options: RedisRateLimiterOptions): {
       getLimiter()(req, res, next);
     },
     resetKey: async (req: Request) => {
-      await getStore().resetKey(options.keyGenerator(req));
+      try {
+        await getStore().resetKey(options.keyGenerator(req));
+      } catch (error) {
+        logger.warn(
+          { err: error, prefix: options.prefix },
+          'réinitialisation du rate limiter Redis échouée, ignorée (best-effort)',
+        );
+      }
     },
   };
 }
