@@ -20,6 +20,7 @@ const EXPECTED_PERMISSIONS_BY_ROLE: Record<MembershipRole, string[]> = {
     'restaurants:read',
     'restaurants:update',
     'restaurants:manage_settings',
+    'employees:read',
     'employees:create',
     'employees:update',
     'employees:delete',
@@ -70,6 +71,7 @@ const EXPECTED_PERMISSIONS_BY_ROLE: Record<MembershipRole, string[]> = {
   ],
   manager: [
     'restaurants:read',
+    'employees:read',
     'employees:create',
     'employees:update',
     'employees:delete',

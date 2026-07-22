@@ -1,10 +1,41 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 
+import type { MembershipRole } from '../database/models/membership.model.js';
 import { RoleDefinitionModel } from '../database/models/roleDefinition.model.js';
 import { ForbiddenError, UnauthorizedError } from '../shared/errors/index.js';
 import { getCachedPermissions, setCachedPermissions } from './rbacPermissionsCache.js';
 
 const FORBIDDEN_MESSAGE = "Vous n'avez pas la permission requise pour effectuer cette action.";
+
+/**
+ * Résolution rôle + `permissionsOverrides` (cache Redis best-effort inclus,
+ * doc 26 §26.2) — extraite de `requirePermissionAsync` (Feature 2.2, 2ᵉ
+ * consommateur réel : `employees.service.ts` en a besoin pour décider de
+ * l'exposition de `salary` sans bloquer toute la requête comme le ferait
+ * `requirePermission`, même précédent que `createRedisRateLimiter`/
+ * `requireTenantContext` — extraction après un 2ᵉ besoin, pas anticipée).
+ */
+export async function resolvePermissions(
+  role: MembershipRole,
+  membershipId: string,
+  permissionsOverrides: string[],
+): Promise<string[]> {
+  const cached = await getCachedPermissions(membershipId);
+  if (cached) {
+    return cached;
+  }
+
+  const roleDefinition = await RoleDefinitionModel.findOne({
+    roleCode: role,
+    isCurrent: true,
+  }).lean();
+
+  const resolvedPermissions = [
+    ...new Set([...(roleDefinition?.permissions ?? []), ...permissionsOverrides]),
+  ];
+  await setCachedPermissions(membershipId, resolvedPermissions);
+  return resolvedPermissions;
+}
 
 /**
  * Middleware RBAC (doc 08 §8.7) : la permission requise est un paramètre
@@ -69,19 +100,7 @@ export async function requirePermissionAsync(
     return;
   }
 
-  let resolvedPermissions = await getCachedPermissions(membershipId);
-
-  if (!resolvedPermissions) {
-    const roleDefinition = await RoleDefinitionModel.findOne({
-      roleCode: role,
-      isCurrent: true,
-    }).lean();
-
-    resolvedPermissions = [
-      ...new Set([...(roleDefinition?.permissions ?? []), ...permissionsOverrides]),
-    ];
-    await setCachedPermissions(membershipId, resolvedPermissions);
-  }
+  const resolvedPermissions = await resolvePermissions(role, membershipId, permissionsOverrides);
 
   if (!resolvedPermissions.includes(permission)) {
     next(new ForbiddenError('RBAC_PERMISSION_DENIED', FORBIDDEN_MESSAGE));

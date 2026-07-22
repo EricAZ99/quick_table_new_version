@@ -12,6 +12,7 @@ export interface CreateMembershipInput {
   role: MembershipRole;
   jobTitle?: string;
   salary?: number;
+  hiredAt?: Date;
 }
 
 /**

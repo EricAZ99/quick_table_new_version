@@ -4,7 +4,7 @@ import { requireAuth } from '../../middlewares/auth.middleware.js';
 import { requirePermission } from '../../middlewares/rbac.middleware.js';
 import { resolveTenant } from '../../middlewares/tenant.middleware.js';
 import { asyncHandler } from '../../shared/utils/asyncHandler.js';
-import { MembershipsRepository } from '../employees/memberships.repository.js';
+import { MembershipsRepository } from '../employees/index.js';
 import { UsersRepository } from '../users/index.js';
 import { RestaurantsController } from './restaurants.controller.js';
 import { RestaurantsRepository } from './restaurants.repository.js';

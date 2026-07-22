@@ -21,5 +21,8 @@
   "RESTAURANT_INVALID_PAYLOAD": "Payload inválido.",
   "RESTAURANT_NOT_FOUND": "Restaurante no encontrado.",
   "RESTAURANT_OWNER_NOT_FOUND": "Usuario propietario no encontrado.",
-  "RESTAURANT_COUNTRY_DEFAULTS_MISSING": "No hay datos de referencia para este país — proporciona el idioma, la zona horaria y la moneda manualmente."
+  "RESTAURANT_COUNTRY_DEFAULTS_MISSING": "No hay datos de referencia para este país — proporciona el idioma, la zona horaria y la moneda manualmente.",
+  "EMPLOYEE_INVALID_PAYLOAD": "Payload inválido.",
+  "EMPLOYEE_NOT_FOUND": "Empleado no encontrado.",
+  "EMPLOYEE_ALREADY_MEMBER": "Este email ya es miembro de este restaurante."
 }

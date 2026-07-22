@@ -30,6 +30,18 @@ export abstract class BaseRepository<T> {
     return this.model.find(this.withTenant(filter, context));
   }
 
+  /**
+   * Compte tenant-scopé (Feature 2.2, doc 09 §9.2 — pagination offset,
+   * `meta: {page, limit, total}`) : 1ère liste paginée du projet, ajouté
+   * ici plutôt que dans un repository de module puisque le besoin
+   * (compter en respectant la même portée tenant que `find`) est générique
+   * à toute future liste de configuration bornée (`rooms`, `tables`,
+   * `categories`, `suppliers`, `ingredients`, doc 09 §9.2).
+   */
+  count(filter: QueryFilter<T>, context: RepositoryContext) {
+    return this.model.countDocuments(this.withTenant(filter, context));
+  }
+
   findOne(filter: QueryFilter<T>, context: RepositoryContext) {
     return this.model.findOne(this.withTenant(filter, context));
   }

@@ -4,7 +4,7 @@ import { CountryDefaultModel } from '../../database/models/countryDefault.model.
 import type { RestaurantDocument } from '../../database/models/restaurant.model.js';
 import type { SupportedLocale } from '../../middlewares/i18n.middleware.js';
 import { BusinessRuleError, NotFoundError } from '../../shared/errors/index.js';
-import type { MembershipsRepository } from '../employees/memberships.repository.js';
+import type { MembershipsRepository } from '../employees/index.js';
 import type { UsersRepository } from '../users/index.js';
 import type { RestaurantsRepository } from './restaurants.repository.js';
 import type {

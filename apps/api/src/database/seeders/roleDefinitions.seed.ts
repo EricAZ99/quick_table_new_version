@@ -14,18 +14,25 @@ interface RoleDefinitionSeed {
  * permissions par défaut du rôle. `super_admin` et `customer` ne sont pas
  * seedés ici (doc 08 §8.4/§8.5, voir `roleDefinition.model.ts`).
  *
- * **Incohérence de doc signalée, non corrigée** (décision validée avec
- * toi, "seeder strictement la matrice écrite") : plusieurs permissions du
- * catalogue (doc 08 §8.3) n'apparaissent dans **aucune** ligne de la
- * matrice §8.4, pour aucun rôle — `employees:read`, `tables:read`,
- * `menus:read`, `payments:read`, `subscriptions:read`, ainsi que tout le
- * groupe `notifications:*` et `qrcode:regenerate`. Probablement un oubli
- * (un manager sans `employees:read` ne pourrait jamais lister son
- * équipe), mais l'intention du Product Owner n'est pas devinée ici — ces
- * permissions ne sont donc accordées à aucun rôle pour l'instant. Sans
- * impact fonctionnel aujourd'hui : aucun endpoint réel ne consomme encore
- * `employees`/`tables`/`menus`/`payments`/`notifications`/`qrcode`
- * (Epic 2+, pas commencé).
+ * **Incohérence de doc signalée et corrigée** (décision validée avec toi,
+ * Feature 2.2 "CRUD /employees") : `employees:read` n'apparaissait dans
+ * **aucune** ligne de la matrice §8.4 d'origine, pour aucun rôle, alors
+ * que `employees:create/update/delete` étaient accordées à owner+manager —
+ * un oubli manifeste (un manager sans `employees:read` ne pourrait jamais
+ * lister son équipe), sans impact tant qu'aucun endpoint `employees` réel
+ * n'existait. Ce ticket en construit un (`GET /employees`) : doc 08 §8.4 a
+ * donc été mis à jour pour ajouter une ligne `employees:read` (Owner ✅,
+ * Manager ✅ — même profil que `employees:create/update/delete`), reflétée
+ * ci-dessous.
+ *
+ * **Incohérences de doc restantes, toujours non corrigées** (même
+ * décision d'origine, "seeder strictement la matrice écrite" — pas
+ * d'impact tant que ces modules n'existent pas) : `tables:read`,
+ * `menus:read`, `payments:read`, `subscriptions:read`, tout le groupe
+ * `notifications:*` et `qrcode:regenerate` n'apparaissent toujours dans
+ * aucune ligne de la matrice §8.4, pour aucun rôle — à corriger au
+ * ticket qui construira l'endpoint concerné (même traitement que
+ * `employees:read` ici), pas anticipé pour les autres maintenant.
  *
  * La portée `own` de doc 08 §8.8 (`orders:read`/`orders:update` pour
  * `waiter`) n'a pas de représentation dans le schéma `roleDefinitions` de
@@ -42,6 +49,7 @@ export const ROLE_DEFINITIONS_SEED_DATA: readonly RoleDefinitionSeed[] = [
       'restaurants:read',
       'restaurants:update',
       'restaurants:manage_settings',
+      'employees:read',
       'employees:create',
       'employees:update',
       'employees:delete',
@@ -95,6 +103,7 @@ export const ROLE_DEFINITIONS_SEED_DATA: readonly RoleDefinitionSeed[] = [
     roleCode: 'manager',
     permissions: [
       'restaurants:read',
+      'employees:read',
       'employees:create',
       'employees:update',
       'employees:delete',

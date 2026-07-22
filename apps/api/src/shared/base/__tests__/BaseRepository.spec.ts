@@ -19,6 +19,7 @@ function createMockModel() {
     updateOne: vi.fn(),
     deleteOne: vi.fn(),
     aggregate: vi.fn(),
+    countDocuments: vi.fn(),
   } as unknown as Model<FakeDoc>;
 }
 
@@ -74,6 +75,15 @@ describe('BaseRepository (doc 06 §6.4 — ligne de défense n°2)', () => {
       { $match: { tenantId: 'tenant-a' } },
       { $group: { _id: '$status' } },
     ]);
+  });
+
+  it('fusionne tenantId dans count()', () => {
+    const model = createMockModel();
+    const repo = new FakeRepository(model);
+
+    repo.count({ status: 'active' }, context);
+
+    expect(model.countDocuments).toHaveBeenCalledWith({ status: 'active', tenantId: 'tenant-a' });
   });
 
   it("impose toujours le tenantId du contexte, même si l'appelant tente de le surcharger dans son filtre", () => {

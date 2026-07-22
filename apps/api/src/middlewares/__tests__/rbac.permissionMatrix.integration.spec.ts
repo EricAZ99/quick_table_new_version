@@ -81,7 +81,9 @@ describe.skipIf(!hasRealCredentials)(
       ${'restaurant_owner'} | ${'audit-logs:read'}               | ${'granted'}
       ${'restaurant_owner'} | ${'employees:view_salary'}         | ${'granted'}
       ${'manager'}          | ${'employees:create'}              | ${'granted'}
+      ${'manager'}          | ${'employees:read'}                | ${'granted'}
       ${'manager'}          | ${'stock:manage_ingredients'}      | ${'granted'}
+      ${'waiter'}           | ${'employees:read'}                | ${'denied'}
       ${'manager'}          | ${'employees:view_salary'}         | ${'denied'}
       ${'manager'}          | ${'audit-logs:read'}               | ${'denied'}
       ${'manager'}          | ${'billing:read'}                  | ${'denied'}

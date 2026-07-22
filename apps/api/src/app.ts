@@ -3,6 +3,7 @@ import express, { type Express } from 'express';
 
 import { healthRouter } from './health/health.routes.js';
 import { authRouter } from './modules/auth/index.js';
+import { employeesRouter } from './modules/employees/index.js';
 import { helloWorldRouter } from './modules/hello-world/index.js';
 import { platformRestaurantsRouter, restaurantsRouter } from './modules/restaurants/index.js';
 import { correlationIdMiddleware } from './middlewares/correlationId.middleware.js';
@@ -58,6 +59,7 @@ export function createApp(): Express {
   app.use('/api/v1/restaurants', restaurantsRouter);
   app.use('/api/v1/platform/restaurants', platformRestaurantsRouter);
   app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/employees', employeesRouter);
 
   app.use(errorHandlerMiddleware);
 

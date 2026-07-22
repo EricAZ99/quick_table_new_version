@@ -27,10 +27,18 @@ describe('ROLE_DEFINITIONS_SEED_DATA', () => {
     expect(owner?.permissions).toContain('audit-logs:read');
   });
 
-  it("n'inclut aucune permission absente de la matrice pour tous les rôles (gap signalé, non corrigé)", () => {
+  it('accorde employees:read à owner+manager (gap corrigé, Feature 2.2 — voir doc 08 §8.4)', () => {
+    const owner = ROLE_DEFINITIONS_SEED_DATA.find((entry) => entry.roleCode === 'restaurant_owner');
+    const manager = ROLE_DEFINITIONS_SEED_DATA.find((entry) => entry.roleCode === 'manager');
+    const waiter = ROLE_DEFINITIONS_SEED_DATA.find((entry) => entry.roleCode === 'waiter');
+    expect(owner?.permissions).toContain('employees:read');
+    expect(manager?.permissions).toContain('employees:read');
+    expect(waiter?.permissions).not.toContain('employees:read');
+  });
+
+  it("n'inclut aucune permission absente de la matrice pour tous les rôles (gaps restants, signalés, non corrigés)", () => {
     const allPermissions = ROLE_DEFINITIONS_SEED_DATA.flatMap((entry) => entry.permissions);
     for (const missing of [
-      'employees:read',
       'tables:read',
       'menus:read',
       'payments:read',

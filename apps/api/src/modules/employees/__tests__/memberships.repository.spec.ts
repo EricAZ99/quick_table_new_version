@@ -24,6 +24,22 @@ describe('MembershipsRepository', () => {
     expect(doc).toEqual({ _id: 'membership-a' });
   });
 
+  it('create() transmet hiredAt quand fourni (Feature 2.2, invitation employé)', async () => {
+    vi.mocked(MembershipModel.create).mockResolvedValue([{ _id: 'membership-b' }] as never);
+    const repository = new MembershipsRepository();
+    const hiredAt = new Date('2026-01-15');
+
+    await repository.create(
+      { userId: 'user-b', role: 'cashier', hiredAt },
+      { tenantId: 'tenant-a' },
+    );
+
+    expect(MembershipModel.create).toHaveBeenCalledWith(
+      [{ userId: 'user-b', role: 'cashier', hiredAt, tenantId: 'tenant-a' }],
+      { session: undefined },
+    );
+  });
+
   it('hérite de BaseRepository : find() fusionne tenantId dans le filtre (doc 06 §6.4)', () => {
     const repository = new MembershipsRepository();
 

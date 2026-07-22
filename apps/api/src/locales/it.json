@@ -21,5 +21,8 @@
   "RESTAURANT_INVALID_PAYLOAD": "Payload non valido.",
   "RESTAURANT_NOT_FOUND": "Ristorante non trovato.",
   "RESTAURANT_OWNER_NOT_FOUND": "Utente proprietario non trovato.",
-  "RESTAURANT_COUNTRY_DEFAULTS_MISSING": "Nessun dato di riferimento per questo paese — fornisci manualmente lingua, fuso orario e valuta."
+  "RESTAURANT_COUNTRY_DEFAULTS_MISSING": "Nessun dato di riferimento per questo paese — fornisci manualmente lingua, fuso orario e valuta.",
+  "EMPLOYEE_INVALID_PAYLOAD": "Payload non valido.",
+  "EMPLOYEE_NOT_FOUND": "Dipendente non trovato.",
+  "EMPLOYEE_ALREADY_MEMBER": "Questa email è già membro di questo ristorante."
 }

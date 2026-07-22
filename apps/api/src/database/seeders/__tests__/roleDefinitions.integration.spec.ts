@@ -53,17 +53,38 @@ describe.skipIf(!hasRealCredentials)('roleDefinitions seed — intégration Mong
     await disconnectDatabase();
   });
 
-  it('seed les 5 rôles en version 1 et reste idempotent au second passage (pas de doublon de version)', async () => {
+  it('seed les 5 rôles et reste idempotent au second passage (pas de doublon de version)', async () => {
+    // Le numéro de version exact n'est pas figé ici (contrairement à une
+    // version antérieure de ce test) : cette base Atlas partagée accumule
+    // les versions au fil des tickets qui changent réellement la matrice
+    // (ex. Feature 2.2, `employees:read` ajouté à owner/manager) — seule
+    // l'idempotence (2ᵉ passage sans changement) est une propriété stable
+    // à vérifier, pas un numéro de version absolu.
     await seedRoleDefinitions();
+    const afterFirstPass = await RoleDefinitionModel.find({ isCurrent: true }).lean();
+
     await seedRoleDefinitions();
+    const afterSecondPass = await RoleDefinitionModel.find({ isCurrent: true }).lean();
 
-    const docs = await RoleDefinitionModel.find({ isCurrent: true }).lean();
-    expect(docs).toHaveLength(ROLE_DEFINITIONS_SEED_DATA.length);
-    expect(docs.every((doc) => doc.version === 1)).toBe(true);
+    function byRole(a: { role: string }, b: { role: string }): number {
+      return a.role.localeCompare(b.role);
+    }
 
-    const manager = docs.find((doc) => doc.roleCode === 'manager');
+    expect(afterSecondPass).toHaveLength(ROLE_DEFINITIONS_SEED_DATA.length);
+    expect(
+      afterSecondPass.map((doc) => ({ role: doc.roleCode, version: doc.version })).sort(byRole),
+    ).toEqual(
+      afterFirstPass.map((doc) => ({ role: doc.roleCode, version: doc.version })).sort(byRole),
+    );
+
+    const manager = afterSecondPass.find((doc) => doc.roleCode === 'manager');
     expect(manager?.permissions).toEqual(
-      expect.arrayContaining(['orders:create', 'orders:read', 'employees:create']),
+      expect.arrayContaining([
+        'orders:create',
+        'orders:read',
+        'employees:create',
+        'employees:read',
+      ]),
     );
   });
 
