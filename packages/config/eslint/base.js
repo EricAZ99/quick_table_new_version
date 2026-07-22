@@ -57,7 +57,17 @@ export const typeCheckedConfig = tseslint.config(
     extends: [...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        projectService: {
+          // `vitest.config.ts` (apps/api) vit hors de `src`, donc hors du
+          // `tsconfig.json` de ce paquet (`include: ["src"]`, `rootDir:
+          // "src"` — l'y ajouter casserait `tsc -p tsconfig.json`,
+          // `rootDir` exigeant que toute source incluse en soit issue).
+          // "Default project" (parsing seul, pas de linting type-aware
+          // complet) pour ce seul fichier plutôt qu'un second tsconfig
+          // dédié (doc 14 §14.5 KISS, même config que `pnpm build` sinon
+          // dupliquée pour un seul fichier).
+          allowDefaultProject: ['apps/api/vitest.config.ts'],
+        },
         tsconfigRootDir: process.cwd(),
       },
     },
