@@ -9,7 +9,6 @@ import { connectDatabase, disconnectDatabase } from '../../config/database.js';
 import { connectRedis, disconnectRedis, getRedisClient } from '../../config/redis.js';
 import { MembershipModel } from '../../database/models/membership.model.js';
 import { RoleDefinitionModel } from '../../database/models/roleDefinition.model.js';
-import { UserModel } from '../../database/models/user.model.js';
 import { seedRoleDefinitions } from '../../database/seeders/roleDefinitions.seed.js';
 import {
   cleanupTenantFixtures,
@@ -93,9 +92,18 @@ describe.skipIf(!hasRealCredentials)('requirePermission — intégration réelle
   });
 
   afterAll(async () => {
+    // Tous les utilisateurs de ce fichier viennent de `createTenantFixture`
+    // (`fixture()` ci-dessous et l'appel direct pour `waiterWithOverride`),
+    // toujours poussés dans `fixtures` — `cleanupTenantFixtures` les
+    // supprime déjà par `_id` exact. Le `UserModel.collection.deleteMany({})`
+    // qui suivait ici (bug réel découvert Feature 2.2, en re-testant
+    // manuellement dans le navigateur après qu'un compte de test créé à la
+    // main ait disparu) viderait TOUTE la collection `users` à chaque
+    // exécution — y compris des comptes n'ayant aucun rapport avec ce
+    // fichier, sur la base Atlas partagée. Retiré : redondant avec le
+    // nettoyage déjà fait juste au-dessus, jamais nécessaire.
     await cleanupTenantFixtures(fixtures);
     await MembershipModel.collection.deleteMany({ tenantId: TENANT_ID });
-    await UserModel.collection.deleteMany({});
     await disconnectDatabase();
   });
 

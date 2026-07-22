@@ -53,6 +53,14 @@ const hasRealCredentials = Boolean(mongodbUri && redisUrl && jwtSecret);
  */
 describe.skipIf(!hasRealCredentials)('hello-world — intégration bout-en-bout', () => {
   const fixtures: TenantFixture[] = [];
+  // Les deux seuls tenants utilisés par ce fichier (tous les appels à
+  // `fixture()` ci-dessous leur sont scopés) — permet de nettoyer
+  // `helloWorld` sans jamais toucher aux documents d'un autre fichier de
+  // test (même précédent que `tenantIsolationFixtures.integration.spec.ts`).
+  const FIXTURE_TENANT_IDS = [
+    'hello-world-integration-tenant-a',
+    'hello-world-integration-tenant-b',
+  ];
 
   async function fixture(tenantId: string): Promise<TenantFixture> {
     const created = await createTenantFixture({ tenantId, jwtSecret: jwtSecret as string });
@@ -63,12 +71,18 @@ describe.skipIf(!hasRealCredentials)('hello-world — intégration bout-en-bout'
   beforeAll(async () => {
     await connectDatabase(mongodbUri as string);
     await connectRedis(redisUrl as string);
-    await HelloWorldModel.collection.deleteMany({});
+    // `deleteMany({})` sans filtre ici auparavant (bug réel découvert
+    // Feature 2.2, en re-testant manuellement après qu'un compte `users`
+    // créé à la main ait disparu à cause du même bug ailleurs) — viderait
+    // toute la collection `helloWorld` à chaque exécution, y compris des
+    // documents d'un autre fichier de test tournant sur la même base Atlas
+    // partagée. Scopé aux deux tenants utilisés par ce fichier.
+    await HelloWorldModel.collection.deleteMany({ tenantId: { $in: FIXTURE_TENANT_IDS } });
   });
 
   afterAll(async () => {
     await cleanupTenantFixtures(fixtures);
-    await HelloWorldModel.collection.deleteMany({});
+    await HelloWorldModel.collection.deleteMany({ tenantId: { $in: FIXTURE_TENANT_IDS } });
     await disconnectDatabase();
     await disconnectRedis();
   });
