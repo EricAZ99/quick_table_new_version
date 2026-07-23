@@ -7,11 +7,12 @@ import { i18n } from '@/plugins/i18n.plugin';
 import App from '../App.vue';
 
 // `App` bascule désormais entre `LoginScreen` (non authentifié) et
-// `RestaurantSettingsScreen` (Feature 2.1, ticket "back-office restaurant")
-// selon `authStore.isAuthenticated` — un simple smoke-test suffit ici (le
+// `AppShell` (écrans authentifiés, doc 11 §11.5) selon
+// `authStore.isAuthenticated` — un simple smoke-test suffit ici (le
 // comportement détaillé de chaque écran est couvert par ses propres
-// specs), mais `fetch` doit être stubé : `onMounted` appelle
-// `auth.restoreSession()` (`POST /auth/refresh`).
+// specs, `AppShell` n'a pas besoin du plugin Router tant que ce test ne
+// franchit jamais la porte d'authentification), mais `fetch` doit être
+// stubé : `onMounted` appelle `auth.restoreSession()` (`POST /auth/refresh`).
 describe('App — porte d’authentification', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ status: 401, ok: false }));

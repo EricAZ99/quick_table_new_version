@@ -2,22 +2,19 @@
 import { onMounted } from 'vue';
 
 import LoginScreen from '@/components/auth/LoginScreen.vue';
-import RestaurantSettingsScreen from '@/components/restaurant/RestaurantSettingsScreen.vue';
+import AppShell from '@/components/layout/AppShell.vue';
 import { useAuthStore } from '@/stores/auth.store';
 
 /**
- * Composant racine (doc 03 §3.2). Bascule entre `LoginScreen` et
- * `RestaurantSettingsScreen` selon `authStore.isAuthenticated` — pas de
- * Router : ce n'est qu'une porte d'authentification à deux états, pas une
- * navigation entre plusieurs pages adressables, le Router restant reporté
- * jusqu'à un vrai besoin de ce type (doc 14 §14.5 KISS).
+ * Composant racine (doc 03 §3.2). Bascule entre `LoginScreen` et `AppShell`
+ * selon `authStore.isAuthenticated` — cette porte d'authentification à deux
+ * états reste une simple condition, pas une route : le Router (`router/`,
+ * introduit avec le ticket "écran Employés") ne gère que la navigation
+ * *entre* écrans authentifiés, jamais l'état connecté/non connecté.
  *
- * `CountryDetectionScreen` (ticket précédent, flux d'inscription) n'est
- * plus monté ici : les deux écrans ne peuvent pas coexister sans Router, et
- * ce ticket porte sur le flux de gestion d'un restaurant existant
- * (connexion → édition), pas sur l'inscription. Le composant reste
- * entièrement implémenté et testé (`CountryDetectionScreen.spec.ts`),
- * simplement non atteignable depuis `App.vue` pour l'instant.
+ * `CountryDetectionScreen` (ticket précédent, flux d'inscription) reste non
+ * atteignable depuis ici, inchangé — toujours hors périmètre (inscription,
+ * pas gestion d'un restaurant existant).
  */
 const auth = useAuthStore();
 
@@ -28,5 +25,5 @@ onMounted(() => {
 
 <template>
   <LoginScreen v-if="!auth.isAuthenticated" />
-  <RestaurantSettingsScreen v-else />
+  <AppShell v-else />
 </template>

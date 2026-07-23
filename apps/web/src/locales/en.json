@@ -1,6 +1,10 @@
 {
   "app": {
-    "greeting": "Hello from QuickTable"
+    "greeting": "Hello from QuickTable",
+    "nav": {
+      "restaurant": "My restaurant",
+      "employees": "Employees"
+    }
   },
   "language": {
     "label": "Language"
@@ -60,6 +64,66 @@
       "friday": "Friday",
       "saturday": "Saturday",
       "sunday": "Sunday"
+    }
+  },
+  "employees": {
+    "title": "Employees",
+    "inviteButton": "Invite an employee",
+    "loading": "Loading…",
+    "empty": "No employees for this filter.",
+    "filters": {
+      "all": "All",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "table": {
+      "employee": "Employee",
+      "role": "Role",
+      "jobTitle": "Job title",
+      "salary": "Salary",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "roles": {
+      "restaurant_owner": "Owner",
+      "manager": "Manager",
+      "cashier": "Cashier",
+      "kitchen": "Kitchen",
+      "waiter": "Waiter"
+    },
+    "actions": {
+      "edit": "Edit",
+      "deactivate": "Deactivate",
+      "reactivate": "Reactivate"
+    },
+    "pagination": {
+      "previous": "Previous",
+      "next": "Next",
+      "pageInfo": "Page {page} of {totalPages}"
+    },
+    "invite": {
+      "title": "Invite an employee",
+      "fullNameLabel": "Full name",
+      "emailLabel": "Email",
+      "roleLabel": "Role",
+      "jobTitleLabel": "Job title",
+      "salaryLabel": "Salary",
+      "salaryOptional": "optional",
+      "cancel": "Cancel",
+      "submit": "Send invitation",
+      "submitting": "Sending…"
+    },
+    "edit": {
+      "title": "Edit employee",
+      "jobTitleLabel": "Job title",
+      "salaryLabel": "Salary",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving…"
     }
   }
 }

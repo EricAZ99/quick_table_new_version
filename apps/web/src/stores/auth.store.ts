@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
-import { apiRequest, ApiError } from '@/shared/apiClient';
+import { apiRequest, apiRequestWithMeta, ApiError } from '@/shared/apiClient';
 
 interface LoginSessionData {
   accessToken: string;
@@ -24,6 +24,31 @@ type LoginOutcome = (LoginSessionData & { requires2FA?: false }) | LoginChalleng
 const EXPIRED_TOKEN_CODES = new Set(['AUTH_TOKEN_MISSING', 'AUTH_TOKEN_INVALID']);
 
 /**
+ * Décode le claim `role` du payload JWT (doc 07, `AccessTokenPayload`,
+ * `apps/api/src/modules/auth/jwt.ts`) sans vérifier la signature — usage
+ * UI uniquement (afficher/masquer un lien de nav), jamais un contrôle
+ * d'accès réel (celui-ci reste entièrement côté serveur, `requirePermission`).
+ * Nécessaire car `tenants` (posé par `login`/`verifyTwoFactor`) ne survit
+ * pas à un rechargement de page : `POST /auth/refresh` ne renvoie qu'un
+ * `accessToken` (cf. commentaire `restoreSession` ci-dessous), alors que le
+ * claim `role` qu'il contient est lui bien préservé d'un refresh à l'autre
+ * (`auth.service.ts#refresh` : `role: previousPayload.role`).
+ */
+function decodeRoleFromAccessToken(token: string | null): string | null {
+  if (!token) return null;
+  try {
+    const payloadSegment = token.split('.')[1];
+    if (!payloadSegment) return null;
+    const base64 = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');
+    const json = atob(base64);
+    const payload = JSON.parse(json) as { role?: string | null };
+    return payload.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * État d'authentification (doc 07) — premier vrai besoin d'un store partagé
  * entre plusieurs composants (`LoginScreen`/`RestaurantSettingsScreen`),
  * Pinia introduit ici pour cette raison (`main.ts`, doc 03 §3.2).
@@ -43,6 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
   const pendingChallengeToken = ref<string | null>(null);
 
   const isAuthenticated = computed(() => accessToken.value !== null);
+  const role = computed(() => decodeRoleFromAccessToken(accessToken.value));
 
   async function login(email: string, password: string): Promise<{ requires2FA: boolean }> {
     const result = await apiRequest<LoginOutcome>('/api/v1/auth/login', {
@@ -101,12 +127,28 @@ export const useAuthStore = defineStore('auth', () => {
    * un échec après ce second essai est propagé tel quel à l'appelant.
    */
   async function authorizedFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-    const attempt = (): Promise<T> =>
+    return withRefreshRetry(() =>
       apiRequest<T>(path, {
         ...init,
         headers: { ...init.headers, Authorization: `Bearer ${accessToken.value ?? ''}` },
-      });
+      }),
+    );
+  }
 
+  /** Même comportement qu'`authorizedFetch`, pour les endpoints paginés exposant `meta` (doc 09 §9.2). */
+  async function authorizedFetchWithMeta<T, M>(
+    path: string,
+    init: RequestInit = {},
+  ): Promise<{ data: T; meta: M }> {
+    return withRefreshRetry(() =>
+      apiRequestWithMeta<T, M>(path, {
+        ...init,
+        headers: { ...init.headers, Authorization: `Bearer ${accessToken.value ?? ''}` },
+      }),
+    );
+  }
+
+  async function withRefreshRetry<T>(attempt: () => Promise<T>): Promise<T> {
     try {
       return await attempt();
     } catch (error) {
@@ -136,10 +178,12 @@ export const useAuthStore = defineStore('auth', () => {
     accessToken,
     tenants,
     isAuthenticated,
+    role,
     login,
     verifyTwoFactor,
     logout,
     restoreSession,
     authorizedFetch,
+    authorizedFetchWithMeta,
   };
 });

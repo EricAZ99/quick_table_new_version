@@ -1,6 +1,10 @@
 {
   "app": {
-    "greeting": "Ciao da QuickTable"
+    "greeting": "Ciao da QuickTable",
+    "nav": {
+      "restaurant": "Il mio ristorante",
+      "employees": "Dipendenti"
+    }
   },
   "language": {
     "label": "Lingua"
@@ -60,6 +64,66 @@
       "friday": "Venerdì",
       "saturday": "Sabato",
       "sunday": "Domenica"
+    }
+  },
+  "employees": {
+    "title": "Dipendenti",
+    "inviteButton": "Invita un dipendente",
+    "loading": "Caricamento…",
+    "empty": "Nessun dipendente per questo filtro.",
+    "filters": {
+      "all": "Tutti",
+      "active": "Attivi",
+      "inactive": "Inattivi"
+    },
+    "table": {
+      "employee": "Dipendente",
+      "role": "Ruolo",
+      "jobTitle": "Mansione",
+      "salary": "Stipendio",
+      "status": "Stato",
+      "actions": "Azioni"
+    },
+    "status": {
+      "active": "Attivo",
+      "inactive": "Inattivo"
+    },
+    "roles": {
+      "restaurant_owner": "Proprietario",
+      "manager": "Manager",
+      "cashier": "Cassiere",
+      "kitchen": "Cucina",
+      "waiter": "Cameriere"
+    },
+    "actions": {
+      "edit": "Modifica",
+      "deactivate": "Disattiva",
+      "reactivate": "Riattiva"
+    },
+    "pagination": {
+      "previous": "Precedente",
+      "next": "Successivo",
+      "pageInfo": "Pagina {page} di {totalPages}"
+    },
+    "invite": {
+      "title": "Invita un dipendente",
+      "fullNameLabel": "Nome completo",
+      "emailLabel": "Email",
+      "roleLabel": "Ruolo",
+      "jobTitleLabel": "Mansione",
+      "salaryLabel": "Stipendio",
+      "salaryOptional": "facoltativo",
+      "cancel": "Annulla",
+      "submit": "Invia invito",
+      "submitting": "Invio…"
+    },
+    "edit": {
+      "title": "Modifica dipendente",
+      "jobTitleLabel": "Mansione",
+      "salaryLabel": "Stipendio",
+      "cancel": "Annulla",
+      "save": "Salva",
+      "saving": "Salvataggio…"
     }
   }
 }

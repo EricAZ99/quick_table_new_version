@@ -242,4 +242,66 @@ describe('useAuthStore', () => {
     });
     expect(store.isAuthenticated).toBe(false);
   });
+
+  /** Fabrique un JWT syntaxiquement valide (header.payload.signature) — signature bidon, jamais vérifiée côté client. */
+  function fakeAccessToken(payload: Record<string, unknown>): string {
+    const base64url = (value: string) =>
+      btoa(value).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return `${base64url('{}')}.${base64url(JSON.stringify(payload))}.sig`;
+  }
+
+  describe('role', () => {
+    it('décode le claim role du payload JWT courant', () => {
+      const store = useAuthStore();
+      store.accessToken = fakeAccessToken({ sub: 'user-1', role: 'manager' });
+
+      expect(store.role).toBe('manager');
+    });
+
+    it('vaut null tant qu’aucun accessToken n’est posé', () => {
+      const store = useAuthStore();
+
+      expect(store.role).toBeNull();
+    });
+
+    it('vaut null pour un token malformé, sans lever d’erreur', () => {
+      const store = useAuthStore();
+      store.accessToken = 'not-a-jwt';
+
+      expect(store.role).toBeNull();
+    });
+  });
+
+  describe('authorizedFetchWithMeta', () => {
+    it('attache le Bearer token et renvoie data + meta séparément', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(
+          jsonResponse(200, {
+            success: true,
+            data: { accessToken: 'at-1', user: {}, tenants: [] },
+          }),
+        )
+        .mockResolvedValueOnce(
+          jsonResponse(200, {
+            success: true,
+            data: [{ id: 'e-1' }],
+            meta: { page: 1, limit: 20, total: 1 },
+          }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+      const store = useAuthStore();
+      await store.login('a@b.com', 'password123');
+
+      const result = await store.authorizedFetchWithMeta('/api/v1/employees?page=1&limit=20');
+
+      expect(result).toEqual({ data: [{ id: 'e-1' }], meta: { page: 1, limit: 20, total: 1 } });
+      expect(fetchMock).toHaveBeenLastCalledWith(
+        '/api/v1/employees?page=1&limit=20',
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Bearer at-1' }),
+        }),
+      );
+    });
+  });
 });
